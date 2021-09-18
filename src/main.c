@@ -6,6 +6,7 @@ NORETURN void main() {
     init_console();
 	/* TODO: Lab1 print */
     puts("Hello world!");
-    char ch = uart_get_char();
+    char ch = -1;
+    while (ch == (char)-1) ch = uart_get_char();
     printf("%d\n", (int)ch);
 }
