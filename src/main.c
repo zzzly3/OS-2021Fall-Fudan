@@ -1,5 +1,6 @@
 #include <aarch64/intrinsic.h>
 #include <core/console.h>
+#include <uart.h>
 
 NORETURN void main() {
     init_char_device();

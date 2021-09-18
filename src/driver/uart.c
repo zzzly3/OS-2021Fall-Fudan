@@ -2,7 +2,6 @@
 #include <driver/aux.h>
 #include <driver/gpio.h>
 #include <driver/uart.h>
-#include <common/lutil.h>
 
 void init_uart() {
     device_put_uint32(GPPUD, 0);
