@@ -2,6 +2,7 @@
 #include <driver/aux.h>
 #include <driver/gpio.h>
 #include <driver/uart.h>
+#include <common/lutil.h>
 
 void init_uart() {
     device_put_uint32(GPPUD, 0);
@@ -44,4 +45,9 @@ void uart_put_char(char c) {
     // fix Windows's '\r'.
     if (c == '\n')
         uart_put_char('\r');
+}
+
+const BOOL uart_vaild_char(const char c)
+{
+    return c == 0xff;
 }
