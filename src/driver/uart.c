@@ -46,7 +46,7 @@ void uart_put_char(char c) {
         uart_put_char('\r');
 }
 
-const BOOL uart_vaild_char(const char c)
+const BOOL uart_valid_char(const char c)
 {
     return c == 0xff;
 }
