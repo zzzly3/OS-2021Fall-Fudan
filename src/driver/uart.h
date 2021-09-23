@@ -9,6 +9,6 @@
 void init_uart();
 char uart_get_char();
 void uart_put_char(char c);
-const BOOL uart_valid_char(const char c);
+BOOL uart_valid_char(const char c);
 
 #endif

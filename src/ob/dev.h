@@ -25,9 +25,9 @@ typedef struct _DEVICE_OBJECT
 	PSPINLOCK Lock; // TODO: Replaced with scheduler-related lock
 } DEVICE_OBJECT, *PDEVICE_OBJECT;
 
-KSTATUS IoLockDevice(PDEVICE_OBJECT DeviceObject);
-KSTATUS IoTryToLockDevice(PDEVICE_OBJECT DeviceObject);
-KSTATUS IoUnlockDevice(PDEVICE_OBJECT DeviceObject);
-KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq);
+KSTATUS IoLockDevice(struct _DEVICE_OBJECT*);
+KSTATUS IoTryToLockDevice(struct _DEVICE_OBJECT*);
+KSTATUS IoUnlockDevice(struct _DEVICE_OBJECT*);
+KSTATUS IoCallDevice(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 
 #endif

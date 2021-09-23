@@ -35,7 +35,7 @@ typedef struct _IOREQ_OBJECT
 	PIOREQ_CALLBACK UpdateCallback;
 } IOREQ_OBJECT, *PIOREQ_OBJECT;
 
-BOOL IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq);
-void IoInitializeRequest(PIOREQ_OBJECT IOReq)
+BOOL IoUpdateRequest(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
+void IoInitializeRequest(struct _IOREQ_OBJECT*);
 
 #endif
