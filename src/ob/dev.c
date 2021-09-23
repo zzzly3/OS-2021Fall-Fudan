@@ -1,5 +1,19 @@
 #include <ob/dev.h>
 
+BOOL IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
+{
+	if (IOReq->Flags & IOREQ_FLAG_ASYNC)
+		return IOReq->UpdateCallback(DeviceObject, IOReq);
+	else
+		return TRUE;
+}
+
+void IoInitializeRequest(PIOREQ_OBJECT IOReq)
+{
+	memset(IOReq, 0, sizeof(IOREQ_OBJECT));
+	IOReq->Status = STATUS_PENDING;
+}
+
 KSTATUS IoLockDevice(PDEVICE_OBJECT DeviceObject)
 {
 	if (DeviceObject->Flags & DEVICE_FLAG_NOLOCK)
@@ -39,9 +53,8 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	else
 	{
 		// TODO: Scheduler-related logic?
-		if (DeviceObject->IOHandler(IOReq))
+		if (DeviceObject->IOHandler(DeviceObject, IOReq))
 			return IOReq->Status;
-		else
-			return STATUS_FAILURE;
 	}
+	return STATUS_FAILURE;
 }

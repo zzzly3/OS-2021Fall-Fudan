@@ -4,7 +4,39 @@
 #include <common/spinlock.h>
 #include <common/string.h>
 #include <common/lutil.h>
-#include <ob/ioreq.h>
+
+struct _MANAGER_OBJECT;
+struct _IOREQ_OBJECT;
+struct _DEVICE_OBJECT;
+
+typedef enum
+{
+	IOREQ_TYPE_NULL,
+	IOREQ_TYPE_INSTALL,
+	IOREQ_TYPE_UNINSTALL,
+	IOREQ_TYPE_CREATE,
+	IOREQ_TYPE_READ,
+	IOREQ_TYPE_WRITE,
+	IOREQ_TYPE_CONTROL,
+	IOREQ_TYPE_CANCEL
+} IOREQ_TYPE;
+#define IOREQ_FLAG_NONBLOCK 1
+#define IOREQ_FLAG_ASYNC 2
+typedef BOOL(*PIOREQ_CALLBACK)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
+typedef struct _IOREQ_OBJECT
+{
+	IOREQ_TYPE Type;
+	KSTATUS Status;
+	ULONG Flags;
+	ULONG RequestCode;
+	ULONG Size;
+	PVOID Buffer;
+	union {
+		PKSTRING Name;
+		ULONG Id;
+	} ObjectAttribute;
+	PIOREQ_CALLBACK UpdateCallback;
+} IOREQ_OBJECT, *PIOREQ_OBJECT;
 
 typedef KSTATUS(*PMANAGER_DISPATCH)(struct _MANAGER_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _MANAGER_OBJECT
@@ -25,9 +57,11 @@ typedef struct _DEVICE_OBJECT
 	PSPINLOCK Lock; // TODO: Replaced with scheduler-related lock
 } DEVICE_OBJECT, *PDEVICE_OBJECT;
 
-KSTATUS IoLockDevice(struct _DEVICE_OBJECT*);
-KSTATUS IoTryToLockDevice(struct _DEVICE_OBJECT*);
-KSTATUS IoUnlockDevice(struct _DEVICE_OBJECT*);
-KSTATUS IoCallDevice(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
+BOOL IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT);
+void IoInitializeRequest(PIOREQ_OBJECT);
+KSTATUS IoLockDevice(PDEVICE_OBJECT);
+KSTATUS IoTryToLockDevice(PDEVICE_OBJECT);
+KSTATUS IoUnlockDevice(PDEVICE_OBJECT);
+KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
 
 #endif
