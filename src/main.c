@@ -10,7 +10,7 @@ NORETURN void main() {
         if (ch == '\r')
             putchar('\n');
         else if (ch == 0x7f)
-            putchar('\b'),putchar('\0');
+            putstr("\b \b");
         else
             putchar(ch);
     }

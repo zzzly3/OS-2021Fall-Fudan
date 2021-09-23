@@ -15,10 +15,11 @@ static inline void puts(const char* s)
 	}
 }
 
-static inline char getchar()
+static inline void putstr(const char* s)
 {
-	char c;
-	return KSUCCESS(HalReadConsoleChar(&c)) ? c : -1;
+	KSTRING ks;
+	if (LibInitializeKString(&ks, s, 256))
+		HalWriteConsoleString(&ks);
 }
 
 static inline void putdec(const int n)
@@ -37,4 +38,11 @@ static inline void puthex(const int n)
 	itos(n, s, 16);
 	LibInitializeKString(&ks, s, 11);
 	HalWriteConsoleString(&ks);
+}
+
+
+static inline char getchar()
+{
+	char c;
+	return KSUCCESS(HalReadConsoleChar(&c)) ? c : -1;
 }
