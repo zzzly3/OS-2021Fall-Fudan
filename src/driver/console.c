@@ -4,7 +4,7 @@ static DEVICE_OBJECT ConsoleDevice;
 static KSTRING ConsoleDeviceName;
 static SPINLOCK ConsoleIOLock;
 
-const PDEVICE_OBJECT HalConsoleDevice;
+const PDEVICE_OBJECT HalConsoleDevice = &ConsoleDevice;
 
 static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 {
@@ -65,7 +65,7 @@ KSTATUS HalInitializeConsole()
 	// TODO: Device manager. Here's just an emulation.
 	ConsoleDevice.Flags = DEVICE_FLAG_NOLOCK;
 	ConsoleDevice.DeviceName = &ConsoleDeviceName;
-	ConsoleDevice.IOHandler = (PDEVICE_DISPATCH)ConsoleHandler;
+	ConsoleDevice.IOHandler = ConsoleHandler;
 	ConsoleDevice.DeviceStorage = (PVOID)&ConsoleIOLock;
 	KeInitializeSpinLock(&ConsoleIOLock);
 	init_uart();
