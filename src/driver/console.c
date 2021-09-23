@@ -67,7 +67,6 @@ KSTATUS HalInitializeConsole()
 	ConsoleDevice.DeviceName = &ConsoleDeviceName;
 	ConsoleDevice.IOHandler = (PDEVICE_DISPATCH)ConsoleHandler;
 	ConsoleDevice.DeviceStorage = (PVOID)&ConsoleIOLock;
-	KeInitializeSpinLock(&ConsoleDevice.Lock);
 	KeInitializeSpinLock(&ConsoleIOLock);
 	init_uart();
 	return STATUS_SUCCESS;
@@ -79,7 +78,7 @@ KSTATUS HalWriteConsoleString(PKSTRING outString)
 	IoInitializeRequest(&req);
 	req.Type = IOREQ_TYPE_WRITE;
 	req.Size = outString->len;
-	req.Buffer = outString->str;
+	req.Buffer = (PVOID)outString->str;
 	return IoCallDevice(HalConsoleDevice, &req);
 }
 
@@ -90,7 +89,7 @@ KSTATUS HalWriteConsoleChar(CHAR outChar)
 	IoInitializeRequest(&req);
 	req.Type = IOREQ_TYPE_WRITE;
 	req.Size = 1;
-	req.Buffer = &ch;
+	req.Buffer = (PVOID)&ch;
 	return IoCallDevice(HalConsoleDevice, &req);
 }
 
@@ -100,6 +99,6 @@ KSTATUS HalReadConsoleChar(PCHAR inChar)
 	IoInitializeRequest(&req);
 	req.Type = IOREQ_TYPE_READ;
 	req.Size = 1;
-	req.Buffer = inChar;
+	req.Buffer = (PVOID)inChar;
 	return IoCallDevice(HalConsoleDevice, &req);
 }

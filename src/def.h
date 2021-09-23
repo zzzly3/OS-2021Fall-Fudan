@@ -5,7 +5,7 @@
 
 #define putchar HalWriteConsoleChar
 
-inline void puts(const char* s)
+static inline void puts(const char* s)
 {
 	KSTRING ks;
 	if (LibInitializeKString(&ks, s, 256))
@@ -15,7 +15,7 @@ inline void puts(const char* s)
 	}
 }
 
-inline char getchar()
+static inline char getchar()
 {
 	char c;
 	return KSUCCESS(HalReadConsoleChar(&c)) ? c : -1;

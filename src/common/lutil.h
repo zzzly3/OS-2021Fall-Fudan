@@ -32,7 +32,7 @@ typedef enum
 } KSTATUS;
 #define KSUCCESS(stat) ((stat)>=STATUS_SUCCESS)
 
-inline BOOL LibInitializeKString(PKSTRING kstr, CPCHAR cstr, int len)
+static inline BOOL LibInitializeKString(PKSTRING kstr, CPCHAR cstr, int len)
 {
 	for (int i = 0; i <= len; i++)
 	{
