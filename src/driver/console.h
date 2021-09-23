@@ -3,7 +3,7 @@
 
 #include <driver/uart.h>
 #include <common/lutil.h>
-#include <obj/dev.h>
+#include <ob/dev.h>
 
 extern const PDEVICE_OBJECT HalConsoleDevice;
 
