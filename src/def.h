@@ -3,7 +3,7 @@
 
 #define init_console HalInitializeConsole
 
-#define put_char HalWriteConsoleChar
+#define putchar HalWriteConsoleChar
 
 inline void puts(const char* s)
 {

@@ -16,7 +16,7 @@ void release_spinlock(SpinLock *lock);
 void wait_spinlock(SpinLock *lock);
 
 typedef SpinLock SPINLOCK, *PSPINLOCK;
-#define KeInitilizeSpinLock init_spinlock
+#define KeInitializeSpinLock init_spinlock
 #define KeTryToAcquireSpinLock try_acquire_spinlock
 #define KeAcquireSpinLock acquire_spinlock
 #define KeReleaseSpinLock release_spinlock
