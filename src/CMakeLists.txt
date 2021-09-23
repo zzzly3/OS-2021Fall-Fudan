@@ -31,6 +31,7 @@ add_subdirectory(asm)
 add_subdirectory(common)
 add_subdirectory(core)
 add_subdirectory(driver)
+add_subdirectory(obj)
 
 set(kernel_name kernel8)
 add_executable(${kernel_name}.elf main.c start.S)
