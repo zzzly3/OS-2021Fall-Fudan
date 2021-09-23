@@ -46,4 +46,20 @@ static inline BOOL LibInitializeKString(PKSTRING kstr, CPCHAR cstr, int len)
 	return FALSE;
 }
 
+static inline void itos(int n, char* s, int base)
+{
+	static const char ch[] = {"0123456789abcdef"};
+	if (base == 10 && n < 0)
+		*s++ = '-';
+	char *t = s, c;
+	do
+	{
+		*t++ = ch[n % base];
+		n /= base;
+	} while (n);
+	*t-- = '\0';
+	while (s < t)
+		c = *s, *s++ = *t, *t-- = c;
+}
+
 #endif
