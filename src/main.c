@@ -7,9 +7,11 @@ NORETURN void main() {
     while (1)
     {
         char ch = getchar();
-        putdec(ch);
-        putchar(' ');
-        puthex(ch);
-        putchar(' ');
+        if (ch == '\r')
+            putchar('\n');
+        else if (ch == 0x7f)
+            putchar('\b'),putchar('\0');
+        else
+            putchar(ch);
     }
 }
