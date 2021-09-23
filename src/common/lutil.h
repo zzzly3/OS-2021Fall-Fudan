@@ -7,6 +7,7 @@ typedef unsigned char BOOL;
 #define FALSE ((BOOL)0)
 
 typedef void* PVOID;
+typedef unsigned short USHORT;
 typedef unsigned long ULONG;
 typedef unsigned long long ULONG64;
 typedef char CHAR;

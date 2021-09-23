@@ -9,27 +9,24 @@ struct _MANAGER_OBJECT;
 struct _IOREQ_OBJECT;
 struct _DEVICE_OBJECT;
 
-typedef enum
-{
-	IOREQ_TYPE_NULL,
-	IOREQ_TYPE_INSTALL,
-	IOREQ_TYPE_UNINSTALL,
-	IOREQ_TYPE_CREATE,
-	IOREQ_TYPE_READ,
-	IOREQ_TYPE_WRITE,
-	IOREQ_TYPE_CONTROL,
-	IOREQ_TYPE_CANCEL
-} IOREQ_TYPE;
+#define IOREQ_TYPE_NULL 1
+#define IOREQ_TYPE_INSTALL 2
+#define IOREQ_TYPE_UNINSTALL 3
+#define IOREQ_TYPE_CREATE 4
+#define IOREQ_TYPE_READ 5
+#define IOREQ_TYPE_WRITE 6
+#define IOREQ_TYPE_CONTROL 7
+#define IOREQ_TYPE_CANCEL 8
 #define IOREQ_FLAG_NONBLOCK 1
 #define IOREQ_FLAG_ASYNC 2
 typedef BOOL(*PIOREQ_CALLBACK)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _IOREQ_OBJECT
 {
-	IOREQ_TYPE Type;
+	USHORT Type;
+	USHORT Size;
+	USHORT Flags;
 	KSTATUS Status;
-	ULONG Flags;
 	ULONG RequestCode;
-	ULONG Size;
 	PVOID Buffer;
 	union {
 		PKSTRING Name;
@@ -50,7 +47,7 @@ typedef struct _MANAGER_OBJECT
 typedef BOOL(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _DEVICE_OBJECT
 {
-	ULONG Flags;
+	USHORT Flags;
 	PKSTRING DeviceName;
 	PDEVICE_DISPATCH IOHandler;
 	PVOID DeviceStorage; // Implementation-dependent
