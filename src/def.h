@@ -22,21 +22,21 @@ static inline void putstr(const char* s)
 		HalWriteConsoleString(&ks);
 }
 
-static inline void putdec(const int n)
+static inline void putdec(const long long n)
 {
-	char s[12];
+	char s[24];
 	KSTRING ks;
 	itos(n, s, 10);
-	LibInitializeKString(&ks, s, 11);
+	LibInitializeKString(&ks, s, 23);
 	HalWriteConsoleString(&ks);
 }
 
-static inline void puthex(const int n)
+static inline void puthex(const long long n)
 {
-	char s[12];
+	char s[24];
 	KSTRING ks;
 	itos(n, s, 16);
-	LibInitializeKString(&ks, s, 11);
+	LibInitializeKString(&ks, s, 23);
 	HalWriteConsoleString(&ks);
 }
 
