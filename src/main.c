@@ -2,10 +2,9 @@
 #include <core/console.h>
 #include <core/physical_memory.h>
 #include <core/virtual_memory.h>
-
+#include <def.h>
 
 NORETURN void main() {
-    init_char_device();
     init_console();
 	/* TODO: Lab1 print */
 

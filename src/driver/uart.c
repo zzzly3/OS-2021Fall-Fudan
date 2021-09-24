@@ -45,3 +45,8 @@ void uart_put_char(char c) {
     if (c == '\n')
         uart_put_char('\r');
 }
+
+BOOL uart_valid_char(const char c)
+{
+    return c != 0xff;
+}
