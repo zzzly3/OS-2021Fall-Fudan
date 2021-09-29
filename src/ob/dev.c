@@ -1,6 +1,6 @@
 #include <ob/dev.h>
 
-static DEVICE_OBJECT RootDevice;
+static DEVICE_OBJECT RootDeviceX;
 static SPINLOCK DeviceListLock;
 
 #define next_device(dev) container_of((dev)->DeviceList.Backward, DEVICE_OBJECT, DeviceList)
@@ -84,7 +84,7 @@ KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 {
 	ObLockObject(DeviceObject);
 	KeAcquireSpinLock(&DeviceListLock);
-	LibInsertListEntry(&RootDevice.DeviceList, &DeviceObject->DeviceList);
+	LibInsertListEntry(&RootDeviceX.DeviceList, &DeviceObject->DeviceList);
 	KeReleaseSpinLock(&DeviceListLock);
 	if (DeviceObject->Flags & DEVICE_FLAG_DYNAMIC)
 	{
@@ -134,7 +134,7 @@ KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
 
 PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 {
-	PDEVICE_OBJECT p0 = &RootDevice, p = next_device(p0);
+	PDEVICE_OBJECT p0 = &RootDeviceX, p = next_device(p0);
 	while (p != p0)
 	{
 		if (p->DeviceName && LibCompareKString(p->DeviceName, DeviceName))
@@ -149,8 +149,8 @@ PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 KSTATUS ObInitializeDeviceManager()
 {
 	KeInitializeSpinLock(&DeviceListLock);
-	IoInitializeDevice(&RootDevice);
-	RootDevice.Flags |= DEVICE_FLAG_NOLOCK;
-	RootDevice.DeviceList.Forward = RootDevice.DeviceList.Backward = &RootDevice.DeviceList;
+	IoInitializeDevice(&RootDeviceX);
+	RootDeviceX.Flags |= DEVICE_FLAG_NOLOCK;
+	RootDeviceX.DeviceList.Forward = RootDeviceX.DeviceList.Backward = &RootDeviceX.DeviceList;
 	return STATUS_SUCCESS;
 }
