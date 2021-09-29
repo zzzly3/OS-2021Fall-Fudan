@@ -86,10 +86,10 @@ KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 	KeAcquireSpinLock(&DeviceListLock);
 	LibInsertListEntry(&RootDevice.DeviceList, &DeviceObject->DeviceList);
 	KeReleaseSpinLock(&DeviceListLock);
-	if (DeviceObject.Flags & DEVICE_FLAG_DYNAMIC)
+	if (DeviceObject->Flags & DEVICE_FLAG_DYNAMIC)
 	{
-		IOReq install_req;
-		IoInitializeRequest(install_req);
+		IOREQ_OBJECT install_req;
+		IoInitializeRequest(&install_req);
 		install_req.Type = IOREQ_TYPE_INSTALL;
 		KSTATUS ret = IoCallDevice(DeviceObject, &install_req);
 		if (!KSUCCESS(ret))
@@ -110,12 +110,12 @@ KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 
 KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
 {
-	if (!(DeviceObject.Flags & DEVICE_FLAG_DYNAMIC))
+	if (!(DeviceObject->Flags & DEVICE_FLAG_DYNAMIC))
 		return STATUS_UNSUPPORTED;
 	if (!IoTryToLockDevice(DeviceObject))
 		return STATUS_DEVICE_BUSY;
-	IOReq uninstall_req;
-	IoInitializeRequest(uninstall_req);
+	IOREQ_OBJECT uninstall_req;
+	IoInitializeRequest(&uninstall_req);
 	uninstall_req.Type = IOREQ_TYPE_UNINSTALL;
 	KSTATUS ret = IoCallDevice(DeviceObject, &uninstall_req);
 	if (KSUCCESS(ret))
