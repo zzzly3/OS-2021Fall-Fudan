@@ -9,9 +9,7 @@ typedef unsigned char BOOL;
 #define OBJECT_MAX_REFERENCE 32767
 
 #define offsetof(TYPE,MEMBER)   ((size_t) &((TYPE *)0)->MEMBER)
-#define container_of(PTR,TYPE,MEMBER)    ({  \
-    const typeof(((TYPE *)0)->MEMBER) *__mptr=(PTR);  \
-    (TYPE *) ((char *)__mptr - offsetof(TYPE,MEMBER)); })
+#define container_of(PTR,TYPE,MEMBER)   (TYPE *) ((char *)PTR - offsetof(TYPE,MEMBER))
 
 typedef void* PVOID;
 typedef unsigned short USHORT;
