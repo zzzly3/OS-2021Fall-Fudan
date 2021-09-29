@@ -31,6 +31,7 @@ typedef struct _IOREQ_OBJECT
 	union {
 		PKSTRING Name;
 		ULONG Id;
+		PVOID Pointer;
 	} ObjectAttribute;
 	PIOREQ_CALLBACK UpdateCallback;
 } IOREQ_OBJECT, *PIOREQ_OBJECT;
@@ -44,14 +45,18 @@ typedef struct _MANAGER_OBJECT
 
 #define DEVICE_FLAG_NOLOCK 1
 #define DEVICE_FLAG_READONLY 2
+#define DEVICE_FLAG_DYNAMIC 4
 typedef BOOL(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _DEVICE_OBJECT
 {
 	USHORT Flags;
+	USHORT ReferenceCount;
 	PKSTRING DeviceName;
 	PDEVICE_DISPATCH IOHandler;
 	PVOID DeviceStorage; // Implementation-dependent
-	PSPINLOCK Lock; // TODO: Replaced with scheduler-related lock
+	SPINLOCK Lock; // TODO: Replaced with scheduler-related lock
+	SPINLOCK IOLock;
+	LIST_ENTRY DeviceList;
 } DEVICE_OBJECT, *PDEVICE_OBJECT;
 
 BOOL IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT);
@@ -60,5 +65,20 @@ KSTATUS IoLockDevice(PDEVICE_OBJECT);
 KSTATUS IoTryToLockDevice(PDEVICE_OBJECT);
 KSTATUS IoUnlockDevice(PDEVICE_OBJECT);
 KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
+void IoInitializeDevice(PDEVICE_OBJECT);
+KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
+KSTATUS ObInitializeDeviceManager();
+BOOL IoTryToLockDevice(PDEVICE_OBJECT);
+KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
+#define IoUnlockDevice ObUnlockObject
+#define ObLockObject(obj) KeAcquireSpinLock(&(obj)->Lock)
+#define ObTryToLockObject(obj) KeTryToAcquireSpinLock(&(obj)->Lock)
+#define ObUnlockObject(obj) KeReleaseSpinLock(&(obj)->Lock)
+#define ObReferenceObject(obj) ({ObLockObject(obj); \
+	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \
+	(obj)->ReferenceCount += __mret ? 1 : 0; \
+	ObUnlockObject(obj);
+	__mret;})
+#define ObDereferenceObject(obj) (ObLockObject(obj),(obj)->ReferenceCount--,ObUnlockObject(obj))
 
 #endif

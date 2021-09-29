@@ -61,15 +61,14 @@ static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 
 KSTATUS HalInitializeConsole()
 {
+	IoInitializeDevice(&ConsoleDevice);
 	LibInitializeKString(&ConsoleDeviceName, "console", 8);
-	// TODO: Device manager. Here's just an emulation.
 	ConsoleDevice.Flags = DEVICE_FLAG_NOLOCK;
 	ConsoleDevice.DeviceName = &ConsoleDeviceName;
 	ConsoleDevice.IOHandler = ConsoleHandler;
 	ConsoleDevice.DeviceStorage = (PVOID)&ConsoleIOLock;
-	KeInitializeSpinLock(&ConsoleIOLock);
 	init_uart();
-	return STATUS_SUCCESS;
+	return IoRegisterDevice(&ConsoleDevice);
 }
 
 KSTATUS HalWriteConsoleString(PKSTRING outString)

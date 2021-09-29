@@ -1,6 +1,7 @@
 #include <aarch64/mmu.h>
 #include <core/physical_memory.h>
 #include <common/types.h>
+#include <common/lutil.h>
 #include <core/console.h>
 
 extern char end[];
@@ -20,8 +21,9 @@ static void freelist_free(void *datastructure_ptr, void *page_address);
  */
 static void *freelist_alloc(void *datastructure_ptr) {
     FreeListNode *f = (FreeListNode *) datastructure_ptr; 
-    /* TODO: Lab2 memory*/
-
+    void* p = f->next;
+    f->next = ((FreeListNode*)p)->next;
+    return p;
 }
 
 /*
@@ -29,8 +31,8 @@ static void *freelist_alloc(void *datastructure_ptr) {
  */
 static void freelist_free(void *datastructure_ptr, void *page_address) {
     FreeListNode* f = (FreeListNode*) datastructure_ptr; 
-    /* TODO: Lab2 memory*/
-
+    ((FreeListNode*)page_address)->next = f->next;
+    f->next = page_address;
 }
 
 /*
@@ -39,8 +41,12 @@ static void freelist_free(void *datastructure_ptr, void *page_address) {
 
 static void freelist_init(void *datastructure_ptr, void *start, void *end) {
     FreeListNode* f = (FreeListNode*) datastructure_ptr; 
-    /* TODO: Lab2 memory*/
-
+    for (ULONG64 p = (ULONG64)start; p < (ULONG64)end; p += PAGE_SIZE)
+    {
+        f->next = (void*)p;
+        f = (FreeListNode*)p;
+    }
+    f->next = NULL;
 }
 
 
@@ -76,6 +82,8 @@ void free_range(void *start, void *end) {
  * Corrupt the page by filling non-zero value in it for debugging.
  */
 void *kalloc(void) {
+    if (((FreeListNode*)pmem.struct_ptr)->next == NULL)
+        return NULL;
     void *p = pmem.page_alloc(pmem.struct_ptr);
     return p;
 }
