@@ -17,14 +17,10 @@ void HalInitializeMemoryManager()
 
 PVOID MmAllocatePhysicalPage()
 {
-	uart_put_char('>');
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	PVOID p = kalloc();
 	KeReleaseSpinLock(&PhysicalPageListLock);
-	uart_put_char('*');
-	if (p) // p CANNOT be accessed without convert
-		memset((void*)P2K(p), 0, PAGE_SIZE);
-	uart_put_char('&');
+	memset(p, 0, PAGE_SIZE);
 	return p;
 }
 
@@ -37,11 +33,11 @@ void MmFreePhysicalPage(PVOID PageAddress)
 
 BOOL MmInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
 {
-	PVOID ttb = MmAllocatePhysicalPage();
-	if (ttb == NULL)
+	PVOID table_base = MmAllocatePhysicalPage();
+	if (table_base == NULL)
 		return FALSE;
-	MemorySpace->ttbr0 = ttb;
-	MemorySpace->PageTable = (PPAGE_TABLE)P2K(ttb);
+	MemorySpace->ttbr0 = (PVOID)K2P(table_base);
+	MemorySpace->PageTable = (PPAGE_TABLE)table_base;
 	KeInitializeSpinLock(&MemorySpace->Lock);
 	return TRUE;
 }
