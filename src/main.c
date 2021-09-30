@@ -11,7 +11,7 @@ NORETURN void main() {
     HalInitializeMemoryManager();
     MEMORY_SPACE m;
     if (MmInitializeMemorySpace(&m))
-        puthex(m.ttbr0);
+        puthex((ULONG64)m.ttbr0);
     else
         putchar('x');
 }

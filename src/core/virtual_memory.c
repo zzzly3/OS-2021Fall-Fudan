@@ -39,7 +39,7 @@ void uvm_switch(PTEntriesPtr pgdir) {
 
 static PTEntriesPtr my_pgdir_init() {
     /* TODO: Lab2 memory*/
-
+    return NULL;
 }
 
 
@@ -51,7 +51,7 @@ static PTEntriesPtr my_pgdir_init() {
 
 static PTEntriesPtr my_pgdir_walk(PTEntriesPtr pgdir, void *vak, int alloc) {
     /* TODO: Lab2 memory*/
-
+    return NULL;
 }
 
 
@@ -71,7 +71,7 @@ void my_vm_free(PTEntriesPtr pgdir) {
 
 int my_uvm_map(PTEntriesPtr pgdir, void *va, size_t sz, uint64_t pa) {
     /* TODO: Lab2 memory*/
-
+    return -1;
 }
 
 void virtual_memory_init(VMemory *vmem_ptr) {
