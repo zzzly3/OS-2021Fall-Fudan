@@ -15,4 +15,6 @@ NORETURN void main() {
     LibInitializeKString(&x, "consolex", 16);
     puthex((ULONG64)IouLookupDevice(&x));
     putchar('\n');
+    puthex((ULONG64)HalConsoleDevice);
+    putchar('\n');
 }
