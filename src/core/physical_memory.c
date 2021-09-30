@@ -2,7 +2,6 @@
 #include <core/physical_memory.h>
 #include <common/types.h>
 #include <common/lutil.h>
-#include <core/console.h>
 
 extern char end[];
 PMemory pmem;
