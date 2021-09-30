@@ -1,4 +1,5 @@
 #include <ob/mem.h>
+#include <driver/uart.h>
 
 extern PMemory pmem;
 SPINLOCK PhysicalPageListLock;
@@ -9,13 +10,21 @@ static void MmInitializePages()
 	KeInitializeSpinLock(&PhysicalPageListLock);
 }
 
+void HalInitializeMemoryManager()
+{
+	MmInitializePages();
+}
+
 PVOID MmAllocatePhysicalPage()
 {
+	uart_put_char('>');
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	PVOID p = kalloc();
 	KeReleaseSpinLock(&PhysicalPageListLock);
+	uart_put_char('*');
 	if (p) // p CANNOT be accessed without convert
 		memset((void*)P2K(p), 0, PAGE_SIZE);
+	uart_put_char('&');
 	return p;
 }
 
@@ -37,11 +46,8 @@ BOOL MmInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
 	return TRUE;
 }
 
-//KSTATUS MmMapIntoMemorySpace(PMEMORY_SPACE MemorySpace, )
 
-void HalInitializeMemoryManager()
-{
-	MmInitializePages();
-}
+
+
 
 

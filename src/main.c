@@ -5,14 +5,13 @@ extern DEVICE_OBJECT RootDeviceX;
 
 NORETURN void main() {
     fuck_gcc(); // FUCK THE LINKER!
-    init_uart_device();
+    init_device();
     init_console();
     puts("Hello world!");
     //init_memory_manager();
     //init_virtual_memory();
     HalInitializeMemoryManager();
     MEMORY_SPACE m;
-    puts('ab');
     if (MmInitializeMemorySpace(&m))
         puthex((ULONG64)m.ttbr0);
     else
