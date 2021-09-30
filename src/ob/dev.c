@@ -75,7 +75,7 @@ BOOL IoTryToLockDevice(PDEVICE_OBJECT DeviceObject)
 
 void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 {
-	memset(DeviceObject, 0, sizeof(PDEVICE_OBJECT));
+	memset(DeviceObject, 0, sizeof(DEVICE_OBJECT));
 	KeInitializeSpinLock(&DeviceObject->Lock);
 	KeInitializeSpinLock(&DeviceObject->IOLock);
 }
