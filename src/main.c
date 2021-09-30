@@ -1,4 +1,3 @@
-#include <mem.h>
 #include <def.h>
 
 extern DEVICE_OBJECT RootDeviceX;
