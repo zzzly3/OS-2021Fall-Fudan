@@ -50,7 +50,8 @@ typedef struct _LIST_ENTRY
 } LIST_ENTRY, *PLIST_ENTRY;
 
 #define LibInsertListEntry(last_entry, new_entry) \
-	((new_entry)->Backward = (last_entry)->Backward)->Forward = ((new_entry)->Forward = last_entry)->Backward = new_entry
+	((new_entry)->Backward = (last_entry)->Backward)->Forward = (new_entry), \
+	((new_entry)->Forward = (last_entry))->Backward = (new_entry)
 #define LibRemoveListEntry(entry) \
 	((entry)->Forward->Backward = (entry)->Backward)->Forward = (entry)->Forward
 
