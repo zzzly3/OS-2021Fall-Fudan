@@ -15,10 +15,6 @@ NORETURN void main() {
     puthex((ULONG64)HalConsoleDevice);
     putchar('\n');
     LibInitializeKString(&x, "consolex", 16);
-    if (LibCompareKString(&x, HalConsoleDevice->DeviceName))
-        putchar('Y');
-    else
-        putchar('N');
     puthex((ULONG64)IouLookupDevice(&x));
     putchar('\n');
 }
