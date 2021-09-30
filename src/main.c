@@ -2,6 +2,8 @@
 #include <core/virtual_memory.h>
 #include <def.h>
 
+extern DEVICE_OBJECT RootDeviceX;
+
 NORETURN void main() {
     init_char_device();
     init_console();
@@ -9,6 +11,8 @@ NORETURN void main() {
     //init_memory_manager();
     //init_virtual_memory();
     KSTRING x;
+    puthex((ULONG64)RootDeviceX.DeviceName);
+    putchar('\n');
     LibInitializeKString(&x, "console", 16);
     puthex((ULONG64)IouLookupDevice(&x));
     putchar('\n');

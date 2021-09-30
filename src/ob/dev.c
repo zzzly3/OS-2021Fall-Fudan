@@ -1,6 +1,6 @@
 #include <ob/dev.h>
 
-static DEVICE_OBJECT RootDeviceX;
+DEVICE_OBJECT RootDeviceX;
 static SPINLOCK DeviceListLock;
 
 #define next_device(dev) container_of((dev)->DeviceList.Backward, DEVICE_OBJECT, DeviceList)
@@ -138,11 +138,12 @@ PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 	while (p != p0)
 	{
 		uart_put_char('.');
-		if (p->DeviceName && LibCompareKString(p->DeviceName, DeviceName))
-		{
-			uart_put_char('#');
-			return p;
-		}
+		if (p->DeviceName)
+			if (LibCompareKString(p->DeviceName, DeviceName))
+			{
+				uart_put_char('#');
+				return p;
+			}
 		uart_put_char('.');
 		p = next_device(p);
 		uart_put_char('.');
