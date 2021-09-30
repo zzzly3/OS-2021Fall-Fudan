@@ -3,22 +3,20 @@
 extern PMemory pmem;
 SPINLOCK PhysicalPageListLock;
 
-void MmInitializePages()
+static void MmInitializePages()
 {
 	init_memory_manager();
 	KeInitializeSpinLock(&PhysicalPageListLock);
 }
 
-KSTATUS MmAllocatePhysicalPage(PVOID* PageAddress)
+PVOID MmAllocatePhysicalPage()
 {
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	PVOID p = kalloc();
 	KeReleaseSpinLock(&PhysicalPageListLock);
-	if (p == NULL)
-		return STATUS_NO_ENOUGH_MEMORY;
-	memset(p, 0, PAGE_SIZE);
-	*PageAddress = p;
-	return STATUS_SUCCESS;
+	if (p) // p CANNOT be accessed without convert
+		memset((void*)P2K(p), 0, PAGE_SIZE);
+	return p;
 }
 
 void MmFreePhysicalPage(PVOID PageAddress)
@@ -26,6 +24,24 @@ void MmFreePhysicalPage(PVOID PageAddress)
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	kfree(PageAddress);
 	KeReleaseSpinLock(&PhysicalPageListLock);
+}
+
+BOOL MmInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
+{
+	PVOID ttb = MmAllocatePhysicalPage();
+	if (ttb == NULL)
+		return FALSE;
+	MemorySpace->ttbr0 = ttb;
+	MemorySpace->PageTable = (PPAGE_TABLE)P2K(ttb);
+	KeInitializeSpinLock(&MemorySpace->Lock);
+	return TRUE;
+}
+
+//KSTATUS MmMapIntoMemorySpace(PMEMORY_SPACE MemorySpace, )
+
+void HalInitializeMemoryManager()
+{
+	MmInitializePages();
 }
 
 

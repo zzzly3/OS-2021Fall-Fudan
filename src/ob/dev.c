@@ -38,17 +38,25 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	else
 	{
 		// TODO: Scheduler-related logic?
-		if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
+		BOOL ret = FALSE;
+		if (DeviceObject->Flags & DEVICE_FLAG_NOLOCK)
 		{
-			if (!KeTryToAcquireSpinLock(&DeviceObject->IOLock))
-				return STATUS_DEVICE_BUSY;
+			ret = DeviceObject->IOHandler(DeviceObject, IOReq);
 		}
 		else
 		{
-			KeAcquireSpinLock(&DeviceObject->IOLock);
+			if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
+			{
+				if (!KeTryToAcquireSpinLock(&DeviceObject->IOLock))
+					return STATUS_DEVICE_BUSY;
+			}
+			else
+			{
+				KeAcquireSpinLock(&DeviceObject->IOLock);
+			}
+			ret = DeviceObject->IOHandler(DeviceObject, IOReq);
+			KeReleaseSpinLock(&DeviceObject->IOLock);
 		}
-		BOOL ret = DeviceObject->IOHandler(DeviceObject, IOReq);
-		KeReleaseSpinLock(&DeviceObject->IOLock);
 		if (ret)
 			return IOReq->Status;
 		else

@@ -1,5 +1,4 @@
-#include <core/physical_memory.h>
-#include <core/virtual_memory.h>
+#include <mem.h>
 #include <def.h>
 
 extern DEVICE_OBJECT RootDeviceX;
@@ -10,16 +9,10 @@ NORETURN void main() {
     puts("Hello world!");
     //init_memory_manager();
     //init_virtual_memory();
-    KSTRING x;
-    LibInitializeKString(&x, "console", 16);
-    puthex((ULONG64)IouLookupDevice(&x));
-    putchar('\n');
-    puthex((ULONG64)HalConsoleDevice);
-    putchar('\n');
-    LibInitializeKString(&x, "consolex", 16);
-    puthex((ULONG64)IouLookupDevice(&x));
-    putchar('\n');
-    LibRemoveListEntry(&HalConsoleDevice->DeviceList);
-    puthex((ULONG64)RootDeviceX.DeviceList->Forward);
-    puthex((ULONG64)RootDeviceX.DeviceList->Backward);
+    HalInitializeMemoryManager();
+    MEMORY_SPACE m;
+    if (MmInitializeMemorySpace(&m))
+        puthex(m.ttbr0);
+    else
+        putchar('x');
 }
