@@ -4,6 +4,7 @@
 #include <common/spinlock.h>
 #include <common/string.h>
 #include <common/lutil.h>
+#include <driver/uart.h>
 
 struct _MANAGER_OBJECT;
 struct _IOREQ_OBJECT;

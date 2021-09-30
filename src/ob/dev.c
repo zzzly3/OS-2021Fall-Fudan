@@ -137,6 +137,8 @@ PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 	PDEVICE_OBJECT p0 = &RootDeviceX, p = next_device(p0);
 	while (p != p0)
 	{
+		uart_put_char((p&0xf)+'a');
+		uart_put_char('\n');
 		if (p->DeviceName && LibCompareKString(p->DeviceName, DeviceName))
 		{
 			return p;
