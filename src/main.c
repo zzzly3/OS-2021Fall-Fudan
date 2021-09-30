@@ -1,8 +1,10 @@
 #include <def.h>
+#include <core/char_device.h>
 
 extern DEVICE_OBJECT RootDeviceX;
 
 NORETURN void main() {
+    fuck_gcc(); // FUCK THE LINKER!
     init_uart_device();
     init_console();
     puts("Hello world!");
@@ -10,6 +12,7 @@ NORETURN void main() {
     //init_virtual_memory();
     HalInitializeMemoryManager();
     MEMORY_SPACE m;
+    puts('ab');
     if (MmInitializeMemorySpace(&m))
         puthex((ULONG64)m.ttbr0);
     else

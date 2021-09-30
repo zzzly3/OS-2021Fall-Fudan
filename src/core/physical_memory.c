@@ -91,3 +91,9 @@ void *kalloc(void) {
 void kfree(void *page_address) {
     pmem.page_free(pmem.struct_ptr, page_address);
 }
+
+// WHY 'Undefined reference to kalloc'???
+void fuck_gcc()
+{
+    return;
+}
