@@ -77,5 +77,6 @@ KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
 	ObUnlockObject(obj); \
 	__mret;})
 #define ObDereferenceObject(obj) (ObLockObject(obj),(obj)->ReferenceCount--,ObUnlockObject(obj))
+PDEVICE_OBJECT IouLookupDevice(PKSTRING);
 
 #endif

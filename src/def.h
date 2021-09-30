@@ -1,6 +1,7 @@
 #include <aarch64/intrinsic.h>
 #include <driver/console.h>
 
+#define init_uart_device ObInitializeDeviceManager
 #define init_console HalInitializeConsole
 
 #define putchar HalWriteConsoleChar
