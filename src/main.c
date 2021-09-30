@@ -11,7 +11,9 @@ NORETURN void main() {
     //init_memory_manager();
     //init_virtual_memory();
     KSTRING x;
-    puthex((ULONG64)RootDeviceX.DeviceName);
+    puthex((ULONG64)&RootDeviceX);
+    putchar(' ');
+    puthex((ULONG64)HalConsoleDevice->DeviceList.Backward);
     putchar('\n');
     LibInitializeKString(&x, "console", 16);
     puthex((ULONG64)IouLookupDevice(&x));

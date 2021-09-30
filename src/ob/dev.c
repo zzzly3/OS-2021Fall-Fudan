@@ -139,11 +139,14 @@ PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 	{
 		uart_put_char('.');
 		if (p->DeviceName)
+		{
+			uart_put_char('&');
 			if (LibCompareKString(p->DeviceName, DeviceName))
 			{
 				uart_put_char('#');
 				return p;
 			}
+		}
 		uart_put_char('.');
 		p = next_device(p);
 		uart_put_char('.');
