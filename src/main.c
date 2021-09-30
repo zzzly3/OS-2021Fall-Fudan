@@ -19,4 +19,7 @@ NORETURN void main() {
     LibInitializeKString(&x, "consolex", 16);
     puthex((ULONG64)IouLookupDevice(&x));
     putchar('\n');
+    LibRemoveListEntry(&HalConsoleDevice->DeviceList);
+    puthex((ULONG64)RootDeviceX.DeviceList->Forward);
+    puthex((ULONG64)RootDeviceX.DeviceList->Backward);
 }
