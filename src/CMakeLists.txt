@@ -29,9 +29,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 add_subdirectory(aarch64)
 add_subdirectory(asm)
 add_subdirectory(common)
+add_subdirectory(ob)
 add_subdirectory(core)
 add_subdirectory(driver)
-add_subdirectory(ob)
 
 set(kernel_name kernel8)
 add_executable(${kernel_name}.elf main.c start.S)
