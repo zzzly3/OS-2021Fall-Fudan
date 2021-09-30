@@ -5,7 +5,7 @@
 extern DEVICE_OBJECT RootDeviceX;
 
 NORETURN void main() {
-    init_char_device();
+    init_uart_device();
     init_console();
     puts("Hello world!");
     //init_memory_manager();
