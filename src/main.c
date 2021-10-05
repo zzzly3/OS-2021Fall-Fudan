@@ -25,13 +25,16 @@ NORETURN void main() {
     }
     for (ULONG64 i = 0; i < 1000000; i++)
     {
-        int j = *(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12));
+        ULONG64 p = (ULONG64)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12));
+        int j = *(int*)p;
         if (j != i)
         {
+            puthex(p);
+            putchar(':');
             putdec(i);
-            putchar(' ');
+            putchar('=');
             putdec(j);
-            putchar('x');
+            putchar('X');
             break;
         }
     }
@@ -57,13 +60,16 @@ NORETURN void main() {
     }
     for (ULONG64 i = 1000000; i > 0; i--)
     {
-        int j = *(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12));
+        ULONG64 p = (ULONG64)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12));
+        int j = *(int*)p;
         if (j != i)
         {
+            puthex(p);
+            putchar(':');
             putdec(i);
-            putchar(' ');
+            putchar('=');
             putdec(j);
-            putchar('x');
+            putchar('X');
             break;
         }
     }
