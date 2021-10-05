@@ -4,11 +4,17 @@
 extern PMemory pmem;
 static SPINLOCK PhysicalPageListLock;
 PHYSICAL_PAGE_INFO PhysicalPageInfoTable[PPN_MAX];
+static ULONG64 AllocatedPagesCount;
 
 static void MmInitializePages()
 {
 	init_memory_manager();
 	KeInitializeSpinLock(&PhysicalPageListLock);
+}
+
+ULONG64 MmGetAllocatedPagesCount()
+{
+	return AllocatedPagesCount;
 }
 
 void HalInitializeMemoryManager()
@@ -23,7 +29,10 @@ PVOID MmAllocatePhysicalPage()
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	PVOID p = kalloc();
 	if (p)
+	{
 		PhysicalPageInfoTable[P2N(K2P(p))].ReferenceCount = 1;
+		++AllocatedPagesCount;
+	}
 	KeReleaseSpinLock(&PhysicalPageListLock);
 	if (p)
 		memset(p, 0, PAGE_SIZE);
@@ -45,7 +54,10 @@ void MmFreePhysicalPage(PVOID PageAddress)
 {
 	KeAcquireSpinLock(&PhysicalPageListLock);
 	if (--PhysicalPageInfoTable[P2N(K2P(PageAddress))].ReferenceCount == 0)
+	{
 		kfree(PageAddress);
+		--AllocatedPagesCount;
+	}
 	KeReleaseSpinLock(&PhysicalPageListLock);
 }
 
@@ -189,7 +201,10 @@ void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE newMemory
 	++newMemorySpace->ActiveCount;
 	arch_set_ttbr0(newMemorySpace->ttbr0);
 	ObUnlockObject(newMemorySpace);
-	ObLockObject(oldMemorySpace);
-	--oldMemorySpace->ActiveCount;
-	ObUnlockObject(oldMemorySpace);
+	if (oldMemorySpace != NULL)
+	{
+		ObLockObject(oldMemorySpace);
+		--oldMemorySpace->ActiveCount;
+		ObUnlockObject(oldMemorySpace);
+	}
 }

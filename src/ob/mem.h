@@ -40,6 +40,7 @@ typedef struct _PHYSICAL_PAGE_INFO
 } PHYSICAL_PAGE_INFO, *PPHYSICAL_PAGE_INFO;
 
 #define MmFlushTLB arch_tlbi_vmalle1is
+ULONG64 MmGetAllocatedPagesCount();
 void HalInitializeMemoryManager();
 BOOL MmInitializeMemorySpace(PMEMORY_SPACE);
 BOOL MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);

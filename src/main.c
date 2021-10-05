@@ -9,8 +9,12 @@ NORETURN void main() {
     
     if (!MmInitializeMemorySpace(&m))
         putchar('x');
+    putdec(MmGetAllocatedPagesCount());
     MmDestroyMemorySpace(&m);
     if (!MmInitializeMemorySpace(&m))
         putchar('x');
+    putdec(MmGetAllocatedPagesCount());
     putchar('p');
+
+
 }
