@@ -149,7 +149,7 @@ PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
 	}
 	ObUnlockObject(MemorySpace);
-	return (PVOID)pt;
+	return (PVOID)((ULONG64)pt + VA_OFFSET(VirtualAddress));
 }
 
 BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
