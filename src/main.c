@@ -10,13 +10,19 @@ NORETURN void main() {
     system_init();
     
     MmInitializeMemorySpace(&m);
-    for (ULONG64 i = 0; i < 1000000; i++)
+    for (ULONG64 i = 0; i < 10000; i++)
     {
         int* p = MmAllocatePhysicalPage();
-        MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        if (!MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA))
+            putchar('x');
         *p = i;
+        if (i % 10000 == 0) putchar('a');
     }
-    for (ULONG64 i = 0; i < 1000000; i++)
+    puthex((ULONG64)MmGetPhysicalAddressEx(&m, NULL));
+    putchar(' ');
+    puthex(*(ULONG64*)MmGetPhysicalAddressEx(&m, NULL));
+    for(;;);
+    for (ULONG64 i = 0; i < 10000; i++)
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
             putchar('x');
