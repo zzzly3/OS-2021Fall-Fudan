@@ -91,6 +91,7 @@ void MmiFreePage(ULONG64 PageDescriptor)
 
 void MmiFreeTable(PPAGE_TABLE PageTable, int Level)
 {
+	uart_put_char('0' + Level);
 	for (int i = 0; i < N_PTE_PER_TABLE; i++)
 	{
 		if (VALID_PTE(PageTable[i]))
