@@ -17,9 +17,8 @@ NORETURN void main() {
         if (!KSUCCESS(ret))
         {
             putdec(i);
-            putchar('\n');
-            putdec((int)ret);
-            for(;;);
+            putchar('x');
+            break;
         }
         *p = i;
         if (i % 10000 == 0) putchar('a');
@@ -29,10 +28,11 @@ NORETURN void main() {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
         {
             putdec(i);
-            putchar('\n');
+            putchar('x');
+            break;
         }
     }
-    putchar('p');
+    putchar('-');
     putdec(MmGetAllocatedPagesCount());
     putchar('\n');
     MmDestroyMemorySpace(&m);
@@ -46,9 +46,8 @@ NORETURN void main() {
         if (!KSUCCESS(ret))
         {
             putdec(i);
-            putchar('\n');
-            putdec((int)ret);
-            for(;;);
+            putchar('x');
+            break;
         }
         *p = i;
         if (i % 10000 == 0) putchar('a');
@@ -58,10 +57,11 @@ NORETURN void main() {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
         {
             putdec(i);
-            putchar('\n');
+            putchar('x');
+            break;
         }
     }
-    putchar('p');
+    putchar('-');
     putdec(MmGetAllocatedPagesCount());
     putchar('\n');
 }
