@@ -14,6 +14,8 @@ NORETURN void main() {
     puthex(MmGetPhysicalAddressEx(&m, 0xdeedbeef));
     putchar(' ');
     char* p = (char*)MmAllocatePhysicalPage();
+    puthex((ULONG64)p);
+    putchar(' ');
     if (!MmMapPageEx(&m, 0xdeedbeef, (ULONG64)p | PTE_USER_DATA))
         putchar('x');
     puthex(MmGetPhysicalAddressEx(&m, 0xdeedbeef));
@@ -24,5 +26,5 @@ NORETURN void main() {
         putchar('x');
     puthex(MmGetPhysicalAddressEx(&m, 0xdeedbeef));
     putchar('\n');
-    
+
 }

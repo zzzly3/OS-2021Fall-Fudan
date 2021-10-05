@@ -66,6 +66,7 @@ BOOL MmInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
 	PVOID table_base = MmAllocatePhysicalPage();
 	if (table_base == NULL)
 		return FALSE;
+	MemorySpace->ActiveCount = 0;
 	MemorySpace->ttbr0 = K2P(table_base);
 	MemorySpace->PageTable = (PPAGE_TABLE)table_base;
 	KeInitializeSpinLock(&MemorySpace->Lock);
@@ -165,6 +166,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 			return FALSE;
 		}
 		pt[i + 1] = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[i][id[i]]));
+		uart_put_char('a');
 	}
 	// NEVER free a page before dereference it, even if it's impossible to cause any problem.
 	ULONG64 pd = pt[3][id[3]];
@@ -172,6 +174,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 	if (MemorySpace->ActiveCount > 0)
 		MmFlushTLB();
 	MmiFreePage(pd);
+	uart_put_char('b');
 	for (int i = 3; i > 0; i--)
 	{
 		if (MmiTestEmptyTable(pt[i]))
@@ -183,6 +186,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 		}
 		else
 			break;
+		uart_put_char('c');
 	}
 	ObUnlockObject(MemorySpace);
 	return TRUE;
