@@ -13,6 +13,12 @@ NORETURN void main() {
     for (ULONG64 i = 0; i < 1000000; i++)
     {
         int* p = MmAllocatePhysicalPage();
+        if (p == NULL)
+        {
+            putdec(i);
+            putchar('x');
+            break;
+        }
         KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
         if (!KSUCCESS(ret))
         {
@@ -48,6 +54,12 @@ NORETURN void main() {
     for (ULONG64 i = 1000000; i > 0; i--)
     {
         int* p = MmAllocatePhysicalPage();
+        if (p == NULL)
+        {
+            putdec(i);
+            putchar('x');
+            break;
+        }
         KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
         if (!KSUCCESS(ret))
         {
