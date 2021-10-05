@@ -14,7 +14,7 @@ static void MmInitializePages()
 void HalInitializeMemoryManager()
 {
 	MmInitializePages();
-	init_virtual_memory();
+	//init_virtual_memory();
 }
 
 // The physical pages are given in kernel address.
