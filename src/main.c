@@ -12,7 +12,7 @@ NORETURN void main() {
     MmInitializeMemorySpace(&m);
     for (ULONG64 i = 0; i < 1000000; i++)
     {
-        int* p = MmAllocatePhysicalPage()
+        int* p = MmAllocatePhysicalPage();
         MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
         *p = i;
     }
@@ -23,11 +23,11 @@ NORETURN void main() {
     }
     putchar('p');
     MmDestroyMemorySpace(&m);
-    putdeC(MmGetAllocatedPagesCount());
+    putdec(MmGetAllocatedPagesCount());
     MmInitializeMemorySpace(&m);
     for (ULONG64 i = 1000000; i > 0; i--)
     {
-        int* p = MmAllocatePhysicalPage()
+        int* p = MmAllocatePhysicalPage();
         MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
         *p = i;
     }
