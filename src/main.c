@@ -26,5 +26,5 @@ NORETURN void main() {
         putchar('x');
     puthex(MmGetPhysicalAddressEx(&m, 0xdeedbeef));
     putchar('\n');
-
+    putdec(MmGetAllocatedPagesCount());
 }

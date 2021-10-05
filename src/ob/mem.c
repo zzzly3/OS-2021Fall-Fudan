@@ -135,6 +135,7 @@ BOOL MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDe
 	return TRUE;
 }
 
+// Given in kernel address
 PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
 	ObLockObject(MemorySpace);
@@ -166,7 +167,6 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 			return FALSE;
 		}
 		pt[i + 1] = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[i][id[i]]));
-		uart_put_char('a');
 	}
 	// NEVER free a page before dereference it, even if it's impossible to cause any problem.
 	ULONG64 pd = pt[3][id[3]];
@@ -174,7 +174,6 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 	if (MemorySpace->ActiveCount > 0)
 		MmFlushTLB();
 	MmiFreePage(pd);
-	uart_put_char('b');
 	for (int i = 3; i > 0; i--)
 	{
 		if (MmiTestEmptyTable(pt[i]))
@@ -186,7 +185,6 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 		}
 		else
 			break;
-		uart_put_char('c');
 	}
 	ObUnlockObject(MemorySpace);
 	return TRUE;
