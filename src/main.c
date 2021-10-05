@@ -13,8 +13,14 @@ NORETURN void main() {
     for (ULONG64 i = 0; i < 1000000; i++)
     {
         int* p = MmAllocatePhysicalPage();
-        if (!KSUCCESS(MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA)))
-            putchar('x');
+        KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        if (!KSUCCESS(ret))
+        {
+            putdec(i);
+            putchar('\n');
+            putdec((int)ret);
+            for(;;);
+        }
         *p = i;
         if (i % 10000 == 0) putchar('a');
     }
@@ -36,15 +42,24 @@ NORETURN void main() {
     for (ULONG64 i = 1000000; i > 0; i--)
     {
         int* p = MmAllocatePhysicalPage();
-        if (!KSUCCESS(MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA)))
-            putchar('x');
+        KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        if (!KSUCCESS(ret))
+        {
+            putdec(i);
+            putchar('\n');
+            putdec((int)ret);
+            for(;;);
+        }
         *p = i;
         if (i % 10000 == 0) putchar('a');
     }
     for (ULONG64 i = 1000000; i > 0; i--)
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
-            putchar('x');
+        {
+            putdec(i);
+            putchar('\n');
+        }
     }
     putchar('p');
     putdec(MmGetAllocatedPagesCount());
