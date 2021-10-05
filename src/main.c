@@ -7,8 +7,10 @@ NORETURN void main() {
     fuck_gcc(); // FUCK THE LINKER!
     system_init();
     
-    if (MmInitializeMemorySpace(&m))
-        puthex((ULONG64)m.ttbr0);
-    else
+    if (!MmInitializeMemorySpace(&m))
         putchar('x');
+    MmDestroyMemorySpace(&m);
+    if (!MmInitializeMemorySpace(&m))
+        putchar('x');
+    putchar('p');
 }
