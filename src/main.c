@@ -10,7 +10,7 @@ NORETURN void main() {
     system_init();
     
     MmInitializeMemorySpace(&m);
-    for (ULONG64 i = 0; i < 100000; i++)
+    for (ULONG64 i = 0; i < 1000000; i++)
     {
         int* p = MmAllocatePhysicalPage();
         if (!KSUCCESS(MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA)))
@@ -18,7 +18,7 @@ NORETURN void main() {
         *p = i;
         if (i % 10000 == 0) putchar('a');
     }
-    for (ULONG64 i = 0; i < 100000; i++)
+    for (ULONG64 i = 0; i < 1000000; i++)
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
         {
@@ -30,11 +30,10 @@ NORETURN void main() {
     putdec(MmGetAllocatedPagesCount());
     putchar('\n');
     MmDestroyMemorySpace(&m);
-    putchar('\n');
     putdec(MmGetAllocatedPagesCount());
     putchar('\n');
     MmInitializeMemorySpace(&m);
-    for (ULONG64 i = 100000; i > 0; i--)
+    for (ULONG64 i = 1000000; i > 0; i--)
     {
         int* p = MmAllocatePhysicalPage();
         if (!KSUCCESS(MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA)))
@@ -42,7 +41,7 @@ NORETURN void main() {
         *p = i;
         if (i % 10000 == 0) putchar('a');
     }
-    for (ULONG64 i = 100000; i > 0; i--)
+    for (ULONG64 i = 1000000; i > 0; i--)
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
             putchar('x');
