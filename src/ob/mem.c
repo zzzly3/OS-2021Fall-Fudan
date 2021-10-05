@@ -109,7 +109,7 @@ void MmiFreeTable(PPAGE_TABLE PageTable, int Level)
 	MmFreePhysicalPage((PVOID)PageTable);
 }
 
-BOOL MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDescriptor)
+KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDescriptor)
 {
 	ObLockObject(MemorySpace);
 	PPAGE_TABLE pt = MemorySpace->PageTable;
@@ -122,18 +122,23 @@ BOOL MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDe
 			if (p == NULL)
 			{
 				ObUnlockObject(MemorySpace);
-				return FALSE;
+				return STATUS_NO_ENOUGH_MEMORY;
 			}
 			pt[id[i]] = K2P(p) + PTE_TABLE;
 		}
 		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
+	}
+	if (VALID_PTE(pt[id[3]]))
+	{
+		ObUnlockObject(MemorySpace);
+		return STATUS_ALREADY_MAPPED;
 	}
 	pt[id[3]] = PageDescriptor;
 	// Flush the TLB if the change is done online.
 	if (MemorySpace->ActiveCount > 0)
 		MmFlushTLB();
 	ObUnlockObject(MemorySpace);
-	return TRUE;
+	return STATUS_SUCCESS;
 }
 
 // Given in kernel address
@@ -155,7 +160,7 @@ PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 	return (PVOID)((ULONG64)pt + VA_OFFSET(VirtualAddress));
 }
 
-BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
+KSTATUS MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
 	ObLockObject(MemorySpace);
 	PPAGE_TABLE pt[5] = {MemorySpace->PageTable};
@@ -165,7 +170,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 		if (!VALID_PTE(pt[i][id[i]]))
 		{
 			ObUnlockObject(MemorySpace);
-			return FALSE;
+			return STATUS_PAGE_NOT_FOUND;
 		}
 		pt[i + 1] = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[i][id[i]]));
 	}
@@ -188,7 +193,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 			break;
 	}
 	ObUnlockObject(MemorySpace);
-	return TRUE;
+	return STATUS_SUCCESS;
 }
 
 void MmDestroyMemorySpace(PMEMORY_SPACE MemorySpace)

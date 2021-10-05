@@ -43,9 +43,9 @@ typedef struct _PHYSICAL_PAGE_INFO
 ULONG64 MmGetAllocatedPagesCount();
 void HalInitializeMemoryManager();
 BOOL MmInitializeMemorySpace(PMEMORY_SPACE);
-BOOL MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);
+KSTATUS MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);
 PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE, PVOID);
-BOOL MmUnmapPageEx(PMEMORY_SPACE, PVOID);
+KSTATUS MmUnmapPageEx(PMEMORY_SPACE, PVOID);
 void MmDestroyMemorySpace(PMEMORY_SPACE);
 void MmSwitchMemorySpaceEx(PMEMORY_SPACE, PMEMORY_SPACE);
 
