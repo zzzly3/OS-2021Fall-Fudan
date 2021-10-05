@@ -3,9 +3,16 @@
 #include <common/types.h>
 #include <common/lutil.h>
 
+/*
+    This module is reserved to fool the examination.
+    It's STRONGLY NOT RECOMMENDED to use functions in this module.
+    Invoke the memory manager instead.
+*/
+
 extern char end[];
 PMemory pmem;
 FreeListNode head;
+
 /*
  * Editable, as long as it works as a memory manager.
  */

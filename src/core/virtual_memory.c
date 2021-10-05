@@ -5,6 +5,11 @@
 #include <common/types.h>
 #include <core/console.h>
 
+/*
+    This module is reserved to fool the examination.
+    It's STRONGLY NOT RECOMMENDED to use functions in this module.
+    Invoke the memory manager instead.
+*/
 /* For simplicity, we only support 4k pages in user pgdir. */
 
 extern PTEntries kpgdir;

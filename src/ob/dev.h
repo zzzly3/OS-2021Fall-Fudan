@@ -69,15 +69,6 @@ KSTATUS ObInitializeDeviceManager();
 BOOL IoTryToLockDevice(PDEVICE_OBJECT);
 KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
 #define IoUnlockDevice ObUnlockObject
-#define ObLockObject(obj) KeAcquireSpinLock(&(obj)->Lock)
-#define ObTryToLockObject(obj) KeTryToAcquireSpinLock(&(obj)->Lock)
-#define ObUnlockObject(obj) KeReleaseSpinLock(&(obj)->Lock)
-#define ObReferenceObject(obj) ({ObLockObject(obj); \
-	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \
-	(obj)->ReferenceCount += __mret ? 1 : 0; \
-	ObUnlockObject(obj); \
-	__mret;})
-#define ObDereferenceObject(obj) (ObLockObject(obj),(obj)->ReferenceCount--,ObUnlockObject(obj))
 //PDEVICE_OBJECT IouLookupDevice(PKSTRING);
 
 #endif

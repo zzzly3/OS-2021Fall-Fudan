@@ -32,13 +32,16 @@
 
 #define PTE_KERNEL (0 << 6)
 #define PTE_USER   (1 << 6)
+#define PTE_RO (1 << 7)
+#define PTE_RW (0 << 7)
 
-
-#define PTE_KERNEL_DATA   (PTE_KERNEL | PTE_NORMAL | PTE_BLOCK) | (0b1111L << 54)
+#define PTE_KERNEL_DATA   (PTE_KERNEL | PTE_NORMAL | PTE_BLOCK)
 #define PTE_KERNEL_DEVICE (PTE_KERNEL | PTE_DEVICE | PTE_BLOCK)
 #define PTE_USER_DATA     (PTE_USER | PTE_NORMAL | PTE_PAGE)
 
 #define N_PTE_PER_TABLE 512
+
+#define PTE_HIGH_NX (1LL << 54)
 
 #define KSPACE_MASK 0xffff000000000000
 
@@ -58,7 +61,8 @@ typedef uint64_t PTEntry;
 typedef PTEntry PTEntries[N_PTE_PER_TABLE];
 typedef PTEntry *PTEntriesPtr;
 
-#define PTE_ADDRESS(pte)   ((pte) & ~0xFFF)
-#define PTE_FLAGS(pte)  ((pte) &  0xFFF)
+#define PTE_ADDRESS(pte)   ((pte) & ~0xFFF8000000000FFF)
+#define PTE_FLAGS(pte)  ((pte) & 0xFFF8000000000FFF)
+#define P2N(addr) (addr>>12)
 
 #endif

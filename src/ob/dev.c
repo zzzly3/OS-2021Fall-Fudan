@@ -140,7 +140,7 @@ KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
 	return ret;
 }
 
-PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
+PDEVICE_OBJECT IoiLookupDevice(PKSTRING DeviceName)
 {
 	PDEVICE_OBJECT p0 = &RootDeviceX, p = next_device(p0);
 	while (p != p0)
@@ -157,7 +157,7 @@ PDEVICE_OBJECT IouLookupDevice(PKSTRING DeviceName)
 	return NULL;
 }
 
-KSTATUS ObInitializeDeviceManager()
+KSTATUS HalInitializeDeviceManager()
 {
 	KeInitializeSpinLock(&DeviceListLock);
 	IoInitializeDevice(&RootDeviceX);

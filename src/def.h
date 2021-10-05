@@ -2,11 +2,14 @@
 #include <driver/console.h>
 #include <ob/mem.h>
 
-
-#define init_device ObInitializeDeviceManager
-#define init_console HalInitializeConsole
-
 #define putchar HalWriteConsoleChar
+
+static inline void system_init()
+{
+	HalInitializeDeviceManager();
+	HalInitializeMemoryManager();
+	HalInitializeConsole();
+}
 
 static inline void puts(const char* s)
 {

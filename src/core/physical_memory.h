@@ -20,4 +20,6 @@ void *kalloc(void);
 void kfree(void *page_address);
 void fuck_gcc();
 
+#define PPN_MAX (0x3F000000/4096)
+
 #endif
