@@ -65,7 +65,7 @@ void IoInitializeRequest(PIOREQ_OBJECT);
 KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
 void IoInitializeDevice(PDEVICE_OBJECT);
 KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
-KSTATUS ObInitializeDeviceManager();
+KSTATUS HalInitializeDeviceManager();
 BOOL IoTryToLockDevice(PDEVICE_OBJECT);
 KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
 #define IoUnlockDevice ObUnlockObject
