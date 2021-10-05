@@ -35,7 +35,7 @@ BOOL MmReferencePhysicalPage(PVOID PageAddress)
 	BOOL ret;
 	int ppn = P2N(K2P(PageAddress));
 	KeAcquireSpinLock(&PhysicalPageListLock);
-	if (ret = (PhysicalPageInfoTable[ppn].ReferenceCount < OBJECT_MAX_REFERENCE))
+	if ((ret = (PhysicalPageInfoTable[ppn].ReferenceCount < OBJECT_MAX_REFERENCE)))
 		++PhysicalPageInfoTable[ppn].ReferenceCount;
 	KeReleaseSpinLock(&PhysicalPageListLock);
 	return ret;
@@ -84,7 +84,7 @@ void MmiFreeTable(PPAGE_TABLE PageTable, int Level)
 		{
 			if (Level < 3)
 			{
-				MmiFreeTable(P2K(PTE_ADDRESS(PageTable[i])), Level + 1);
+				MmiFreeTable((PPAGE_TABLE)P2K(PTE_ADDRESS(PageTable[i])), Level + 1);
 			}
 			else
 			{
@@ -116,7 +116,7 @@ BOOL MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDe
 	}
 	pt[id[3]] = PageDescriptor;
 	// Flush the TLB if the change is done online.
-	if (MemorySpace.ActiveCount > 0)
+	if (MemorySpace->ActiveCount > 0)
 		MmFlushTLB();
 	ObUnlockObject(MemorySpace);
 	return TRUE;
@@ -157,7 +157,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 	// NEVER free a page before dereference it, even if it's impossible to cause any problem.
 	ULONG64 pd = pt[3][id[3]];
 	pt[3][id[3]] = NULL;
-	if (MemorySpace.ActiveCount > 0)
+	if (MemorySpace->ActiveCount > 0)
 		MmFlushTLB();
 	MmiFreePage(pd);
 	for (int i = 3; i > 0; i--)
@@ -165,7 +165,7 @@ BOOL MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 		if (MmiTestEmptyTable(pt[i]))
 		{
 			pt[i - 1][id[i - 1]] = NULL;
-			if (MemorySpace.ActiveCount > 0)
+			if (MemorySpace->ActiveCount > 0)
 				MmFlushTLB();
 			MmFreePhysicalPage((PVOID)pt[i]);
 		}
