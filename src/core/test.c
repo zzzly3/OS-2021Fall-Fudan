@@ -5,9 +5,10 @@
 
 void sys_test()
 {
-	return;
+	sys_mem_test();
 }
 
+PVOID MmAllocatePhysicalPage();
 void sys_mem_test()
 {
 	static MEMORY_SPACE m;
