@@ -9,17 +9,32 @@ NORETURN void main() {
     fuck_gcc(); // FUCK THE LINKER!
     system_init();
     
-    if (!MmInitializeMemorySpace(&m))
-        putchar('x');
-    char* p = (char*)MmAllocatePhysicalPage();
-    if (!MmMapPageEx(&m, (PVOID)0xdeedbeef, (ULONG64)p | PTE_USER_DATA))
-        putchar('x');
-    MmSwitchMemorySpaceEx(NULL, &m);
-    for (int i = 0; i < 4096; i++)
+    MmInitializeMemorySpace(&m);
+    for (ULONG64 i = 0; i < 1000000; i++)
     {
-        p[i] = "0123456789abcdef"[i & 15];
+        int* p = MmAllocatePhysicalPage()
+        MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        *p = i;
     }
-    for (char* p = (char*)0xdeedbeef; p < (char*)0xdeedbeff; p++)
-        putchar(*p);
-
+    for (ULONG64 i = 0; i < 1000000; i++)
+    {
+        if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
+            putchar('x');
+    }
+    putchar('p');
+    MmDestroyMemorySpace(&m);
+    putdeC(MmGetAllocatedPagesCount());
+    MmInitializeMemorySpace(&m);
+    for (ULONG64 i = 1000000; i > 0; i--)
+    {
+        int* p = MmAllocatePhysicalPage()
+        MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        *p = i;
+    }
+    for (ULONG64 i = 1000000; i > 0; i--)
+    {
+        if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
+            putchar('x');
+    }
+    putchar('p');
 }
