@@ -81,14 +81,13 @@ static inline BOOL LibCompareKString(PKSTRING kstr1, PKSTRING kstr2)
 
 static inline void itos(long long n, char* s, int base)
 {
-	static const char ch[] = {"0123456789abcdef"};
 	unsigned long long nn = n;
 	if (base == 10 && n < 0)
 		*s++ = '-', nn = -n;
 	char *t = s, c;
 	do
 	{
-		*t++ = ch[nn % base];
+		*t++ = "0123456789abcdef"[nn % base];
 		nn /= base;
 	} while (nn);
 	*t-- = '\0';
