@@ -18,14 +18,13 @@ NORETURN void main() {
         *p = i;
         if (i % 10000 == 0) putchar('a');
     }
-    puthex((ULONG64)MmGetPhysicalAddressEx(&m, NULL));
-    putchar(' ');
-    puthex(*(ULONG64*)MmGetPhysicalAddressEx(&m, NULL));
-    for(;;);
     for (ULONG64 i = 0; i < 10000; i++)
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
-            putchar('x');
+        {
+            putdec(i);
+            putchar('\n');
+        }
     }
     putchar('p');
     MmDestroyMemorySpace(&m);
