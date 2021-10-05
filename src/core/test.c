@@ -7,3 +7,8 @@ void sys_test()
 {
 	return;
 }
+
+void sys_mem_test()
+{
+	return;
+}

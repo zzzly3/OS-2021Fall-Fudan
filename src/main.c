@@ -27,6 +27,8 @@ NORETURN void main() {
         }
     }
     putchar('p');
+    putdec(MmGetAllocatedPagesCount());
+    putchar('\n');
     MmDestroyMemorySpace(&m);
     putchar('\n');
     putdec(MmGetAllocatedPagesCount());
@@ -44,7 +46,8 @@ NORETURN void main() {
     {
         if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i)
             putchar('x');
-        if (i % 10000 == 0) putchar('a');
     }
     putchar('p');
+    putdec(MmGetAllocatedPagesCount());
+    putchar('\n');
 }
