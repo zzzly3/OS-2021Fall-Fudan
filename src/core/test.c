@@ -10,5 +10,43 @@ void sys_test()
 
 void sys_mem_test()
 {
-	return;
+	static MEMORY_SPACE m;
+	int p0 = MmGetAllocatedPagesCount();
+	MmInitializeMemorySpace(&m);
+	ULONG64 j = 0;
+    for (ULONG64 i = 0; i < 1000000; i++)
+    {
+        int* p = MmAllocatePhysicalPage();
+        if (p == NULL)
+        {
+            j = i;
+            break;
+        }
+        KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        if (!KSUCCESS(ret))
+        {
+            j = i;
+            break;
+        }
+        *p = i;
+    }
+    sys_test_pass("Pass: allocate");
+    MmSwitchMemorySpaceEx(NULL, &m);
+    for (ULONG64 i = 0; i < j; i++)
+    {
+        if (*(int*)(i << 12) != i)
+        	sys_test_fail("Fail: read");
+        *(int*)(i << 12) = i + 1;
+    }
+    sys_test_pass("Pass: read");
+    for (ULONG64 i = 0; i < j; i++)
+    {
+    	if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i + 1)
+    		sys_test_fail("Fail: write");
+    }
+    sys_test_pass("Pass: write");
+    MmDestroyMemorySpace(&m);
+    if (MmGetAllocatedPagesCount() != p0)
+    	sys_test_fail("Fail: balance");
+    sys_test_pass("Pass: balance");
 }
