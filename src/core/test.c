@@ -1,10 +1,13 @@
 #include <def.h>
+#include <core/virtual_memory.h>
 
 #define sys_test_pass(message) {puts(message);}
 #define sys_test_fail(message) {puts(message);while(1);}
 
 void sys_test()
 {
+    puts("Memory");
+    virtual_memory_init();
 	sys_mem_test();
 }
 
@@ -13,6 +16,8 @@ void sys_mem_test()
 {
 	static MEMORY_SPACE m;
 	int p0 = MmGetAllocatedPagesCount();
+    vm_test();
+    puts("Pass: legacy");
 	MmInitializeMemorySpace(&m);
 	ULONG64 j = 0;
     for (ULONG64 i = 0; i < 1000000; i++)

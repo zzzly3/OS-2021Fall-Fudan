@@ -24,7 +24,7 @@ typedef struct _MEMORY_SPACE
 	PPAGE_TABLE PageTable;
 } MEMORY_SPACE, *PMEMORY_SPACE;
 
-#define VALID_PTE(pte) (pte & PTE_VALID)
+#define VALID_PTE(pte) ((pte & PTE_VALID) || (pte & VPTE_VALID))
 // Custom flags begin from bit[12] + bit[1]
 #define VPTE_VALID 1 // Different from PTE_VALID
 #define VPTE_XN (1 << 12) // PTE_HIGH_XN
