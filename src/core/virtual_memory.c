@@ -128,11 +128,10 @@ void vm_test() {
     for (ULONG64 i = 0; i < 100000; i++)
     {
         PVOID p = MmAllocatePhysicalPage();
-        my_uvm_map(pg, (PVOID)(i << 12), 4096, p);
+        my_uvm_map(pg, (PVOID)(i << 12), 4096, K2P(p));
         *(int*)p = i;
     }
     uvm_switch(pg);
-    uart_put_char('a');
     for (ULONG64 i = 0; i < 100000; i++)
     {
         if (*(int*)(P2K(PTE_ADDRESS(*my_pgdir_walk(pg, (PVOID)(i << 12), 1)))) != i ||
@@ -142,7 +141,6 @@ void vm_test() {
             for (;;);
         }
     }
-    uart_put_char('b');
     vm_free(pg);
     // Certify that your code works!
 }
