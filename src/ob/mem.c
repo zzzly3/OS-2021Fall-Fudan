@@ -108,6 +108,22 @@ void MmiFreeTable(PPAGE_TABLE PageTable, int Level)
 	MmFreePhysicalPage((PVOID)PageTable);
 }
 
+PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress)
+{
+	PPAGE_TABLE pt = PageTable;
+	int id[] = {VA_PART0(VirtualAddress), VA_PART1(VirtualAddress), VA_PART2(VirtualAddress), VA_PART3(VirtualAddress)};
+	for (int i = 0; i < 3; i++)
+	{
+		if (!VALID_PTE(pt[id[i]]))
+		{
+			ObUnlockObject(MemorySpace);
+			return NULL;
+		}
+		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
+	}
+	return VALID_PTE(pt[id[3]]) ? (PPAGE_ENTRY)&pt[id[3]] : NULL;
+}
+
 KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDescriptor)
 {
 	ObLockObject(MemorySpace);
@@ -144,19 +160,15 @@ KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 Pag
 PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
 	ObLockObject(MemorySpace);
-	PPAGE_TABLE pt = MemorySpace->PageTable;
-	int id[] = {VA_PART0(VirtualAddress), VA_PART1(VirtualAddress), VA_PART2(VirtualAddress), VA_PART3(VirtualAddress)};
-	for (int i = 0; i < 4; i++)
+	PPAGE_ENTRY pe = MmiGetPageEntry(MemorySpace->PageTable, VirtualAddress);
+	if (pe == NULL)
 	{
-		if (!VALID_PTE(pt[id[i]]))
-		{
-			ObUnlockObject(MemorySpace);
-			return NULL;
-		}
-		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
+		ObUnlockObject(MemorySpace);
+		return NULL;
 	}
+	ULONG64 pb = P2K(PTE_ADDRESS(*pe));
 	ObUnlockObject(MemorySpace);
-	return (PVOID)((ULONG64)pt + VA_OFFSET(VirtualAddress));
+	return (PVOID)(pb + VA_OFFSET(VirtualAddress));
 }
 
 KSTATUS MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)

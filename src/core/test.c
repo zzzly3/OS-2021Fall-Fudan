@@ -29,20 +29,20 @@ void sys_mem_test()
             j = i;
             break;
         }
-        *p = i;
+        *(p + (i & 1023)) = i;
     }
     sys_test_pass("Pass: allocate");
     MmSwitchMemorySpaceEx(NULL, &m);
     for (ULONG64 i = 0; i < j; i++)
     {
-        if (*(int*)(i << 12) != i)
+        if (*((int*)(i << 12) + (i & 1023)) != i)
         	sys_test_fail("Fail: read");
-        *(int*)(i << 12) = i + 1;
+        *((int*)(i << 12) + (i & 1023)) = i + 1;
     }
     sys_test_pass("Pass: read");
     for (ULONG64 i = 0; i < j; i++)
     {
-    	if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)(i << 12)) != i + 1)
+    	if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)((int*)(i << 12) + (i & 1023))) != i + 1)
     		sys_test_fail("Fail: write");
     }
     sys_test_pass("Pass: write");

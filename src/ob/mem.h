@@ -5,9 +5,9 @@
 #include <aarch64/intrinsic.h>
 #include <aarch64/mmu.h>
 #include <common/string.h>
-#include <core/physical_memory.h>
-#include <core/virtual_memory.h>
 #include <common/spinlock.h>
+#include <core/physical_memory.h>
+// #include <core/virtual_memory.h>
 
 #define VA_PART0(va) (((ULONG64)(va) & 0xFF8000000000) >> 39)
 #define VA_PART1(va) (((ULONG64)(va) & 0x7FC0000000) >> 30)
@@ -15,6 +15,7 @@
 #define VA_PART3(va) (((ULONG64)(va) & 0x1FF000) >> 12)
 
 #define PPAGE_TABLE PTEntriesPtr
+#define PPAGE_ENTRY PTEntriesPtr
 typedef struct _MEMORY_SPACE
 {
 	USHORT ActiveCount;

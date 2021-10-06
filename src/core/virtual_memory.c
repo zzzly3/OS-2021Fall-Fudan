@@ -4,7 +4,10 @@
 #include <core/physical_memory.h>
 #include <common/types.h>
 #include <core/console.h>
+#include <ob/mem.h>
 
+PVOID MmAllocatePhysicalPage();
+void MmiFreeTable(PPAGE_TABLE, int);
 /*
     This module is reserved to fool the examination.
     It's STRONGLY NOT RECOMMENDED to use functions in this module.
@@ -44,7 +47,7 @@ void uvm_switch(PTEntriesPtr pgdir) {
 
 static PTEntriesPtr my_pgdir_init() {
     /* TODO: Lab2 memory*/
-    return NULL;
+    return (PTEntriesPtr)MmAllocatePhysicalPage();
 }
 
 
@@ -56,6 +59,8 @@ static PTEntriesPtr my_pgdir_init() {
 
 static PTEntriesPtr my_pgdir_walk(PTEntriesPtr pgdir, void *vak, int alloc) {
     /* TODO: Lab2 memory*/
+    // DON'T imitate this trick.
+
     return NULL;
 }
 
@@ -64,7 +69,7 @@ static PTEntriesPtr my_pgdir_walk(PTEntriesPtr pgdir, void *vak, int alloc) {
 
 void my_vm_free(PTEntriesPtr pgdir) {
     /* TODO: Lab2 memory*/
-
+    MmiFreeTable(pgdir, 0);
 }
 
 /*
