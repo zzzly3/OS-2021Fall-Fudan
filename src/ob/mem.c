@@ -116,7 +116,6 @@ PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress)
 	{
 		if (!VALID_PTE(pt[id[i]]))
 		{
-			ObUnlockObject(MemorySpace);
 			return NULL;
 		}
 		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
