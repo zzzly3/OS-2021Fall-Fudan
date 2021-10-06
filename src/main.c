@@ -1,7 +1,7 @@
 #include <def.h>
 #include <core/char_device.h>
 
-void sys_mem_test();
+void sys_test();
 
 NORETURN void main() {
     fuck_gcc(); // FUCK THE LINKER!

@@ -7,7 +7,7 @@
 void sys_test()
 {
     puts("Memory");
-    virtual_memory_init();
+    init_virtual_memory();
 	sys_mem_test();
 }
 
