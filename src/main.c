@@ -8,4 +8,6 @@ NORETURN void main() {
     system_init();
     
     sys_mem_test();
+    sys_mem_test();
+    
 }

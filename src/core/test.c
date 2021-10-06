@@ -48,6 +48,6 @@ void sys_mem_test()
     sys_test_pass("Pass: write");
     MmDestroyMemorySpace(&m);
     if (MmGetAllocatedPagesCount() != p0)
-    	sys_test_fail("Fail: balance");
-    sys_test_pass("Pass: balance");
+    	sys_test_fail("Fail: destroy");
+    sys_test_pass("Pass: destroy");
 }
