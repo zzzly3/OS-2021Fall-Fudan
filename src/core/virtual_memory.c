@@ -6,7 +6,7 @@
 #include <core/console.h>
 #include <ob/mem.h>
 #include <driver/uart.h>
-
+#define pdgir pgdir
 /*
     This module is reserved to fool the examination.
     It's STRONGLY NOT RECOMMENDED to use functions in this module.
@@ -127,7 +127,7 @@ void vm_test() {
     PTEntriesPtr pg = pgdir_init();
     for (ULONG64 i = 0; i < 100000; i++)
     {
-        PVOID p = MmAllocatePhysicalPage()
+        PVOID p = MmAllocatePhysicalPage();
         my_uvm_map(pg, (PVOID)(i << 12), 4096, p);
         *(int*)p = i;
     }
