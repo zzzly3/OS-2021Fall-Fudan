@@ -134,7 +134,7 @@ void vm_test() {
     uvm_switch(pg);
     for (ULONG64 i = 0; i < 100000; i++)
     {
-        if (*(int*)(P2K(PTE_ADDRESS(*my_pgdir_walk(pg, (PVOID)(i << 12), 1))) != i ||
+        if (*(int*)(P2K(PTE_ADDRESS(*my_pgdir_walk(pg, (PVOID)(i << 12), 1)))) != i ||
             *(int*)(i << 12) != i)
         {
             uart_put_char('x');
