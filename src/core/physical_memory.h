@@ -3,8 +3,6 @@
 #ifndef _CORE_MEMORY_MANAGE_
 #define _CORE_MEMORY_MANAGE_
 
-#include <common/spinlock.h>
-
 typedef struct {
     void *struct_ptr;
     void (*page_init)(void *datastructure_ptr, void *start, void *end);
@@ -20,5 +18,8 @@ void init_memory_manager(void);
 void free_range(void *start, void *end);
 void *kalloc(void);
 void kfree(void *page_address);
+void fuck_gcc();
+
+#define PPN_MAX (0x3F000000/4096)
 
 #endif
