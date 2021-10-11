@@ -56,7 +56,7 @@ int main()
 
     //sys_test();
 
-    printf("%d %x %%%", 12, 345);
+    printf("%d%x %d %u %%%", 12, 0xaab, -2333, -23333);
 }
 
 #endif

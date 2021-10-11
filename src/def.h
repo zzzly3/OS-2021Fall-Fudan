@@ -61,14 +61,17 @@ static inline void printf(const char *fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     while (*fmt && p < 239)
-    	if (*fmt++ == '%') switch (*fmt++)
+    	if (*fmt == '%') switch (*++fmt)
     	{
-			case 'd': p += itos(va_arg(arg, int), &s[p], 10); break;
-			case 'x': p += itos(va_arg(arg, int), &s[p], 16); break;
-			case 'u': p += itos(va_arg(arg, unsigned), &s[p], 10); break;
-			case 'p': p += itos(va_arg(arg, ULONG64), &s[p], 16); break;
-			case '\0': fmt--; break;
-			default: fmt--; goto put_char;
+    		#define __CASE(c, t, b) case c: p += itos(va_arg(arg, t), &s[p], b); fmt++; break;
+			__CASE('u', unsigned, 10)
+			__CASE('d', int, 10)
+			__CASE('x', unsigned, 16)
+			__CASE('p', ULONG64, 16)
+			__CASE('l', long long, 10)
+			#undef __CASE
+			case '\0': break;
+			default: goto put_char;
 		}
     	else put_char:
     		s[p++] = *fmt++;
