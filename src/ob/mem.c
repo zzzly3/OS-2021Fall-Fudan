@@ -1,6 +1,6 @@
 #include <ob/mem.h>
 #include <driver/uart.h>
-#include <core/virtual_memory.h>
+//#include <core/virtual_memory.h>
 
 extern PMemory pmem;
 static SPINLOCK PhysicalPageListLock;
@@ -21,7 +21,7 @@ ULONG64 MmGetAllocatedPagesCount()
 void HalInitializeMemoryManager()
 {
 	MmInitializePages();
-	init_virtual_memory(); // Lagacy
+	//init_virtual_memory();
 }
 
 // The physical pages are given in kernel address.

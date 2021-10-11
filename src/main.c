@@ -53,7 +53,9 @@ int main()
 {
     fuck_gcc(); // FUCK THE LINKER!
     system_init();
-    sys_test();
+
+    //sys_test();
+
     printf("%d %x\n", 12345, 54321);
 }
 
