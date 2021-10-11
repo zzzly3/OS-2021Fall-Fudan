@@ -1,3 +1,4 @@
+#if 0
 #include <aarch64/intrinsic.h>
 #include <common/string.h>
 #include <core/console.h>
@@ -45,3 +46,14 @@ NORETURN void main() {
     enter_scheduler();
 
 }
+#else
+#include <def.h>
+
+int main()
+{
+    system_init();
+    sys_test();
+    printf("%d %x\n", 12345, 54321);
+}
+
+#endif

@@ -52,3 +52,26 @@ static inline char getchar()
 	char c;
 	return KSUCCESS(HalReadConsoleChar(&c)) ? c : -1;
 }
+
+// Warning: This implementation is UNSAFE
+static inline void printf(const char *fmt, ...) {
+	char s[256];
+	int p = 0;
+    va_list arg;
+    va_start(arg, fmt);
+    while (*fmt && p < 239)
+    	if (*fmt++ == '%') switch (*fmt)
+    	{
+			case 'd': p += itos(va_arg(arg, int), &s[p], 10); break;
+			case 'x': p += itos(va_arg(arg, int), &s[p], 16); break;
+			case 'u': p += itos(va_arg(arg, unsigned), &s[p], 10); break;
+			case 'p': p += itos(va_arg(arg, ULONG64), &s[p], 16); break;
+			case '\0': break;
+			default: goto put_char;
+		}
+    	else put_char:
+    		s[p++] = *fmt++;
+    va_end(arg);
+    s[p] = 0;
+    putstr(s);
+}

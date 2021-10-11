@@ -81,20 +81,23 @@ static inline BOOL LibCompareKString(PKSTRING kstr1, PKSTRING kstr2)
 	return TRUE;
 }
 
-static inline void itos(long long n, char* s, int base)
+static inline int itos(long long n, char* s, int base)
 {
 	unsigned long long nn = n;
+	int r = 1;
 	if (base == 10 && n < 0)
-		*s++ = '-', nn = -n;
+		*s++ = '-', nn = -n, r++;
 	char *t = s, c;
 	do
 	{
 		*t++ = "0123456789abcdef"[nn % base];
 		nn /= base;
 	} while (nn);
+	r += t - s;
 	*t-- = '\0';
 	while (s < t)
 		c = *s, *s++ = *t, *t-- = c;
+	return r;
 }
 
 #define ObLockObject(obj) KeAcquireSpinLock(&(obj)->Lock)
