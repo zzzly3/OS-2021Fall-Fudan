@@ -1,6 +1,7 @@
 #include <aarch64/intrinsic.h>
 #include <driver/console.h>
 #include <ob/mem.h>
+#include <common/variadic.h>
 
 #define putchar HalWriteConsoleChar
 
