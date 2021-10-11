@@ -1,3 +1,4 @@
+#if 0
 #include <core/char_device.h>
 #include <driver/uart.h>
 
