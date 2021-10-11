@@ -29,7 +29,7 @@
 #else
 
     #include <def.h>
-    #define PANIC(fmt, ...) for (int t = printf(fmt, __VA_ARGS__);;)
+    #define PANIC(...) for (printf(__VA_ARGS__);;)
 
 #endif
 
