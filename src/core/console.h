@@ -3,26 +3,35 @@
 #ifndef _CORE_CONSOLE_H_
 #define _CORE_CONSOLE_H_
 
-#include <common/spinlock.h>
-#include <common/variadic.h>
-#include <core/char_device.h>
-
 #define NEWLINE '\n'
 
-typedef struct {
-    SpinLock lock;
-    CharDevice device;
-} ConsoleContext;
+#ifdef USE_LAGACY
 
-void init_console();
+    #include <common/spinlock.h>
+    #include <common/variadic.h>
+    #include <core/char_device.h>
 
-void puts(const char *str);
-void vprintf(const char *fmt, va_list arg);
-void printf(const char *fmt, ...);
+    typedef struct {
+        SpinLock lock;
+        CharDevice device;
+    } ConsoleContext;
 
-NORETURN void _panic(const char *file, usize line, const char *fmt, ...);
+    void init_console();
 
-#define PANIC(...) _panic(__FILE__, __LINE__, __VA_ARGS__)
+    void puts(const char *str);
+    void vprintf(const char *fmt, va_list arg);
+    void printf(const char *fmt, ...);
+
+    NORETURN void _panic(const char *file, usize line, const char *fmt, ...);
+
+    #define PANIC(...) _panic(__FILE__, __LINE__, __VA_ARGS__)
+
+#else
+
+    #include <def.h>
+    #define PANIC(fmt, ...) for (printf(fmt, __VA_ARGS__);;);
+
+#endif
 
 #define assert(predicate)                                                                          \
     do {                                                                                           \

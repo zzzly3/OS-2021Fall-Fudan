@@ -1,7 +1,10 @@
+#ifndef __DEF_H__
+#define __DEF_H__
+
 #include <aarch64/intrinsic.h>
+#include <common/variadic.h>
 #include <driver/console.h>
 #include <ob/mem.h>
-#include <common/variadic.h>
 
 #define putchar HalWriteConsoleChar
 
@@ -79,3 +82,5 @@ static inline void printf(const char *fmt, ...) {
     s[p] = 0;
     putstr(s);
 }
+
+#endif

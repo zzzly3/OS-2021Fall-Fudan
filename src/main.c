@@ -48,15 +48,14 @@ NORETURN void main() {
 }
 #else
 #include <def.h>
+#include <core/console.h>
 
 int main()
 {
     fuck_gcc(); // FUCK THE LINKER!
     system_init();
-
+    asserts(1==2, "%d==%d fail!\n", 1, 2);
     //sys_test();
-
-    printf("%d%x %d %u %%%", 12, 0xaab, -2333, -23333);
 }
 
 #endif
