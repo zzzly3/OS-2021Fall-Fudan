@@ -84,7 +84,7 @@ static inline BOOL LibCompareKString(PKSTRING kstr1, PKSTRING kstr2)
 static inline int itos(long long n, char* s, int base)
 {
 	unsigned long long nn = n;
-	int r = 1;
+	int r = 0;
 	if (base == 10 && n < 0)
 		*s++ = '-', nn = -n, r++;
 	char *t = s, c;

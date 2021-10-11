@@ -56,7 +56,7 @@ int main()
 
     //sys_test();
 
-    printf("%d %d\n", 12, 345);
+    printf("%d %x %%%", 12, 345);
 }
 
 #endif
