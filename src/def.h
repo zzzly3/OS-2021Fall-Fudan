@@ -58,7 +58,7 @@ static inline char getchar()
 }
 
 // Warning: This implementation is UNSAFE
-static inline void printf(const char *fmt, ...) {
+static inline int printf(const char *fmt, ...) {
 	char s[256];
 	int p = 0;
     va_list arg;
@@ -81,6 +81,7 @@ static inline void printf(const char *fmt, ...) {
     va_end(arg);
     s[p] = 0;
     putstr(s);
+    return p;
 }
 
 #endif
