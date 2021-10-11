@@ -1,4 +1,3 @@
-#if 0
 #include <aarch64/intrinsic.h>
 #include <common/format.h>
 #define USE_LAGACY
