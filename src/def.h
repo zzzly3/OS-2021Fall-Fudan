@@ -73,6 +73,7 @@ static inline int printf(const char *fmt, ...) {
 			__CASE('p', ULONG64, 16)
 			__CASE('l', long long, 10)
 			#undef __CASE
+			case 's': for (CPCHAR q = va_arg(arg, CPCHAR); *q && p < 255;) s[p++] = *q++; fmt++; break;
 			case '\0': break;
 			default: goto put_char;
 		}
