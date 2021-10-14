@@ -8,7 +8,7 @@ void swtch (PVOID kstack, PVOID* oldkstack);
 
 void ObInitializeScheduler()
 {
-	KeInitializeSpinLock(ActiveListLock);
+	KeInitializeSpinLock(&ActiveListLock);
 	arch_set_tid((ULONG64)KernelProcess);
 	KernelProcess->Status = PROCESS_STATUS_RUNNING;
 }

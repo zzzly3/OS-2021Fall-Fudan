@@ -47,7 +47,7 @@ void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgumen
 {
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
-		Process->Context.KernelStack.d->lr = ProcessEntry;
+		Process->Context.KernelStack.d->lr = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x0 = EntryArgument;
 	}
 	else
