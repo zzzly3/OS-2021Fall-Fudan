@@ -43,7 +43,7 @@ PKPROCESS PsCreateProcessEx()
 }
 
 // Create & run the process described by the object
-void PsCreateProcess(PKPROCESS Process, ULONG64 ProcessEntry, ULONG64 EntryArgument)
+void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
@@ -53,7 +53,7 @@ void PsCreateProcess(PKPROCESS Process, ULONG64 ProcessEntry, ULONG64 EntryArgum
 	else
 	{
 		Process->Context.KernelStack.d->lr = (ULONG64)PsUserProcessEntry;
-		Process->Context.KernelStack.d->x0 = ProcessEntry;
+		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
 	}
 	KeAcquireSpinLock(&ProcessListLock);
@@ -74,5 +74,5 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
-	return KSTATUS_SUCCESS;
+	return STATUS_SUCCESS;
 }
