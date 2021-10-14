@@ -5,12 +5,14 @@
 #include <common/variadic.h>
 #include <driver/console.h>
 #include <ob/mem.h>
+#include <ob/proc.h>
 
 static inline void system_init()
 {
 	HalInitializeDeviceManager();
 	HalInitializeMemoryManager();
 	HalInitializeConsole();
+	ObInitializeProcessManager();
 }
 
 #define putchar HalWriteConsoleChar

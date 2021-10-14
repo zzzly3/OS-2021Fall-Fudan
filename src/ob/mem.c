@@ -102,6 +102,7 @@ PVOID MmAllocateObject(POBJECT_POOL ObjectPool)
 	{
 		ObjectPool->Head = (PVOID)*(ULONG64*)p;
 		memset(p, 0, ObjectPool->Size);
+		ObjectPool->AllocatedCount++;
 	}
 	ObUnlockObject(ObjectPool);
 	return p;
@@ -112,6 +113,7 @@ void MmFreeObject(POBJECT_POOL ObjectPool, PVOID Object)
 	ObLockObject(ObjectPool);
 	*(ULONG64*)Object = (ULONG64)ObjectPool->Head;
 	ObjectPool->Head = Object;
+	ObjectPool->AllocatedCount--;
 	ObUnlockObject(ObjectPool);
 }
 
@@ -283,10 +285,13 @@ void MmDestroyMemorySpace(PMEMORY_SPACE MemorySpace)
 
 void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE newMemorySpace)
 {
-	ObLockObject(newMemorySpace);
-	++newMemorySpace->ActiveCount;
-	arch_set_ttbr0(newMemorySpace->ttbr0);
-	ObUnlockObject(newMemorySpace);
+	if (newMemorySpace != NULL)
+	{
+		ObLockObject(newMemorySpace);
+		++newMemorySpace->ActiveCount;
+		arch_set_ttbr0(newMemorySpace->ttbr0);
+		ObUnlockObject(newMemorySpace);
+	}	
 	if (oldMemorySpace != NULL)
 	{
 		ObLockObject(oldMemorySpace);

@@ -14,7 +14,6 @@
 */
 /* For simplicity, we only support 4k pages in user pgdir. */
 
-PVOID MmAllocatePhysicalPage();
 PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE, PVOID);
 void MmiFreeTable(PPAGE_TABLE, int);
 extern PTEntries kpgdir;

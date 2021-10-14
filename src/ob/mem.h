@@ -12,6 +12,7 @@ typedef struct _OBJECT_POOL
 {
 	SPINLOCK Lock;
 	USHORT Size;
+	int AllocatedCount;
 	PVOID Head;
 } OBJECT_POOL, *POBJECT_POOL;
 
@@ -20,6 +21,7 @@ typedef struct _OBJECT_POOL
 #define VA_PART2(va) (((ULONG64)(va) & 0x3FE00000) >> 21)
 #define VA_PART3(va) (((ULONG64)(va) & 0x1FF000) >> 12)
 
+extern PTEntries kernel_pt;
 #define PPAGE_TABLE PTEntriesPtr
 #define PPAGE_ENTRY PTEntriesPtr
 typedef struct _MEMORY_SPACE
@@ -48,6 +50,9 @@ typedef struct _PHYSICAL_PAGE_INFO
 
 #define MmFlushTLB arch_tlbi_vmalle1is
 ULONG64 MmGetAllocatedPagesCount();
+PVOID MmAllocatePhysicalPage();
+BOOL MmReferencePhysicalPage(PVOID);
+void MmFreePhysicalPage(PVOID);
 void MmInitializeObjectPool(POBJECT_POOL, USHORT);
 PVOID MmAllocateObject(POBJECT_POOL);
 void MmFreeObject(POBJECT_POOL, PVOID);

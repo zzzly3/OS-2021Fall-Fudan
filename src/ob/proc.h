@@ -7,6 +7,8 @@
 #define PROCESS_STATUS_INITIALIZE 0
 #define PROCESS_STATUS_RUNNING 1
 #define PROCESS_STATUS_WAITING 2
+#define PROCESS_STATUS_REALTIME 3
+#define PROCESS_FLAG_KERNEL 1
 typedef struct _KPROCESS
 {
 	USHORT Status;
@@ -42,5 +44,9 @@ typedef struct _KPROCESS
 	} Context;
 	char DebugName[16]; // DON'T access this directly, invoke PsGetDebugNameEx() instead.
 } KPROCESS, *PKPROCESS;
+
+
+BOOL ObInitializeProcessManager();
+PKPROCESS PsCreateProcessEx();
 
 #endif
