@@ -68,8 +68,8 @@ void sys_switch_test_proc()
 {
     for (int i = 1; i <= 10; i++)
     {
-        printf("New process message #%d", i);
-        pt = i;
+        for (int j = 0; j < i; j++)
+            pt += j;
         swtch(KernelProcess->Context.KernelStack.p, &NewProcess->Context.KernelStack.p);
     }
 }
@@ -82,7 +82,7 @@ void sys_switch_test()
     {
         swtch(NewProcess->Context.KernelStack.p, &KernelProcess->Context.KernelStack.p);
     }
-    if (pt == 10) sys_test_pass("Pass: switch") else sys_test_fail("Fail: switch");
+    if (pt == 165) sys_test_pass("Pass: switch") else sys_test_fail("Fail: switch");
 }
 
 
