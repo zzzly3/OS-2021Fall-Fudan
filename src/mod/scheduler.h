@@ -5,6 +5,6 @@
 #include <common/defines.h>
 #include <ob/proc.h>
 
-
+void fuck_gcc_again();
 
 #endif
