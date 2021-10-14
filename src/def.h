@@ -6,6 +6,7 @@
 #include <driver/console.h>
 #include <ob/mem.h>
 #include <ob/proc.h>
+#include <mod/scheduler.h>
 
 static inline void system_init()
 {

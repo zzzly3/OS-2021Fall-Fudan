@@ -58,7 +58,7 @@ int printf(const char *fmt, ...)
 			__CASE('p', ULONG64, 16)
 			__CASE('l', long long, 10)
 			#undef __CASE
-			case 'c': s[p++] = va_arg(arg, char); fmt++; break;
+			case 'c': s[p++] = (char)va_arg(arg, int); fmt++; break;
 			case 's': for (CPCHAR q = va_arg(arg, CPCHAR); *q && p < 255;) s[p++] = *q++; fmt++; break;
 			case '\0': break;
 			default: goto put_char;

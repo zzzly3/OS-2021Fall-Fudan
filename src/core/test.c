@@ -64,24 +64,27 @@ extern PKPROCESS KernelProcess;
 static PKPROCESS NewProcess;
 static int pt = 0;
 void swtch (PVOID kstack, PVOID* oldkstack);
-void sys_switch_test_proc()
+void sys_switch_test_proc(ULONG64 arg)
 {
-    for (int i = 1; i <= 10; i++)
+    PKPROCESS current = PsGetCurrentProcess();
+    for(;;)
     {
-        for (int j = 0; j < i; j++)
-            pt += j;
-        swtch(KernelProcess->Context.KernelStack.p, &NewProcess->Context.KernelStack.p);
+        printf("Process %d, pid = %d\n", arg, current->ProcessId);
+        KeTaskSwitch();
     }
 }
 void sys_switch_test()
 {
-    NewProcess = PsCreateProcessEx();
-    if (NewProcess == NULL) sys_test_fail("Fail: switch");
-    NewProcess->Context.KernelStack.d->lr = (ULONG64)sys_switch_test_proc;
+    int pid[10];
     for (int i = 0; i < 10; i++)
     {
-        swtch(NewProcess->Context.KernelStack.p, &KernelProcess->Context.KernelStack.p);
+        if (!KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_switch_test_proc, i, &pid[i])))
+            sys_test_fail("Fail: create");
+        printf("pid[%d]=%d\n", i, pid[i]);
     }
-    if (pt == 165) sys_test_pass("Pass: switch") else sys_test_fail("Fail: switch");
+    sys_test_pass("Pass: create");
+    for (int i = 0; i < 25; i++)
+        KeTaskSwitch();
+    sys_test_pass("Pass: switch");
 }
 

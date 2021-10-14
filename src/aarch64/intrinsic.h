@@ -116,11 +116,12 @@ static inline void arch_set_ttbr1(u64 addr) {
 }
 
 // read & set tid (may be used as a pointer?)
+// No need to add fence since added in arch_set_tid
 static inline u64 arch_get_tid() {
     u64 tid;
-    arch_fence();
+    // arch_fence();
     asm volatile("mrs %[x], tpidr_el1" : [x] "=r"(tid));
-    arch_fence();
+    // arch_fence();
     return tid;
 }
 static inline void arch_set_tid(u64 tid) {

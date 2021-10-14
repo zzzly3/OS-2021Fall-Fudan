@@ -20,6 +20,7 @@ typedef struct _KPROCESS
 	int ProcessId;
 	int ParentId;
 	LIST_ENTRY ProcessList;
+	LIST_ENTRY SchedulerList;
 	PMEMORY_SPACE MemorySpace;
 	struct
 	{
@@ -50,5 +51,8 @@ typedef struct _KPROCESS
 
 BOOL ObInitializeProcessManager();
 PKPROCESS PsCreateProcessEx();
+void PsCreateProcess(PKPROCESS, ULONG64, ULONG64);
+KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
+#define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
 
 #endif

@@ -5,5 +5,9 @@
 #include <common/defines.h>
 #include <ob/proc.h>
 
+void ObInitializeScheduler();
+void KeRaiseRealTimeState(BOOL*);
+void KeLowerRealTimeState(BOOL);
+void KeTaskSwitch();
 
 #endif

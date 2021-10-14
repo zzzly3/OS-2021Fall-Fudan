@@ -50,7 +50,7 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 
-int main()
+NO_RETURN main()
 {
     system_init();
     //asserts(1==2, "PASS");

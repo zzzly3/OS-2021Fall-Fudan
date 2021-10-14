@@ -81,6 +81,16 @@ static inline BOOL LibCompareKString(PKSTRING kstr1, PKSTRING kstr2)
 	return TRUE;
 }
 
+static inline void LibKStringToCString(PKSTRING kstr, PCHAR cstr, int len)
+{
+	int i = 0;
+	for (int i = 0; i < len && i <= kstr->len; i++)
+	{
+		cstr[i] = kstr->str[i];
+	}
+	cstr[i - 1] = 0;
+}
+
 static inline int itos(long long n, char* s, int base)
 {
 	unsigned long long nn = n;

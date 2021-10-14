@@ -5,6 +5,9 @@ static SPINLOCK ProcessListLock;
 int NextProcessId;
 PKPROCESS KernelProcess;
 
+void PsUserProcessEntry();
+void PsiStartNewProcess(PKPROCESS);
+
 BOOL ObInitializeProcessManager()
 {
 	MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
@@ -14,6 +17,8 @@ BOOL ObInitializeProcessManager()
 		return FALSE;
 	KernelProcess->Flags |= PROCESS_FLAG_KERNEL;
 	KernelProcess->ProcessList.Forward = KernelProcess->ProcessList.Backward = &KernelProcess->ProcessList;
+	KernelProcess->SchedulerList.Forward = KernelProcess->SchedulerList.Backward = &KernelProcess->SchedulerList;
+	ObInitializeScheduler();
 	return TRUE;
 }
 
@@ -38,7 +43,6 @@ PKPROCESS PsCreateProcessEx()
 }
 
 // Create & run the process described by the object
-void PsUserProcessEntry();
 void PsCreateProcess(PKPROCESS Process, ULONG64 ProcessEntry, ULONG64 EntryArgument)
 {
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
@@ -55,10 +59,20 @@ void PsCreateProcess(PKPROCESS Process, ULONG64 ProcessEntry, ULONG64 EntryArgum
 	KeAcquireSpinLock(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLock(&ProcessListLock);
+	PsiStartNewProcess(Process);
 }
 
-PKPROCESS PsGetCurrentProcess()
+KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
 {
-	// TODO
-	return NULL;
+	PKPROCESS p = PsCreateProcessEx();
+	if (p == NULL)
+		return STATUS_NO_ENOUGH_MEMORY;
+	p->Flags |= PROCESS_FLAG_KERNEL;
+	if (ProcessName != NULL)
+		LibKStringToCString(ProcessName, p->DebugName, 16);
+	p->ParentId = KernelProcess->ProcessId;
+	p->MemorySpace = NULL;
+	*ProcessId = p->ProcessId;
+	PsCreateProcess(p, ProcessEntry, EntryArgument);
+	return KSTATUS_SUCCESS;
 }
