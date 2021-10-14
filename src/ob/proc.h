@@ -51,7 +51,7 @@ typedef struct _KPROCESS
 
 BOOL ObInitializeProcessManager();
 PKPROCESS PsCreateProcessEx();
-void PsCreateProcess(PKPROCESS, ULONG64, ULONG64);
+void PsCreateProcess(PKPROCESS, PVOID, ULONG64);
 KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 #define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
 
