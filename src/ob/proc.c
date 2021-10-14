@@ -38,12 +38,20 @@ PKPROCESS PsCreateProcessEx()
 }
 
 // Create & run the process described by the object
-void proc_entry();
-void PsCreateProcess(PKPROCESS Process, ULONG64 UserEntry, ULONG64 UserArgument)
+void PsUserProcessEntry();
+void PsCreateProcess(PKPROCESS Process, ULONG64 ProcessEntry, ULONG64 EntryArgument)
 {
-	Process->Context.KernelStack.d->lr = (ULONG64)proc_entry;
-	Process->Context.KernelStack.d->x0 = UserEntry;
-	Process->Context.KernelStack.d->x1 = UserArgument;
+	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
+	{
+		Process->Context.KernelStack.d->lr = ProcessEntry;
+		Process->Context.KernelStack.d->x0 = EntryArgument;
+	}
+	else
+	{
+		Process->Context.KernelStack.d->lr = (ULONG64)PsUserProcessEntry;
+		Process->Context.KernelStack.d->x0 = ProcessEntry;
+		Process->Context.KernelStack.d->x1 = EntryArgument;
+	}
 	KeAcquireSpinLock(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLock(&ProcessListLock);
