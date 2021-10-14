@@ -21,7 +21,7 @@ PKPROCESS PsCreateProcessEx()
 	if (p == NULL)
 		return NULL;
 	p->Status = PROCESS_STATUS_INITIALIZE;
-	KeInitializeSpinLock(p->Lock);
+	KeInitializeSpinLock(&p->Lock);
 	PVOID g = MmAllocatePhysicalPage();
 	if (g == NULL)
 	{
