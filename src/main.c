@@ -52,8 +52,7 @@ NORETURN void main() {
 
 int main()
 {
-    fuck_gcc(); // FUCK THE LINKER!
-    fuck_gcc_again(); // AGAIN!
+    // fuck_gcc(); // FUCK THE LINKER!
     system_init();
     //asserts(1==2, "PASS");
     sys_test();
