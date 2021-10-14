@@ -21,7 +21,7 @@ swtch:
     stp x25, x26, [sp, #-16]!
     stp x27, x28, [sp, #-16]!
     stp x29, x30, [sp, #-16]!
-    mov [x1], sp // oldkstack
+    str sp, [x1] // oldkstack
     mov sp, x0 // kstack
     ldp x29, x30, [sp], #16
     ldp x27, x28, [sp], #16
