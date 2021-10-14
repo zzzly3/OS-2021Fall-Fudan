@@ -3,6 +3,7 @@
 
 #include <common/lutil.h>
 #include <ob/mem.h>
+#include <mod/scheduler.h>
 
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1

@@ -6,3 +6,6 @@ proc_entry: // x0: UserEntry; x1: UserArgument
 	msr spsr_el1, x0
 	mov x0, x1
 	eret
+.global fuck_gcc_again
+fuck_gcc_again:
+	ret

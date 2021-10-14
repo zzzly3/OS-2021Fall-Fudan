@@ -6,6 +6,7 @@
 #include <driver/console.h>
 #include <ob/mem.h>
 #include <ob/proc.h>
+void fuck_gcc_again();
 
 static inline void system_init()
 {
