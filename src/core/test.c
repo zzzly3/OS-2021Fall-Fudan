@@ -10,6 +10,7 @@ PVOID MmAllocatePhysicalPage();
 void sys_test()
 {
     puts("Memory");
+    init_virtual_memory();
 	sys_mem_test();
 }
 

@@ -54,8 +54,8 @@ int main()
 {
     fuck_gcc(); // FUCK THE LINKER!
     system_init();
-    asserts(1==2, "PASS");
-    //sys_test();
+    //asserts(1==2, "PASS");
+    sys_test();
 }
 
 #endif
