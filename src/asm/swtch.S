@@ -5,7 +5,6 @@ swtch:
     /* TODO: Lab3 Schedule */
     // (Uncomment on demand)
     /*
-	stp x0, x1, [sp, #-16]!
     stp x2, x3, [sp, #-16]!
     stp x4, x5, [sp, #-16]!
     stp x6, x7, [sp, #-16]!
@@ -21,9 +20,11 @@ swtch:
     stp x25, x26, [sp, #-16]!
     stp x27, x28, [sp, #-16]!
     stp x29, x30, [sp, #-16]!
+    stp x0, x1, [sp, #-16]!
     mov x2, sp
     str x2, [x1] // oldkstack
     mov sp, x0 // kstack
+    ldp x0, x1, [sp], #16
     ldp x29, x30, [sp], #16
     ldp x27, x28, [sp], #16
     ldp x25, x26, [sp], #16
@@ -39,6 +40,5 @@ swtch:
     ldp x6, x7, [sp], #16
     ldp x4, x5, [sp], #16
     ldp x2, x3, [sp], #16
-    ldp x0, x1, [sp], #16
     */
     ret

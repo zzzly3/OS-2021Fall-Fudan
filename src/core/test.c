@@ -85,4 +85,3 @@ void sys_switch_test()
     if (pt == 165) sys_test_pass("Pass: switch") else sys_test_fail("Fail: switch");
 }
 
-
