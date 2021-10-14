@@ -6,6 +6,7 @@ extern PMemory pmem;
 static SPINLOCK PhysicalPageListLock;
 PHYSICAL_PAGE_INFO PhysicalPageInfoTable[PPN_MAX];
 static ULONG64 AllocatedPagesCount;
+static OBJECT_POOL MemorySpacePool;
 
 static void MmInitializePages()
 {
@@ -21,7 +22,8 @@ ULONG64 MmGetAllocatedPagesCount()
 void HalInitializeMemoryManager()
 {
 	MmInitializePages();
-	//init_virtual_memory();
+	MmInitializeObjectPool(&MemorySpacePool, sizeof(MEMORY_SPACE));
+	//init_virtual_memory(); // I don't want to fuck the gcc again!!!
 }
 
 // The physical pages are given in kernel address.
@@ -62,7 +64,58 @@ void MmFreePhysicalPage(PVOID PageAddress)
 	KeReleaseSpinLock(&PhysicalPageListLock);
 }
 
-BOOL MmInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
+PVOID MmiBuildObjectPool(USHORT sz)
+{
+	PVOID p = MmAllocatePhysicalPage();
+	if (p == NULL)
+		return NULL;
+	for (ULONG64 p1 = (ULONG64)p, pe = p1 + PAGE_SIZE - sz;;)
+	{
+		ULONG64 p2 = p1 + sz;
+		if (p2 > pe)
+		{
+			*(ULONG64*)p1 = NULL;
+			break;
+		}
+		*(ULONG64*)p1 = p2;
+		p1 = p2;
+	}
+	return p;
+}
+
+void MmInitializeObjectPool(POBJECT_POOL ObjectPool, USHORT Size)
+{
+	memset(ObjectPool, 0, sizeof(OBJECT_POOL));
+	KeInitializeSpinLock(&ObjectPool->Lock);
+	USHORT sz = (Size + 7) & ~7;
+	ObjectPool->Size = sz;
+	ObjectPool->Head = MmiBuildObjectPool(sz);
+}
+
+PVOID MmAllocateObject(POBJECT_POOL ObjectPool)
+{
+	ObLockObject(ObjectPool);
+	if (ObjectPool->Head == NULL)
+		ObjectPool->Head = MmiBuildObjectPool(ObjectPool->Size);
+	PVOID p = ObjectPool->Head;
+	if (p != NULL)
+	{
+		ObjectPool->Head = (PVOID)*(ULONG64*)p;
+		memset(p, 0, ObjectPool->Size);
+	}
+	ObUnlockObject(ObjectPool);
+	return p;
+}
+
+void MmFreeObject(POBJECT_POOL ObjectPool, PVOID Object)
+{
+	ObLockObject(ObjectPool);
+	*(ULONG64*)Object = (ULONG64)ObjectPool->Head;
+	ObjectPool->Head = Object;
+	ObUnlockObject(ObjectPool);
+}
+
+BOOL MmiInitializeMemorySpace(PMEMORY_SPACE MemorySpace)
 {
 	PVOID table_base = MmAllocatePhysicalPage();
 	if (table_base == NULL)
@@ -122,6 +175,19 @@ PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress)
 		pt = (PPAGE_TABLE)P2K(PTE_ADDRESS(pt[id[i]]));
 	}
 	return VALID_PTE(pt[id[3]]) ? (PPAGE_ENTRY)&pt[id[3]] : NULL;
+}
+
+PMEMORY_SPACE MmCreateMemorySpace()
+{
+	PMEMORY_SPACE p = (PMEMORY_SPACE)MmAllocateObject(&MemorySpacePool);
+	if (p == NULL)
+		return NULL;
+	if (!MmiInitializeMemorySpace(p))
+	{
+		MmFreeObject(&MemorySpacePool, (PVOID)p);
+		return NULL;
+	}
+	return p;
 }
 
 KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDescriptor)
@@ -212,6 +278,7 @@ void MmDestroyMemorySpace(PMEMORY_SPACE MemorySpace)
 	ObLockObject(MemorySpace);
 	MmiFreeTable(MemorySpace->PageTable, 0);
 	// No need to unlock since destroyed.
+	MmFreeObject(&MemorySpacePool, (PVOID)MemorySpace);
 }
 
 void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE newMemorySpace)

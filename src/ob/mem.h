@@ -8,6 +8,13 @@
 #include <common/spinlock.h>
 #include <core/physical_memory.h>
 
+typedef struct _OBJECT_POOL
+{
+	SPINLOCK Lock;
+	USHORT Size;
+	PVOID Head;
+} OBJECT_POOL, *POBJECT_POOL;
+
 #define VA_PART0(va) (((ULONG64)(va) & 0xFF8000000000) >> 39)
 #define VA_PART1(va) (((ULONG64)(va) & 0x7FC0000000) >> 30)
 #define VA_PART2(va) (((ULONG64)(va) & 0x3FE00000) >> 21)
@@ -41,8 +48,11 @@ typedef struct _PHYSICAL_PAGE_INFO
 
 #define MmFlushTLB arch_tlbi_vmalle1is
 ULONG64 MmGetAllocatedPagesCount();
+void MmInitializeObjectPool(POBJECT_POOL, USHORT);
+PVOID MmAllocateObject(POBJECT_POOL);
+void MmFreeObject(POBJECT_POOL, PVOID);
 void HalInitializeMemoryManager();
-BOOL MmInitializeMemorySpace(PMEMORY_SPACE);
+PMEMORY_SPACE MmCreateMemorySpace();
 KSTATUS MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);
 PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE, PVOID);
 KSTATUS MmUnmapPageEx(PMEMORY_SPACE, PVOID);

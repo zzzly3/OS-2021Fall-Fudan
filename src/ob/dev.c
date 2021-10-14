@@ -131,7 +131,8 @@ KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
 		KeAcquireSpinLock(&DeviceListLock);
 		LibRemoveListEntry(&DeviceObject->DeviceList);
 		KeReleaseSpinLock(&DeviceListLock);
-		// If success, return without unlock.
+		// If success, return without unlock the device.
+		// Cleanup? (associated with the driver?)
 	}
 	else
 	{

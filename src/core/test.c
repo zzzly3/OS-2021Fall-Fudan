@@ -15,11 +15,11 @@ void sys_test()
 
 void sys_mem_test()
 {
-	static MEMORY_SPACE m;
+	PMEMORY_SPACE m;
 	int p0 = MmGetAllocatedPagesCount();
     vm_test();
     puts("Pass: legacy");
-	MmInitializeMemorySpace(&m);
+	m = MmCreateMemorySpace();
 	ULONG64 j = 0;
     for (ULONG64 i = 0; i < 1000000; i++)
     {
@@ -29,7 +29,7 @@ void sys_mem_test()
             j = i;
             break;
         }
-        KSTATUS ret = MmMapPageEx(&m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        KSTATUS ret = MmMapPageEx(m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
         if (!KSUCCESS(ret))
         {
             j = i;
@@ -38,7 +38,7 @@ void sys_mem_test()
         *(p + (i & 1023)) = i;
     }
     sys_test_pass("Pass: allocate");
-    MmSwitchMemorySpaceEx(NULL, &m);
+    MmSwitchMemorySpaceEx(NULL, m);
     for (ULONG64 i = 0; i < j; i++)
     {
         if (*((int*)(i << 12) + (i & 1023)) != i)
@@ -48,11 +48,11 @@ void sys_mem_test()
     sys_test_pass("Pass: read");
     for (ULONG64 i = 0; i < j; i++)
     {
-    	if (*(int*)MmGetPhysicalAddressEx(&m, (PVOID)((int*)(i << 12) + (i & 1023))) != i + 1)
+    	if (*(int*)MmGetPhysicalAddressEx(m, (PVOID)((int*)(i << 12) + (i & 1023))) != i + 1)
     		sys_test_fail("Fail: write");
     }
     sys_test_pass("Pass: write");
-    MmDestroyMemorySpace(&m);
+    MmDestroyMemorySpace(m);
     if (MmGetAllocatedPagesCount() != p0)
     	sys_test_fail("Fail: balance");
     sys_test_pass("Pass: balance");

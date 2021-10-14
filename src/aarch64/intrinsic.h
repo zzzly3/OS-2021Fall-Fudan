@@ -115,6 +115,22 @@ static inline void arch_set_ttbr1(u64 addr) {
     arch_tlbi_vmalle1is();
 }
 
+// read tid (may be used as a pointer?)
+static inline u64 arch_get_tid() {
+    u64 tid;
+    arch_fence();
+    asm volatile("mrs %[x], tpidr_el1" : [x] "=r"(tid));
+    arch_fence();
+    return tid;
+}
+
+// set tid
+static inline void arch_set_tid(u64 tid) {
+    arch_fence();
+    asm volatile("msr tpidr_el1, %[x]" : : [x] "r"(tid));
+    arch_fence();
+}
+
 // set-event instruction.
 static inline void arch_sev() {
     asm volatile("sev" ::: "memory");
