@@ -69,8 +69,8 @@ void sys_switch_test_proc(ULONG64 arg)
     PKPROCESS current = PsGetCurrentProcess();
     for(;;)
     {
-        printf("Process %d, pid = %d\n", arg, current->ProcessId);
-        KeTaskSwitch();
+        printf("CPU %d, Process %d, pid = %d\n", cpuid(), arg, current->ProcessId);
+        delay_us(1000000);
     }
 }
 void sys_switch_test()
@@ -83,8 +83,9 @@ void sys_switch_test()
         printf("pid[%d]=%d\n", i, pid[i]);
     }
     sys_test_pass("Pass: create");
-    for (int i = 0; i < 25; i++)
+    for (int i = 0; i < 10; i++)
         KeTaskSwitch();
+    arch_disable_trap();
     sys_test_pass("Pass: switch");
 }
 

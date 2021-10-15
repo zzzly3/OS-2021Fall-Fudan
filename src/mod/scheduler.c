@@ -33,7 +33,7 @@ void KiClockTrapEntry()
 		return;
 	// Before schedulering, raise to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	reset_clock(1);
+	reset_clock(100);
 	arch_enable_trap();
 	// TODO: call DPCs
 	KeTaskSwitch();
