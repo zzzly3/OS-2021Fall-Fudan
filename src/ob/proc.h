@@ -5,16 +5,12 @@
 #include <ob/mem.h>
 #include <mod/scheduler.h>
 
-#define EXECUTE_LEVEL_ISR 10
-#define EXECUTE_LEVEL_RT 5
-#define EXECUTE_LEVEL_APC 2
-#define EXECUTE_LEVEL_USR 0
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1
 #define PROCESS_STATUS_WAITING 2
 #define PROCESS_FLAG_KERNEL 1
 #define PROCESS_FLAG_REALTIME 2
-typedef UCHAR EXECUTE_LEVEL;
+
 typedef struct _KPROCESS
 {
 	EXECUTE_LEVEL ExecuteLevel;

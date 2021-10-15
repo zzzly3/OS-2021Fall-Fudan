@@ -45,6 +45,11 @@ typedef enum
 	STATUS_REDIRECTED
 } KSTATUS;
 #define KSUCCESS(stat) ((stat)>=STATUS_SUCCESS)
+typedef UCHAR EXECUTE_LEVEL;
+#define EXECUTE_LEVEL_ISR 10
+#define EXECUTE_LEVEL_RT 5
+#define EXECUTE_LEVEL_APC 2
+#define EXECUTE_LEVEL_USR 0
 
 typedef struct _LIST_ENTRY
 {
