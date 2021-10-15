@@ -168,8 +168,13 @@ static inline void arch_enable_trap() {
     asm volatile("msr daif, %[x]" ::[x] "r"(0ll));
 }
 
-static inline void arch_disable_trap() {
+static inline bool arch_disable_trap() {
+    u64 t;
+    asm volatile("mrs %[x], daif" : [x] "=r"(t));
+    if (t != 0)
+        return false;
     asm volatile("msr daif, %[x]" ::[x] "r"(0xfll << 6));
+    return true;
 }
 
 void delay_us(u64 n);

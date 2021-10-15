@@ -25,13 +25,13 @@ void ObInitializeScheduler()
 	init_trap();
 }
 
-void PsiStartNewProcess(PKPROCESS Process)
+RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 {
-	KeAcquireSpinLock(&ActiveListLock);
+	KeAcquireSpinLockFast(&ActiveListLock);
 	LibInsertListEntry(&PsGetCurrentProcess()->SchedulerList, &Process->SchedulerList);
 	Process->Status = PROCESS_STATUS_WAITING;
 	// After that, the process is visible in the process list, and MIGHT BE REFERENCED BY OTHERS.
-	KeReleaseSpinLock(&ActiveListLock);
+	KeReleaseSpinLockFast(&ActiveListLock);
 }
 
 void KiClockTrapEntry()
@@ -44,16 +44,7 @@ void KiClockTrapEntry()
 	// Raise EL to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	arch_enable_trap();
-	while (1) // Do DPCs
-	{
-		KeAcquireSpinLock(&DpcListLock);
-		PDPC_ENTRY dpc = LibPopSingleListEntry(DpcList);
-		KeReleaseSpinLock(&DpcListLock);
-		if (dpc == NULL)
-			break;
-		dpc->DpcRoutine(dpc->DpcArgment);
-		MmFreeObject(&DpcObjectPool, (PVOID)dpc);
-	}
+	KeClearDpcList();
 	KeTaskSwitch();
 	if (oldel < EXECUTE_LEVEL_APC)
 	{
@@ -65,19 +56,57 @@ void KiClockTrapEntry()
 	return;
 }
 
+RT_ONLY void KeClearDpcList()
+{
+	if (DpcList == NULL)
+		return;
+	// Batch processing
+	KeAcquireSpinLock(&DpcListLock);
+	PDPC_ENTRY dpc = DpcList;
+	DpcList = NULL;
+	KeReleaseSpinLock(&DpcListLock);
+	if (dpc == NULL)
+		return;
+	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
+	{
+		p->DpcRoutine(p->DpcArgument);
+	}
+	BOOL trapen = arch_disable_trap();
+	for (PDPC_ENTRY p = dpc; p != NULL;)
+	{
+		PDPC_ENTRY np = p->NextEntry;
+		MmFreeObject(&DpcObjectPool, (PVOID)p);
+		p = np;
+	}
+	if (trapen)
+		arch_enable_trap();
+}
+
 APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 {
 	PKPROCESS cur = PsGetCurrentProcess();
-	whlie (1)
+	if (cur->ApcList == NULL)
+		return;
+	// Batch processing
+	ObLockObject(cur);
+	PAPC_ENTRY apc = cur->ApcList;
+	cur->ApcList = NULL;
+	ObUnlockObject(cur);
+	if (apc == NULL)
+		return;
+	for (PAPC_ENTRY p = apc; p != NULL; p = p->NextEntry)
 	{
-		ObLockObject(cur);
-		PAPC_ENTRY apc = LibPopSingleListEntry(cur->ApcList);
-		ObUnlockObject(cur);
-		if (apc == NULL)
-			break;
-		apc->ApcRoutine(apc->ApcArgument);
-		MmFreeObject(&ApcObjectPool, (PVOID)apc);
+		p->ApcRoutine(p->ApcArgument);
 	}
+	BOOL trapen = arch_disable_trap();
+	for (PAPC_ENTRY p = apc; p != NULL;)
+	{
+		PAPC_ENTRY np = p->NextEntry;
+		MmFreeObject(&ApcObjectPool, (PVOID)p);
+		p = np;
+	}
+	if (trapen)
+		arch_enable_trap();
 }
 
 // No need to lock the process, since only the process itself can change its realtime-state.
@@ -97,6 +126,11 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
 	// ObLockObject(proc);
+	if (proc->ExecuteLevel >= EXECUTE_LEVEL_RT && OriginalExecuteLevel < EXECUTE_LEVEL_RT)
+	{
+		proc->ExecuteLevel = EXECUTE_LEVEL_RT;
+		KeClearDpcList();
+	}
 	if (proc->ExecuteLevel >= EXECUTE_LEVEL_APC && OriginalExecuteLevel < EXECUTE_LEVEL_APC)
 	{
 		proc->ExecuteLevel = EXECUTE_LEVEL_APC;
@@ -111,23 +145,24 @@ RT_ONLY void KeTaskSwitch() // MUST be called in RT level
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
-	KeAcquireSpinLock(&ActiveListLock);
+	KeAcquireSpinLockFast(&ActiveListLock);
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
 	if (nxt == cur) // No more process
 	{
-		KeReleaseSpinLock(&ActiveListLock);
+		KeReleaseSpinLockFast(&ActiveListLock);
 		return;
 	}
 	// Do switch
-	arch_disable_trap();
+	BOOL trapen = arch_disable_trap();
 	nxt->Status = PROCESS_STATUS_RUNNING;
-	KeReleaseSpinLock(&ActiveListLock);
+	KeReleaseSpinLockFast(&ActiveListLock);
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)nxt->Context.UserStack);
 	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
 	arch_set_tid((ULONG64)nxt);
 	cur->Status = PROCESS_STATUS_WAITING;
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
-	arch_enable_trap();
+	if (trapen)
+		arch_enable_trap();
 }
 

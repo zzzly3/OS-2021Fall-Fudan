@@ -4,9 +4,11 @@
 #define _COMMON_SPINLOCK_H_
 
 #include <common/defines.h>
+#include <aarch64/intrinsic.h>
 
 typedef struct {
     volatile bool locked;
+    bool enable_trap;
 } SpinLock;
 
 void init_spinlock(SpinLock *lock);
@@ -17,11 +19,19 @@ void wait_spinlock(SpinLock *lock);
 
 typedef SpinLock SPINLOCK, *PSPINLOCK;
 #define KeInitializeSpinLock init_spinlock
-#define KeTryToAcquireSpinLock try_acquire_spinlock
-#define KeAcquireSpinLock acquire_spinlock
-#define KeReleaseSpinLock release_spinlock
-#define KeWaitForSpinLock wait_spinlock
+#define KeTryToAcquireSpinLockFast try_acquire_spinlock
+#define KeAcquireSpinLockFast acquire_spinlock
+#define KeReleaseSpinLockFast release_spinlock
+#define KeWaitForSpinLockFast wait_spinlock
 #define KeTestSpinLock(lock) (lock->locked)
+#define KeAcquireSpinLock(lock) ({ \
+    bool __t = arch_disable_trap(); \
+    acquire_spinlock(lock); \
+    (lock)->enable_trap = __t;})
+#define KeReleaseSpinLock(lock) ({ \
+    bool __t = (lock)->enable_trap; \
+    release_spinlock(lock); \
+    if (__t) arch_enable_trap();})
 
 // TODO: scheduler-related lock
 

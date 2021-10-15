@@ -50,18 +50,18 @@ typedef struct _PHYSICAL_PAGE_INFO
 
 #define MmFlushTLB arch_tlbi_vmalle1is
 ULONG64 MmGetAllocatedPagesCount();
-PVOID MmAllocatePhysicalPage();
-BOOL MmReferencePhysicalPage(PVOID);
-void MmFreePhysicalPage(PVOID);
-void MmInitializeObjectPool(POBJECT_POOL, USHORT);
-PVOID MmAllocateObject(POBJECT_POOL);
-void MmFreeObject(POBJECT_POOL, PVOID);
+UNSAFE PVOID MmAllocatePhysicalPage();
+UNSAFE BOOL MmReferencePhysicalPage(PVOID);
+UNSAFE void MmFreePhysicalPage(PVOID);
+UNSAFE void MmInitializeObjectPool(POBJECT_POOL, USHORT);
+UNSAFE PVOID MmAllocateObject(POBJECT_POOL);
+UNSAFE void MmFreeObject(POBJECT_POOL, PVOID);
 void HalInitializeMemoryManager();
-PMEMORY_SPACE MmCreateMemorySpace();
-KSTATUS MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);
-PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE, PVOID);
-KSTATUS MmUnmapPageEx(PMEMORY_SPACE, PVOID);
-void MmDestroyMemorySpace(PMEMORY_SPACE);
-void MmSwitchMemorySpaceEx(PMEMORY_SPACE, PMEMORY_SPACE);
+UNSAFE PMEMORY_SPACE MmCreateMemorySpace();
+UNSAFE KSTATUS MmMapPageEx(PMEMORY_SPACE, PVOID, ULONG64);
+UNSAFE PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE, PVOID);
+UNSAFE KSTATUS MmUnmapPageEx(PMEMORY_SPACE, PVOID);
+UNSAFE void MmDestroyMemorySpace(PMEMORY_SPACE);
+UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE, PMEMORY_SPACE);
 
 #endif

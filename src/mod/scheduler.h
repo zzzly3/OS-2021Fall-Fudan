@@ -29,5 +29,6 @@ EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL);
 void KeLowerExecuteLevel(EXECUTE_LEVEL);
 RT_ONLY void KeTaskSwitch();
 APC_ONLY void KeClearApcList();
+RT_ONLY void KeClearDpcList();
 
 #endif

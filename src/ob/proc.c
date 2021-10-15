@@ -26,6 +26,7 @@ BOOL ObInitializeProcessManager()
 
 PKPROCESS PsCreateProcessEx()
 {
+	BOOL trapen = arch_disable_trap();
 	PKPROCESS p = (PKPROCESS)MmAllocateObject(&ProcessPool);
 	if (p == NULL)
 		return NULL;
@@ -40,14 +41,16 @@ PKPROCESS PsCreateProcessEx()
 		return NULL;
 	}
 	p->Context.KernelStack.p = (PVOID)((ULONG64)g + PAGE_SIZE - 192);
-	KeAcquireSpinLock(&ProcessListLock);
+	KeAcquireSpinLockFast(&ProcessListLock);
 	p->ProcessId = NextProcessId++;
-	KeReleaseSpinLock(&ProcessListLock);
+	KeReleaseSpinLockFast(&ProcessListLock);
+	if (trapen)
+		arch_enable_trap();
 	return p;
 }
 
 // Create & run the process described by the object
-void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
+RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
@@ -61,9 +64,9 @@ void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgumen
 		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
 	}
-	KeAcquireSpinLock(&ProcessListLock);
+	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess->ProcessList, &Process->ProcessList);
-	KeReleaseSpinLock(&ProcessListLock);
+	KeReleaseSpinLockFast(&ProcessListLock);
 	PsiStartNewProcess(Process);
 }
 
@@ -78,6 +81,8 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->ParentId = KernelProcess->ProcessId;
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
+	KeLowerExecuteLevel(oldel);
 	return STATUS_SUCCESS;
 }

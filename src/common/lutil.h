@@ -57,6 +57,9 @@ typedef UCHAR EXECUTE_LEVEL;
 #define USR_ONLY // Indicates the API MUST be called in USR level.
 #define APC_ONLY
 #define RT_ONLY
+#define LEQAPC_ONLY // EL <= APC
+#define LEQRT_ONLY
+#define UNSAFE
 
 typedef struct _LIST_ENTRY
 {
@@ -126,8 +129,16 @@ static inline int itos(long long n, char* s, int base)
 	return r;
 }
 
+#define ObTryToLockObjectFast(obj) KeTryToAcquireSpinLockFast(&(obj)->Lock)
+#define ObLockObjectFast(obj) KeAcquireSpinLockFast(&(obj)->Lock)
+#define ObUnlockObjectFast(obj) KeReleaseSpinLockFast(&(obj)->Lock)
+#define ObReferenceObjectFast(obj) ({ObLockObjectFast(obj); \
+	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \
+	(obj)->ReferenceCount += __mret ? 1 : 0; \
+	ObUnlockObjectFast(obj); \
+	__mret;})
+#define ObDereferenceObjectFast(obj) (ObLockObjectFast(obj),(obj)->ReferenceCount--,ObUnlockObjectFast(obj))
 #define ObLockObject(obj) KeAcquireSpinLock(&(obj)->Lock)
-#define ObTryToLockObject(obj) KeTryToAcquireSpinLock(&(obj)->Lock)
 #define ObUnlockObject(obj) KeReleaseSpinLock(&(obj)->Lock)
 #define ObReferenceObject(obj) ({ObLockObject(obj); \
 	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \

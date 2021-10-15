@@ -47,8 +47,7 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		{
 			if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
 			{
-				if (!KeTryToAcquireSpinLock(&DeviceObject->IOLock))
-					return STATUS_DEVICE_BUSY;
+				return STATUS_UNSUPPORTED;
 			}
 			else
 			{
@@ -65,21 +64,21 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	return STATUS_FAILURE;
 }
 
-BOOL IoTryToLockDevice(PDEVICE_OBJECT DeviceObject)
-{
-	if (!ObTryToLockObject(DeviceObject))
-		return FALSE;
-	if (DeviceObject->ReferenceCount <= 1)
-	{
-		//TODO: eq 0 SHOULD trigger BUGCHECK! (ACCESS_WITHOUT_REFERENCE)
-		return TRUE;
-	}
-	else
-	{
-		ObUnlockObject(DeviceObject);
-		return FALSE;
-	}
-}
+// BOOL IoTryToLockDevice(PDEVICE_OBJECT DeviceObject)
+// {
+// 	if (!ObTryToLockObjectFast(DeviceObject))
+// 		return FALSE;
+// 	if (DeviceObject->ReferenceCount <= 1)
+// 	{
+// 		//TODO: eq 0 SHOULD trigger BUGCHECK! (ACCESS_WITHOUT_REFERENCE)
+// 		return TRUE;
+// 	}
+// 	else
+// 	{
+// 		ObUnlockObject(DeviceObject);
+// 		return FALSE;
+// 	}
+// }
 
 void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 {
@@ -88,12 +87,12 @@ void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 	KeInitializeSpinLock(&DeviceObject->IOLock);
 }
 
-KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
+RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 {
-	ObLockObject(DeviceObject);
-	KeAcquireSpinLock(&DeviceListLock);
+	ObLockObjectFast(DeviceObject);
+	KeAcquireSpinLockFast(&DeviceListLock);
 	LibInsertListEntry(&RootDeviceX.DeviceList, &DeviceObject->DeviceList);
-	KeReleaseSpinLock(&DeviceListLock);
+	KeReleaseSpinLockFast(&DeviceListLock);
 	if (DeviceObject->Flags & DEVICE_FLAG_DYNAMIC)
 	{
 		IOREQ_OBJECT install_req;
@@ -102,44 +101,44 @@ KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 		KSTATUS ret = IoCallDevice(DeviceObject, &install_req);
 		if (!KSUCCESS(ret))
 		{
-			KeAcquireSpinLock(&DeviceListLock);
+			KeAcquireSpinLockFast(&DeviceListLock);
 			LibRemoveListEntry(&DeviceObject->DeviceList);
-			KeReleaseSpinLock(&DeviceListLock);
+			KeReleaseSpinLockFast(&DeviceListLock);
 		}
-		ObUnlockObject(DeviceObject);
+		ObUnlockObjectFast(DeviceObject);
 		return ret;
 	}
 	else
 	{
-		ObUnlockObject(DeviceObject);
+		ObUnlockObjectFast(DeviceObject);
 		return STATUS_SUCCESS;
 	}
 }
 
-KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
-{
-	if (!(DeviceObject->Flags & DEVICE_FLAG_DYNAMIC))
-		return STATUS_UNSUPPORTED;
-	if (!IoTryToLockDevice(DeviceObject))
-		return STATUS_DEVICE_BUSY;
-	IOREQ_OBJECT uninstall_req;
-	IoInitializeRequest(&uninstall_req);
-	uninstall_req.Type = IOREQ_TYPE_UNINSTALL;
-	KSTATUS ret = IoCallDevice(DeviceObject, &uninstall_req);
-	if (KSUCCESS(ret))
-	{
-		KeAcquireSpinLock(&DeviceListLock);
-		LibRemoveListEntry(&DeviceObject->DeviceList);
-		KeReleaseSpinLock(&DeviceListLock);
-		// If success, return without unlock the device.
-		// Cleanup? (associated with the driver?)
-	}
-	else
-	{
-		IoUnlockDevice(DeviceObject);
-	}
-	return ret;
-}
+// KSTATUS IoUnloadDevice(PDEVICE_OBJECT DeviceObject)
+// {
+// 	if (!(DeviceObject->Flags & DEVICE_FLAG_DYNAMIC))
+// 		return STATUS_UNSUPPORTED;
+// 	if (!IoTryToLockDevice(DeviceObject))
+// 		return STATUS_DEVICE_BUSY;
+// 	IOREQ_OBJECT uninstall_req;
+// 	IoInitializeRequest(&uninstall_req);
+// 	uninstall_req.Type = IOREQ_TYPE_UNINSTALL;
+// 	KSTATUS ret = IoCallDevice(DeviceObject, &uninstall_req);
+// 	if (KSUCCESS(ret))
+// 	{
+// 		KeAcquireSpinLockSafe(&DeviceListLock);
+// 		LibRemoveListEntry(&DeviceObject->DeviceList);
+// 		KeReleaseSpinLockSafe(&DeviceListLock);
+// 		// If success, return without unlock the device.
+// 		// Cleanup? (associated with the driver?)
+// 	}
+// 	else
+// 	{
+// 		IoUnlockDevice(DeviceObject);
+// 	}
+// 	return ret;
+// }
 
 PDEVICE_OBJECT IoiLookupDevice(PKSTRING DeviceName)
 {

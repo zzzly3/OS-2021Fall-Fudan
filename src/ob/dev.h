@@ -65,11 +65,11 @@ BOOL IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT);
 void IoInitializeRequest(PIOREQ_OBJECT);
 KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
 void IoInitializeDevice(PDEVICE_OBJECT);
-KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
+RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
 KSTATUS HalInitializeDeviceManager();
-BOOL IoTryToLockDevice(PDEVICE_OBJECT);
-KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
-#define IoUnlockDevice ObUnlockObject
+//BOOL IoTryToLockDevice(PDEVICE_OBJECT);
+//KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
+//#define IoUnlockDevice ObUnlockObject
 //PDEVICE_OBJECT IouLookupDevice(PKSTRING);
 
 #endif

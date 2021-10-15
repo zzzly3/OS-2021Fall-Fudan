@@ -12,11 +12,7 @@ static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 	PSPINLOCK lock = (PSPINLOCK)(dev->DeviceStorage);
 	if (req->Flags & IOREQ_FLAG_NONBLOCK)
 	{
-		if (!KeTryToAcquireSpinLock(lock))
-		{
-			req->Status = STATUS_DEVICE_BUSY;
-			return IoUpdateRequest(dev, req);
-		}
+		return STATUS_UNSUPPORTED;
 	}
 	else
 	{
