@@ -13,6 +13,7 @@ void ObInitializeScheduler()
 	KeInitializeSpinLock(&ActiveListLock);
 	arch_set_tid((ULONG64)KernelProcess);
 	KernelProcess->Status = PROCESS_STATUS_RUNNING;
+	uart_put_char('o');
 	init_clock();
 	set_clock_handler(KiClockTrapEntry);
 	init_trap();
