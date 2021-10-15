@@ -36,19 +36,20 @@ typedef struct _KPROCESS
 				ULONG64 fp; // x29
 				ULONG64 lr; // x30/equivalent to pc
 			} *d;
-			struct
-			{
-				ULONG64 elr;
-				ULONG64 spsr;
-				ULONG64 x0;
-				ULONG64 x1;
-			} *f;
 			// Unused members in context & trapframe emitted.
 			// WARNING: Don't use 'd' or 'f' unless you are clear about what you are doing.
 		} KernelStack;
 	} Context;
 	char DebugName[16]; // DON'T access this directly, invoke PsGetDebugNameEx() instead.
 } KPROCESS, *PKPROCESS;
+
+typedef struct _TRAP_FRAME
+{
+	ULONG64 elr;
+	ULONG64 spsr;
+	ULONG64 x0;
+	ULONG64 x1;
+} TRAP_FRAME, *PTRAP_FRAME;
 
 BOOL ObInitializeProcessManager();
 PKPROCESS PsCreateProcessEx();

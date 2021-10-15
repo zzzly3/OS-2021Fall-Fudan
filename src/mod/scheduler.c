@@ -93,8 +93,6 @@ void KeTaskSwitch() // MUST be called in RT level
 	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
 	arch_set_tid((ULONG64)nxt);
 	cur->Status = PROCESS_STATUS_WAITING;
-	uart_put_char('x');
-	uart_put_char('\n');
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
 	arch_enable_trap();
 }
