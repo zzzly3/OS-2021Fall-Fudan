@@ -13,7 +13,6 @@ trap_entry:
      */
 
     /* TODO: Lab3 Interrupt. */
-    b trap_entry
     stp x2, x3, [sp, #-16]!
     stp x4, x5, [sp, #-16]!
     stp x6, x7, [sp, #-16]!

@@ -10,6 +10,8 @@
 
 static inline void system_init()
 {
+	extern char edata[], end[];
+    memset(edata, 0, end - edata);
 	HalInitializeDeviceManager();
 	HalInitializeMemoryManager();
 	HalInitializeConsole();
