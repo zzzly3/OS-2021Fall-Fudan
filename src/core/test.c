@@ -64,7 +64,6 @@ void sys_mem_test()
 
 extern PKPROCESS KernelProcess;
 static PKPROCESS NewProcess;
-static int pt = 0;
 void swtch (PVOID kstack, PVOID* oldkstack);
 void sys_switch_test_proc(ULONG64 arg)
 {
@@ -72,13 +71,13 @@ void sys_switch_test_proc(ULONG64 arg)
     for(;;)
     {
         printf("CPU %d, Process %d, pid = %d\n", cpuid(), arg, current->ProcessId);
-        delay_us(1000000);
+        delay_us(1000 * 1000);
     }
 }
 void sys_switch_test()
 {
     int pid[10];
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 5; i++)
     {
         if (!KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_switch_test_proc, i, &pid[i])))
             sys_test_fail("Fail: create");
@@ -88,7 +87,7 @@ void sys_switch_test()
     for (int i = 0; i < 5; i++)
     {
         KeTaskSwitch();
-        printf("Round #%d done\n", i);
+        printf("Round #%d done\n", i + 1);
     }
     sys_test_pass("Pass: switch");
 }

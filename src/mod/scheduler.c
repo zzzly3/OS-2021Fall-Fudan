@@ -30,7 +30,7 @@ void PsiStartNewProcess(PKPROCESS Process)
 
 void KiClockTrapEntry()
 {
-	reset_clock(1);
+	reset_clock(TIME_SLICE_MS);
 	//uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)

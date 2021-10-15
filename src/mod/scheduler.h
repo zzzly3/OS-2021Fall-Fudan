@@ -6,6 +6,8 @@
 #include <driver/clock.h>
 #include <ob/proc.h>
 
+#define TIME_SLICE_MS 100
+
 void ObInitializeScheduler();
 EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL);
 void KeLowerExecuteLevel(EXECUTE_LEVEL);
