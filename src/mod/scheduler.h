@@ -4,6 +4,7 @@
 #include <common/lutil.h>
 #include <common/defines.h>
 #include <driver/clock.h>
+#include <core/trap.h>
 #include <ob/proc.h>
 #include <ob/mem.h>
 
@@ -14,7 +15,7 @@ typedef void (*PAPC_ROUTINE)(ULONG64);
 typedef struct _DPC_ENTRY
 {
 	PDPC_ROUTINE DpcRoutine;
-	ULONG64 DpcArgment;
+	ULONG64 DpcArgument;
 	struct _DPC_ENTRY* NextEntry;
 } DPC_ENTRY, *PDPC_ENTRY;
 typedef struct _APC_ENTRY
