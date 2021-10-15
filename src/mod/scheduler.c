@@ -71,12 +71,11 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 	// ObUnlockObject(proc);
 }
 
-void KeTaskSwitch()
+void KeTaskSwitch() // MUST be called in RT level
 {
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
-	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeAcquireSpinLock(&ActiveListLock);
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
 	if (nxt == cur) // No more process
@@ -95,5 +94,4 @@ void KeTaskSwitch()
 	cur->Status = PROCESS_STATUS_WAITING;
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
 	arch_enable_trap();
-	KeLowerExecuteLevel(oldel);
 }

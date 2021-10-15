@@ -15,6 +15,7 @@ BOOL ObInitializeProcessManager()
 	KernelProcess = PsCreateProcessEx();
 	if (KernelProcess == NULL)
 		return FALSE;
+	KernelProcess->ExecuteLevel = EXECUTE_LEVEL_RT;
 	KernelProcess->Flags |= PROCESS_FLAG_KERNEL;
 	KernelProcess->ProcessList.Forward = KernelProcess->ProcessList.Backward = &KernelProcess->ProcessList;
 	KernelProcess->SchedulerList.Forward = KernelProcess->SchedulerList.Backward = &KernelProcess->SchedulerList;
@@ -28,6 +29,7 @@ PKPROCESS PsCreateProcessEx()
 	if (p == NULL)
 		return NULL;
 	p->Status = PROCESS_STATUS_INITIALIZE;
+	p->ExecuteLevel = EXECUTE_LEVEL_USR;
 	KeInitializeSpinLock(&p->Lock);
 	PVOID g = MmAllocatePhysicalPage();
 	if (g == NULL)

@@ -12,6 +12,7 @@ void sys_test()
 	//sys_mem_test();
     puts("Switch");
     sys_switch_test();
+    while(1);
 }
 
 void sys_mem_test()
@@ -85,7 +86,6 @@ void sys_switch_test()
     sys_test_pass("Pass: create");
     for (int i = 0; i < 10; i++)
         KeTaskSwitch();
-    arch_disable_trap();
     sys_test_pass("Pass: switch");
 }
 
