@@ -54,7 +54,8 @@ NO_RETURN main()
 {
     system_init();
     //asserts(1==2, "PASS");
-    sys_test();
+    //sys_test();
+    while(1);
 }
 
 #endif
