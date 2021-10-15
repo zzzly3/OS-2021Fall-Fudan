@@ -1,4 +1,4 @@
-#if 0
+#if 1
 #include <aarch64/intrinsic.h>
 #include <common/string.h>
 #include <core/console.h>
