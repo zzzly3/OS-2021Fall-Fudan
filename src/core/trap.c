@@ -3,6 +3,7 @@
 #include <core/syscall.h>
 #include <core/trap.h>
 #include <driver/interrupt.h>
+#include <driver/uart.h>
 
 void init_trap() {
     extern char exception_vector[];
@@ -11,6 +12,7 @@ void init_trap() {
 }
 
 void trap_global_handler(Trapframe *frame) {
+    uart_put_char('h');
     u64 esr = arch_get_esr();
     u64 ec = esr >> ESR_EC_SHIFT;
     u64 iss = esr & ESR_ISS_MASK;
