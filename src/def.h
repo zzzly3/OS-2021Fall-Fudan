@@ -22,9 +22,6 @@ static inline void system_init()
 	HalInitializeMemoryManager();
 	HalInitializeConsole();
 	ObInitializeProcessManager();
- // init_clock();
- // set_clock_handler(hello);
- // init_trap();
 	arch_enable_trap();
 }
 

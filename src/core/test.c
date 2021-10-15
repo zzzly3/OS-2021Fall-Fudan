@@ -84,8 +84,9 @@ void sys_switch_test()
         printf("pid[%d]=%d\n", i, pid[i]);
     }
     sys_test_pass("Pass: create");
-    for (int i = 0; i < 10; i++)
-        KeTaskSwitch();
+    // for (int i = 0; i < 10; i++)
+    //     KeTaskSwitch();
+    whlie(1);
     sys_test_pass("Pass: switch");
 }
 
