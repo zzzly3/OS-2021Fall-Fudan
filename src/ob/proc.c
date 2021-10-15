@@ -31,6 +31,7 @@ PKPROCESS PsCreateProcessEx()
 		return NULL;
 	p->Status = PROCESS_STATUS_INITIALIZE;
 	p->ExecuteLevel = EXECUTE_LEVEL_USR;
+	p->ApcList = NULL;
 	KeInitializeSpinLock(&p->Lock);
 	PVOID g = MmAllocatePhysicalPage();
 	if (g == NULL)

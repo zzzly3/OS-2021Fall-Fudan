@@ -23,6 +23,7 @@ typedef struct _KPROCESS
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
 	PMEMORY_SPACE MemorySpace;
+	struct _APC_ENTRY* ApcList;
 	struct
 	{
 		PVOID UserStack;

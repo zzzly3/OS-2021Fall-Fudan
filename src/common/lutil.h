@@ -2,6 +2,8 @@
 #ifndef __LUTIL__
 #define __LUTIL__
 
+#define whlie while
+
 typedef unsigned char BOOL;
 #define TRUE ((BOOL)1)
 #define FALSE ((BOOL)0)
@@ -45,11 +47,16 @@ typedef enum
 	STATUS_REDIRECTED
 } KSTATUS;
 #define KSUCCESS(stat) ((stat)>=STATUS_SUCCESS)
+
 typedef UCHAR EXECUTE_LEVEL;
 #define EXECUTE_LEVEL_ISR 10
 #define EXECUTE_LEVEL_RT 5
 #define EXECUTE_LEVEL_APC 2
 #define EXECUTE_LEVEL_USR 0
+
+#define USR_ONLY // Indicates the API MUST be called in USR level.
+#define APC_ONLY
+#define RT_ONLY
 
 typedef struct _LIST_ENTRY
 {
@@ -62,6 +69,9 @@ typedef struct _LIST_ENTRY
 	((new_entry)->Forward = (last_entry))->Backward = (new_entry)
 #define LibRemoveListEntry(entry) \
 	((entry)->Forward->Backward = (entry)->Backward)->Forward = (entry)->Forward
+#define LibPopSingleListEntry(head) ({typeof(head) __r = (head); \
+	if ((head) != NULL) (head) = (head)->NextEntry; \
+	__r;})
 
 static inline BOOL LibInitializeKString(PKSTRING kstr, CPCHAR cstr, int len)
 {

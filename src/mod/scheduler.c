@@ -4,6 +4,9 @@
 extern PKPROCESS KernelProcess;
 // Although one core has only one active list, locks are needed to apply the cross-core stealing policy (TODO).
 static SPINLOCK ActiveListLock;
+static SPINLOCK DpcListLock;
+static PDPC_ENTRY DpcList;
+static OBJECT_POOL ApcObjectPool, DpcObjectPool;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
 void KiClockTrapEntry();
@@ -11,9 +14,12 @@ void KiClockTrapEntry();
 void ObInitializeScheduler()
 {
 	KeInitializeSpinLock(&ActiveListLock);
+	KeInitializeSpinLock(&DpcListLock);
+	MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
+	MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
+	DpcList = NULL;
 	arch_set_tid((ULONG64)KernelProcess);
 	KernelProcess->Status = PROCESS_STATUS_RUNNING;
-	uart_put_char('o');
 	init_clock();
 	set_clock_handler(KiClockTrapEntry);
 	init_trap();
@@ -35,19 +41,43 @@ void KiClockTrapEntry()
 	PKPROCESS cur = PsGetCurrentProcess();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 		return;
-	// Before schedulering, raise to RT level and enable interrupt
+	// Raise EL to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	arch_enable_trap();
-	// TODO: call DPCs
+	while (1) // Do DPCs
+	{
+		KeAcquireSpinLock(&DpcListLock);
+		PDPC_ENTRY dpc = LibPopSingleListEntry(DpcList);
+		KeReleaseSpinLock(&DpcListLock);
+		if (dpc == NULL)
+			break;
+		dpc->DpcRoutine(dpc->DpcArgment);
+		MmFreeObject(&DpcObjectPool, (PVOID)dpc);
+	}
 	KeTaskSwitch();
 	if (oldel < EXECUTE_LEVEL_APC)
 	{
 		cur->ExecuteLevel = EXECUTE_LEVEL_APC;
-		// TODO: call APCs
+		KeClearApcList();
 	}
 	arch_disable_trap();
 	cur->ExecuteLevel = oldel;
 	return;
+}
+
+APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	whlie (1)
+	{
+		ObLockObject(cur);
+		PAPC_ENTRY apc = LibPopSingleListEntry(cur->ApcList);
+		ObUnlockObject(cur);
+		if (apc == NULL)
+			break;
+		apc->ApcRoutine(apc->ApcArgument);
+		MmFreeObject(&ApcObjectPool, (PVOID)apc);
+	}
 }
 
 // No need to lock the process, since only the process itself can change its realtime-state.
@@ -67,12 +97,16 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
 	// ObLockObject(proc);
-	// TODO: When lowerring through APC level, execute APCs
+	if (proc->ExecuteLevel >= EXECUTE_LEVEL_APC && OriginalExecuteLevel < EXECUTE_LEVEL_APC)
+	{
+		proc->ExecuteLevel = EXECUTE_LEVEL_APC;
+		KeClearApcList();
+	}
 	proc->ExecuteLevel = OriginalExecuteLevel;
 	// ObUnlockObject(proc);
 }
 
-void KeTaskSwitch() // MUST be called in RT level
+RT_ONLY void KeTaskSwitch() // MUST be called in RT level
 {
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
@@ -96,3 +130,4 @@ void KeTaskSwitch() // MUST be called in RT level
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
 	arch_enable_trap();
 }
+
