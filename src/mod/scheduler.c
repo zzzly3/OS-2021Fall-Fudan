@@ -29,12 +29,12 @@ void PsiStartNewProcess(PKPROCESS Process)
 
 void KiClockTrapEntry()
 {
+	uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 		return;
 	// Before schedulering, raise to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	uart_put_char('t');
 	reset_clock(100);
 	arch_enable_trap();
 	// TODO: call DPCs
