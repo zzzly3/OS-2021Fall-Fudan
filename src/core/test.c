@@ -8,10 +8,10 @@ void sys_mem_test();
 
 void sys_test()
 {
-    //puts("Memory");
-	//sys_mem_test();
-    puts("Switch");
-    sys_switch_test();
+    puts("Memory");
+	sys_mem_test();
+    //puts("Switch");
+    //sys_switch_test();
     puts("Finish");
     while(1);
 }
