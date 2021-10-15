@@ -36,7 +36,7 @@ NORETURN void main() {
 	/* TODO: Lab1 print */
 
     init_memory_manager();
-    init_virtual_memory();
+    //init_virtual_memory();
 
     init_system_per_cpu();
 
