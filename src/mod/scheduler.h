@@ -32,6 +32,6 @@ RT_ONLY void KeTaskSwitch();
 APC_ONLY void KeClearApcList();
 RT_ONLY void KeClearDpcList();
 PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE, ULONG64);
-PAPC_ENTRY KeCreateApcEx(PKPROCESS, PAPC_ROUTINE, ULONG64);
+PAPC_ENTRY KeCreateApcEx(struct _KPROCESS*, PAPC_ROUTINE, ULONG64);
 
 #endif
