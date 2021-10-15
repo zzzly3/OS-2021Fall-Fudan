@@ -1,4 +1,5 @@
 #include <mod/scheduler.h>
+#include <driver/uart.h>
 
 extern PKPROCESS KernelProcess;
 // Although one core has only one active list, locks are needed to apply the cross-core stealing policy (TODO).
@@ -33,6 +34,7 @@ void KiClockTrapEntry()
 		return;
 	// Before schedulering, raise to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	uart_put_char('t');
 	reset_clock(100);
 	arch_enable_trap();
 	// TODO: call DPCs
