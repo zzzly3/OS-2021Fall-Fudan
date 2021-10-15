@@ -12,6 +12,7 @@ void sys_test()
 	//sys_mem_test();
     puts("Switch");
     sys_switch_test();
+    puts("Finish");
     while(1);
 }
 
@@ -84,9 +85,8 @@ void sys_switch_test()
         printf("pid[%d]=%d\n", i, pid[i]);
     }
     sys_test_pass("Pass: create");
-    // for (int i = 0; i < 10; i++)
-    //     KeTaskSwitch();
-    whlie(1);
+    for (int i = 0; i < 10; i++)
+        KeTaskSwitch();
     sys_test_pass("Pass: switch");
 }
 

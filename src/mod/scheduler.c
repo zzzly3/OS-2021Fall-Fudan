@@ -31,7 +31,7 @@ void PsiStartNewProcess(PKPROCESS Process)
 void KiClockTrapEntry()
 {
 	reset_clock(200);
-	uart_put_char('t');
+	//uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 		return;
