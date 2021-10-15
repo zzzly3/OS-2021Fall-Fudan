@@ -14,6 +14,7 @@ static inline void system_init()
 	HalInitializeMemoryManager();
 	HalInitializeConsole();
 	ObInitializeProcessManager();
+	arch_enable_trap();
 }
 
 #define putchar HalWriteConsoleChar

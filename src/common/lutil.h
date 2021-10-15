@@ -17,7 +17,8 @@ typedef void* PVOID;
 typedef unsigned short USHORT;
 typedef unsigned long ULONG;
 typedef unsigned long long ULONG64;
-typedef char CHAR;
+typedef unsigned char UCHAR;
+typedef char CHAR; // In RaspberryPi, it seems that CHAR=UCHAR.
 typedef char* PCHAR;
 typedef const char* CPCHAR;
 typedef struct

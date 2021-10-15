@@ -164,5 +164,6 @@ KSTATUS HalInitializeDeviceManager()
 	IoInitializeDevice(&RootDeviceX);
 	RootDeviceX.Flags |= DEVICE_FLAG_NOLOCK;
 	RootDeviceX.DeviceList.Forward = RootDeviceX.DeviceList.Backward = &RootDeviceX.DeviceList;
+	init_interrupt();
 	return STATUS_SUCCESS;
 }

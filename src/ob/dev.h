@@ -5,6 +5,7 @@
 #include <common/string.h>
 #include <common/lutil.h>
 #include <driver/uart.h>
+#include <driver/interrupt.h>
 
 struct _MANAGER_OBJECT;
 struct _IOREQ_OBJECT;

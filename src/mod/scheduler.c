@@ -5,12 +5,16 @@ extern PKPROCESS KernelProcess;
 static SPINLOCK ActiveListLock;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
+void KiClockTrapEntry();
 
 void ObInitializeScheduler()
 {
 	KeInitializeSpinLock(&ActiveListLock);
 	arch_set_tid((ULONG64)KernelProcess);
 	KernelProcess->Status = PROCESS_STATUS_RUNNING;
+	init_clock();
+	set_clock_handler(KiClockTrapEntry);
+	init_trap();
 }
 
 void PsiStartNewProcess(PKPROCESS Process)
@@ -22,23 +26,46 @@ void PsiStartNewProcess(PKPROCESS Process)
 	KeReleaseSpinLock(&ActiveListLock);
 }
 
+void KiClockTrapEntry()
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
+		return;
+	// Before schedulering, raise to RT level and enable interrupt
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	reset_clock(1);
+	arch_enable_trap();
+	// TODO: call DPCs
+	KeTaskSwitch();
+	if (oldel < EXECUTE_LEVEL_APC)
+	{
+		cur->ExecuteLevel = EXECUTE_LEVEL_APC;
+		// TODO: call APCs
+	}
+	arch_disable_trap();
+	cur->ExecuteLevel = oldel;
+	return;
+}
+
 // No need to lock the process, since only the process itself can change its realtime-state.
-void KeRaiseRealTimeState(BOOL* OldState)
+EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL TargetExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
 	// ObLockObject(proc);
-	*OldState = proc->RealTimeState;
-	proc->RealTimeState = TRUE;
+	EXECUTE_LEVEL old = proc->ExecuteLevel;
+	proc->ExecuteLevel = TargetExecuteLevel;
 	// ObUnlockObject(proc);
+	return old;
 }
 
 // The OldState must be the one returned by raise()!
 // Otherwise, the kstack and trapframe would be corruptted! 
-void KeLowerRealTimeState(BOOL OldState)
+void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
 	// ObLockObject(proc);
-	proc->RealTimeState = OldState;
+	// TODO: When lowerring through APC level, execute APCs
+	proc->ExecuteLevel = OriginalExecuteLevel;
 	// ObUnlockObject(proc);
 }
 
@@ -47,7 +74,7 @@ void KeTaskSwitch()
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
-	// TODO: if cur is realtime, core fault!
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeAcquireSpinLock(&ActiveListLock);
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
 	if (nxt == cur) // No more process
@@ -64,6 +91,7 @@ void KeTaskSwitch()
 	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
 	arch_set_tid((ULONG64)nxt);
 	cur->Status = PROCESS_STATUS_WAITING;
-	arch_enable_trap();
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
+	arch_enable_trap();
+	KeLowerExecuteLevel(oldel);
 }
