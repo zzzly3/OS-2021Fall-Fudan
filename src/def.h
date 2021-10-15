@@ -8,6 +8,12 @@
 #include <ob/proc.h>
 #include <mod/scheduler.h>
 
+static void hello()
+{
+	uart_put_char('h');
+	reset_clock(1000);
+}
+
 static inline void system_init()
 {
 	extern char edata[], end[];
@@ -15,7 +21,10 @@ static inline void system_init()
 	HalInitializeDeviceManager();
 	HalInitializeMemoryManager();
 	HalInitializeConsole();
-	ObInitializeProcessManager();
+	//ObInitializeProcessManager();
+	init_clock();
+    set_clock_handler(hello);
+    init_trap();
 	arch_enable_trap();
 }
 
