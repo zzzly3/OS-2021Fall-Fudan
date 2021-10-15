@@ -56,6 +56,42 @@ void KiClockTrapEntry()
 	return;
 }
 
+PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE Routine, ULONG64 Argument)
+{
+	BOOL trapen = arch_disable_trap();
+	PDPC_ENTRY p = (PDPC_ENTRY)MmAllocateObject(&DpcObjectPool);
+	if (p != NULL)
+	{
+		p->DpcRoutine = Routine;
+		p->DpcArgument = Argument;
+		KeAcquireSpinLockFast(&DpcListLock);
+		p->NextEntry = DpcList;
+		DpcList = p;
+		KeReleaseSpinLockFast(&DpcListLock);
+	}
+	if (trapen)
+		arch_enable_trap();
+	return p;
+}
+
+PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argument)
+{
+	BOOL trapen = arch_disable_trap();
+	PAPC_ENTRY p = (PAPC_ENTRY)MmAllocateObject(&ApcObjectPool);
+	if (p != NULL)
+	{
+		p->ApcRoutine = Routine;
+		p->ApcArgument = Argument;
+		ObLockObjectFast(Process);
+		p->NextEntry = Process->ApcList;
+		Process->ApcList = p;
+		ObUnlockObjectFast(Process);
+	}
+	if (trapen)
+		arch_enable_trap();
+	return p;
+}
+
 RT_ONLY void KeClearDpcList()
 {
 	if (DpcList == NULL)

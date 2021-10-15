@@ -65,9 +65,15 @@ void sys_mem_test()
 extern PKPROCESS KernelProcess;
 static PKPROCESS NewProcess;
 void swtch (PVOID kstack, PVOID* oldkstack);
+void sys_switch_callback(ULONG64 arg)
+{
+    printf("CB: arg = %d, pid = %d\n", arg, PsGetCurrentProcess()->ProcessId);
+}
 void sys_switch_test_proc(ULONG64 arg)
 {
     PKPROCESS current = PsGetCurrentProcess();
+    KeCreateApcEx(current, sys_switch_callback, arg);
+    KeCreateApcEx(current, sys_switch_callback, arg * 10);
     for(;;)
     {
         printf("CPU %d, Process %d, pid = %d\n", cpuid(), arg, current->ProcessId);
@@ -86,6 +92,8 @@ void sys_switch_test()
     sys_test_pass("Pass: create");
     for (int i = 0; i < 5; i++)
     {
+        KeCreateDpc(sys_switch_callback, 233);
+        KeCreateDpc(sys_switch_callback, 2333);
         KeTaskSwitch();
         printf("Round #%d done\n", i + 1);
     }
