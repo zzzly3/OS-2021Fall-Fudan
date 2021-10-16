@@ -80,6 +80,8 @@ void sys_switch_test_proc(ULONG64 arg)
         asm volatile("mov %[x], sp" : [x] "=r"(p));
         printf("CPU %d, Process %d, pid = %d, Stack at %p\n", cpuid(), arg, current->ProcessId, p);
         delay_us(1000 * 1000);
+        if (arg == 0)
+            KeExitProcess();
     }
 }
 void sys_switch_test()
