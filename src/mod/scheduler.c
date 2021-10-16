@@ -47,6 +47,7 @@ RT_ONLY void PsiExitProcess()
 
 void PsiProcessEntry()
 {
+	// Interrupt disabled. Keep disabled when return.
 	// Do DPC & APCs.
 	EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeLowerExecuteLevel(el);
