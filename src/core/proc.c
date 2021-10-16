@@ -56,7 +56,7 @@ void spawn_init_process() {
     MmSwitchMemorySpaceEx(m, NULL);
     p->MemorySpace = m;
     p->ParentId = 0;
-    p->DebugName = "init";
+    strncpy(&p->DebugName, "init", 16);
     PsCreateProcess(p, base, 0);
     if (trpen) arch_enable_trap();
     return;
@@ -79,7 +79,7 @@ void forkret() {
  * until its parent calls wait() to find out it exited.
  */
 NO_RETURN void exit() {
-    struct proc *p = thiscpu()->proc;
+    // struct proc *p = thiscpu()->proc;
     /* TODO: Lab3 Process */
 	KeExitProcess();
 }

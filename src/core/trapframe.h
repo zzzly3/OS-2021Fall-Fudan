@@ -4,7 +4,6 @@
 #define _CORE_TRAPFRAME_H_
 
 #include <common/defines.h>
-#include <ob/proc.h>
 
 typedef struct {
 	/* TODO: Lab3 Interrupt */
