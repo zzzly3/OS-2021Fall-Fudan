@@ -1,9 +1,11 @@
 #include <def.h>
 #include <core/virtual_memory.h>
+#include <core/proc.h>
 
 #define sys_test_pass(message) {puts(message);}
 #define sys_test_fail(message) {puts(message);while(1);}
 
+void sys_switch_test();
 void sys_mem_test();
 
 void sys_test()
@@ -102,5 +104,10 @@ void sys_switch_test()
         printf("Round #%d done\n", i + 1);
     }
     sys_test_pass("Pass: switch");
+    spawn_init_process();
+    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+    delay_us(1000 * 1000);
+    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    sys_test_pass("Pass: init");
 }
 

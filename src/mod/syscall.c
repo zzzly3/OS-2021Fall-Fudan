@@ -7,7 +7,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	ULONG64 arg2 = TrapFrame->x1;
 	switch (callno)
 	{
-		case SYS_myexecve: sys_myexecve(arg1); break;
+		case SYS_myexecve: sys_myexecve((char*)arg1); break; // UNSAFE!!!
 		case SYS_myexit: sys_myexit(); break;
 	}
 	// Fault if EL mismatching

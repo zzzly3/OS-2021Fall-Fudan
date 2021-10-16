@@ -45,7 +45,7 @@ void spawn_init_process() {
     if (m == NULL)
         goto fail;
     int sz = eicode - icode, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
-    PVOID base = 0x40000000;
+    PVOID base = (PVOID)0x40000000;
     for (int i = 0; i < pg; i++)
     {
         if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)((ULONG64)base + i * PAGE_SIZE))))
@@ -56,7 +56,7 @@ void spawn_init_process() {
     MmSwitchMemorySpaceEx(m, NULL);
     p->MemorySpace = m;
     p->ParentId = 0;
-    strncpy(&p->DebugName, "init", 16);
+    strncpy(p->DebugName, "init", 16);
     PsCreateProcess(p, base, 0);
     if (trpen) arch_enable_trap();
     return;
