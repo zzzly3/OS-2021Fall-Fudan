@@ -106,13 +106,13 @@ void sys_switch_test()
     KeCreateDpc(sys_switch_callback, 233);
     KeCreateDpc(sys_switch_callback, 2333);
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-    delay_us(3000 * 1000);
+    delay_us(2000 * 1000);
     if (pt == 4)
         sys_test_pass("Pass: switch")
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
-    delay_us(1000 * 1000);
+    delay_us(2000 * 1000);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
     sys_test_pass("Pass: init");
     asm volatile("mov %[x], sp" : [x] "=r"(p2));
