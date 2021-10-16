@@ -58,6 +58,5 @@ static struct proc *alloc_pcb_simple() {
     /* TODO: Lab3 Schedule */
     // Not used. Just make the TA happy.
     PKPROCESS pp = PsCreateProcessEx();
-    p = (struct proc*)((ULONG64)&pp->ProcessId - (ULONG64)&((struct proc*)0)->pid);
-    return p;
+    return (struct proc*)((ULONG64)&pp->ProcessId - (ULONG64)&((struct proc*)0)->pid);
 }
