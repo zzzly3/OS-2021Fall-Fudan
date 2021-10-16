@@ -45,6 +45,14 @@ RT_ONLY void PsiExitProcess()
 	KeTaskSwitch();
 }
 
+void PsiProcessEntry()
+{
+	// Do DPC & APCs.
+	EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	KeLowerExecuteLevel(el);
+	return;
+}
+
 void KiClockTrapEntry()
 {
 	reset_clock(TIME_SLICE_MS);
@@ -54,15 +62,13 @@ void KiClockTrapEntry()
 		return;
 	// Raise EL to RT level and enable interrupt
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	arch_enable_trap();
-	KeClearDpcList();
 	KeTaskSwitch();
+	KeClearDpcList();
 	if (oldel < EXECUTE_LEVEL_APC)
 	{
 		cur->ExecuteLevel = EXECUTE_LEVEL_APC;
 		KeClearApcList();
 	}
-	arch_disable_trap();
 	cur->ExecuteLevel = oldel;
 	return;
 }
@@ -103,57 +109,51 @@ PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argume
 	return p;
 }
 
-RT_ONLY void KeClearDpcList()
+UNSAFE RT_ONLY void KeClearDpcList()
 {
-	if (DpcList == NULL)
-		return;
 	// Batch processing
-	KeAcquireSpinLock(&DpcListLock);
+	KeAcquireSpinLockFast(&DpcListLock);
 	PDPC_ENTRY dpc = DpcList;
 	DpcList = NULL;
-	KeReleaseSpinLock(&DpcListLock);
+	KeReleaseSpinLockFast(&DpcListLock);
 	if (dpc == NULL)
 		return;
+	arch_enable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
 	{
 		p->DpcRoutine(p->DpcArgument);
 	}
-	BOOL trapen = arch_disable_trap();
+	arch_disable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL;)
 	{
 		PDPC_ENTRY np = p->NextEntry;
 		MmFreeObject(&DpcObjectPool, (PVOID)p);
 		p = np;
 	}
-	if (trapen)
-		arch_enable_trap();
 }
 
-APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
+UNSAFE APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 {
 	PKPROCESS cur = PsGetCurrentProcess();
-	if (cur->ApcList == NULL)
-		return;
 	// Batch processing
-	ObLockObject(cur);
+	ObLockObjectFast(cur);
 	PAPC_ENTRY apc = cur->ApcList;
 	cur->ApcList = NULL;
-	ObUnlockObject(cur);
+	ObUnlockObjectFast(cur);
 	if (apc == NULL)
 		return;
+	arch_enable_trap();
 	for (PAPC_ENTRY p = apc; p != NULL; p = p->NextEntry)
 	{
 		p->ApcRoutine(p->ApcArgument);
 	}
-	BOOL trapen = arch_disable_trap();
+	arch_disable_trap();
 	for (PAPC_ENTRY p = apc; p != NULL;)
 	{
 		PAPC_ENTRY np = p->NextEntry;
 		MmFreeObject(&ApcObjectPool, (PVOID)p);
 		p = np;
 	}
-	if (trapen)
-		arch_enable_trap();
 }
 
 // No need to lock the process, since only the process itself can change its realtime-state.
@@ -175,13 +175,23 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 	// ObLockObject(proc);
 	if (proc->ExecuteLevel >= EXECUTE_LEVEL_RT && OriginalExecuteLevel < EXECUTE_LEVEL_RT)
 	{
-		proc->ExecuteLevel = EXECUTE_LEVEL_RT;
-		KeClearDpcList();
+		if (DpcList != NULL)
+		{
+			proc->ExecuteLevel = EXECUTE_LEVEL_RT;
+			BOOL trapen = arch_disable_trap();
+			KeClearDpcList();
+			if (trapen) arch_enable_trap();
+		}
 	}
 	if (proc->ExecuteLevel >= EXECUTE_LEVEL_APC && OriginalExecuteLevel < EXECUTE_LEVEL_APC)
 	{
-		proc->ExecuteLevel = EXECUTE_LEVEL_APC;
-		KeClearApcList();
+		if (proc->ApcList != NULL)
+		{
+			proc->ExecuteLevel = EXECUTE_LEVEL_APC;
+			BOOL trapen = arch_disable_trap();
+			KeClearApcList();
+			if (trapen) arch_enable_trap();
+		}
 	}
 	proc->ExecuteLevel = OriginalExecuteLevel;
 	// ObUnlockObject(proc);

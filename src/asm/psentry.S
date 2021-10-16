@@ -4,13 +4,18 @@ PsUserProcessEntry: // x0: UserEntry; x1: UserArgument
 	msr elr_el1, x0
 	mov x0, #0
 	msr spsr_el1, x0
-	mov x0, x1
+	mov x19, x1
+	bl PsiProcessEntry
+	mov x0, x19
 	eret
 
 .global PsKernelProcessEntry
-PsKernelProcessEntry:
+PsKernelProcessEntry: // x0: KernelEntry; x1: KernelArgument
 	mov x2, #0
 	msr daif, x2
-	mov x2, x0
-	mov x0, x1
-	br x2
+	mov x19, x0
+	mov x20, x1
+	bl PsiProcessEntry
+	mov x0, x20
+	br x19
+	
