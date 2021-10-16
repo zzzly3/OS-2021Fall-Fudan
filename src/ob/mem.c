@@ -224,6 +224,17 @@ UNSAFE KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULON
 	return STATUS_SUCCESS;
 }
 
+UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
+{
+	PVOID p = MmAllocatePhysicalPage();
+	if (p == NULL)
+		return STATUS_NO_ENOUGH_MEMORY;
+	KSTATUS r = MmMapPageEx(MemorySpace, VirtualAddress, K2P((ULONG64)p) | PTE_USER_DATA);
+	if (!KSUCCESS(r))
+		MmFreePhysicalPage(p);
+	return r;
+}
+
 // Given in kernel address
 UNSAFE PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {

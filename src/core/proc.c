@@ -6,6 +6,8 @@
 #include <common/string.h>
 #include <core/sched.h>
 #include <core/console.h>
+#include <ob/proc.h>
+#include <ob/mem.h>
 
 void forkret();
 extern void trap_return();
@@ -18,6 +20,10 @@ extern void trap_return();
 static struct proc *alloc_proc() {
     struct proc *p;
     /* TODO: Lab3 Process */
+    // Not used. Just make the TA happy.
+    PKPROCESS pp = PsCreateProcessEx();
+    p = (struct proc*)((ULONG64)&pp->ProcessId - (ULONG64)&((struct proc*)0)->pid);
+    return p;
 }
 
 /*
@@ -27,11 +33,35 @@ static struct proc *alloc_proc() {
  * by uvm_init
  */
 void spawn_init_process() {
-    struct proc *p;
+    // struct proc *p;
     extern char icode[], eicode[];
-    p = alloc_proc();
-
+    // p = alloc_proc();
     /* TODO: Lab3 Process */
+    BOOL trpen = arch_disable_trap();
+    KPROCESS p = PsCreateProcessEx();
+    if (p == NULL)
+        goto fail;
+    PMEMORY_SPACE m = MmCreateMemorySpace();
+    if (m == NULL)
+        goto fail;
+    int sz = eicode - icode, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+    PVOID base = 0x40000000;
+    for (int i = 0; i < pg; i++)
+    {
+        if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)((ULONG64)base + i * PAGE_SIZE))))
+            goto fail;
+    }
+    MmSwitchMemorySpaceEx(NULL, m);
+    memcpy(base, (PVOID)icode, sz);
+    MmSwitchMemorySpaceEx(m, NULL);
+    p->MemorySpace = m;
+    p->ParentId = 0;
+    p->DebugName = "init";
+    PsCreateProcess(p, base, 0);
+    if (trpen) arch_enable_trap();
+    return;
+fail:
+    PANIC("spawn_init_process FAULT");
 }
 
 /*
@@ -39,7 +69,8 @@ void spawn_init_process() {
  */
 void forkret() {
 	/* TODO: Lab3 Process */
-
+    // Nothing to do. I don't even use this procedure.
+    return;
 }
 
 /*
@@ -50,5 +81,5 @@ void forkret() {
 NO_RETURN void exit() {
     struct proc *p = thiscpu()->proc;
     /* TODO: Lab3 Process */
-	
+	KeExitProcess();
 }

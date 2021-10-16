@@ -8,8 +8,8 @@ void sys_mem_test();
 
 void sys_test()
 {
-    //puts("Memory");
-	//sys_mem_test();
+    puts("Memory");
+	sys_mem_test();
     puts("Switch");
     sys_switch_test();
     puts("Finish");
@@ -33,7 +33,7 @@ void sys_mem_test()
             j = i;
             break;
         }
-        KSTATUS ret = MmMapPageEx(m, (PVOID)(i << 12), (ULONG64)p | PTE_USER_DATA);
+        KSTATUS ret = MmMapPageEx(m, (PVOID)(i << 12), (ULONG64)K2P(p) | PTE_USER_DATA);
         if (!KSUCCESS(ret))
         {
             j = i;

@@ -2,8 +2,9 @@
 #include <driver/uart.h>
 
 extern PKPROCESS KernelProcess;
-// Although one core has only one active list, locks are needed to apply the cross-core stealing policy (TODO).
-static SPINLOCK ActiveListLock;
+// Although one core has only one active list, locks are no longer needed.
+// But RT level is still needed to avoid being interrupted.
+// static SPINLOCK ActiveListLock;
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -13,7 +14,7 @@ void KiClockTrapEntry();
 
 void ObInitializeScheduler()
 {
-	KeInitializeSpinLock(&ActiveListLock);
+	// KeInitializeSpinLock(&ActiveListLock);
 	KeInitializeSpinLock(&DpcListLock);
 	MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
 	MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
@@ -27,11 +28,20 @@ void ObInitializeScheduler()
 
 RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 {
-	KeAcquireSpinLockFast(&ActiveListLock);
+	// KeAcquireSpinLockFast(&ActiveListLock);
 	LibInsertListEntry(&PsGetCurrentProcess()->SchedulerList, &Process->SchedulerList);
 	Process->Status = PROCESS_STATUS_WAITING;
 	// After that, the process is visible in the process list, and MIGHT BE REFERENCED BY OTHERS.
-	KeReleaseSpinLockFast(&ActiveListLock);
+	// KeReleaseSpinLockFast(&ActiveListLock);
+}
+
+RT_ONLY void PsiExitProcess()
+{
+	// KeAcquireSpinLockFast(&ActiveListLock);
+	LibRemoveListEntry(&PsGetCurrentProcess()->SchedulerList);
+	// KeReleaseSpinLockFast(&ActiveListLock);
+	Process->Status = PROCESS_STATUS_ZOMBIE;
+	KeTaskSwitch();
 }
 
 void KiClockTrapEntry()
@@ -181,22 +191,25 @@ RT_ONLY void KeTaskSwitch() // MUST be called in RT level
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
-	KeAcquireSpinLockFast(&ActiveListLock);
+	// KeAcquireSpinLockFast(&ActiveListLock);
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
 	if (nxt == cur) // No more process
 	{
-		KeReleaseSpinLockFast(&ActiveListLock);
+		// KeReleaseSpinLockFast(&ActiveListLock);
 		return;
 	}
 	// Do switch
-	BOOL trapen = arch_disable_trap();
 	nxt->Status = PROCESS_STATUS_RUNNING;
-	KeReleaseSpinLockFast(&ActiveListLock);
+	if (cur->Status == PROCESS_STATUS_RUNNING)
+		cur->Status = PROCESS_STATUS_WAITING;
+	else // For zombie, blocked and other inactive processes
+		LibRemoveListEntry(&cur->SchedulerList);
+	// KeReleaseSpinLockFast(&ActiveListLock);
+	BOOL trapen = arch_disable_trap();
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)nxt->Context.UserStack);
 	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
 	arch_set_tid((ULONG64)nxt);
-	cur->Status = PROCESS_STATUS_WAITING;
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
 	if (trapen)
 		arch_enable_trap();

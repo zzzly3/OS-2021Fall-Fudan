@@ -8,6 +8,7 @@
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1
 #define PROCESS_STATUS_WAITING 2
+#define PROCESS_STATUS_ZOMBIE 3
 #define PROCESS_FLAG_KERNEL 1
 #define PROCESS_FLAG_REALTIME 2
 
@@ -57,5 +58,6 @@ PKPROCESS PsCreateProcessEx();
 RT_ONLY void PsCreateProcess(PKPROCESS, PVOID, ULONG64);
 KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 #define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
+void KeExitProcess();
 
 #endif
