@@ -18,7 +18,7 @@
 * Locked：加锁并关中断（因为开关中断有性能损失，频繁使用的资源不采用此模式）
 * Fast locked：加锁但不关中断，效率更高
 * Non-block：访问是非阻塞的， 不存在中断嵌套引起的死锁问题
-
+* No share：资源是按核心分配的，不需要加锁
 * ✓：直接访问
 * ○：关闭中断或提升级别访问
 * □：关闭中断访问
@@ -34,5 +34,5 @@
 | Process List     | Fast locked | ○    | ○    | ✓ | ×    |
 | Process Object | Locked      | ✓   | ✓   | ✓    | ✓    |
 | DPC List         | Locked      | ✓    | ✓    | ✓    | ✓    |
-| Scheduler        | Fast locked | ○    | ○    | ✓    | ×    |
+| Scheduler      | No share    | ○    | ○    | ✓    | ×    |
 

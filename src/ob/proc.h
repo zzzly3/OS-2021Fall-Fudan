@@ -49,6 +49,8 @@ typedef struct _TRAP_FRAME
 {
 	ULONG64 elr;
 	ULONG64 spsr;
+	ULONG64 x8;
+	ULONG64 x9;
 	ULONG64 x0;
 	ULONG64 x1;
 } TRAP_FRAME, *PTRAP_FRAME;
