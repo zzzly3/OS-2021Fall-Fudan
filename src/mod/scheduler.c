@@ -37,10 +37,11 @@ RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 
 RT_ONLY void PsiExitProcess()
 {
+	PKPROCESS cur = PsGetCurrentProcess();
 	// KeAcquireSpinLockFast(&ActiveListLock);
-	LibRemoveListEntry(&PsGetCurrentProcess()->SchedulerList);
+	LibRemoveListEntry(cur->SchedulerList);
 	// KeReleaseSpinLockFast(&ActiveListLock);
-	Process->Status = PROCESS_STATUS_ZOMBIE;
+	cur->Status = PROCESS_STATUS_ZOMBIE;
 	KeTaskSwitch();
 }
 
