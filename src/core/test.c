@@ -76,7 +76,9 @@ void sys_switch_test_proc(ULONG64 arg)
     KeCreateApcEx(current, sys_switch_callback, arg * 10);
     for(;;)
     {
-        printf("CPU %d, Process %d, pid = %d\n", cpuid(), arg, current->ProcessId);
+        u64 p;
+        asm volatile("mov %[x], sp" : [x] "=r"(p));
+        printf("CPU %d, Process %d, pid = %d, Stack at %p\n", cpuid(), arg, current->ProcessId, p);
         delay_us(1000 * 1000);
     }
 }
