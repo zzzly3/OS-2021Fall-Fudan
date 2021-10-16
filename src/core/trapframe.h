@@ -8,8 +8,7 @@
 
 typedef struct {
 	/* TODO: Lab3 Interrupt */
-    TRAP_FRAME tf;
-    uint64_t reserved[16];
+    uint64_t reserved[16]; // See TRAP_FRAME
 } Trapframe;
 
 #endif

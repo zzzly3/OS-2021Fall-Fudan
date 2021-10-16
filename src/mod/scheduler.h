@@ -10,6 +10,7 @@
 
 #define TIME_SLICE_MS 100
 
+struct _KPROCESS;
 typedef void (*PDPC_ROUTINE)(ULONG64);
 typedef void (*PAPC_ROUTINE)(ULONG64);
 typedef struct _DPC_ENTRY
