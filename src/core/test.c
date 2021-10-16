@@ -108,7 +108,7 @@ void sys_switch_test()
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
     delay_us(3000 * 1000);
     if (pt == 4)
-        sys_test_pass("Pass: switch");
+        sys_test_pass("Pass: switch")
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
