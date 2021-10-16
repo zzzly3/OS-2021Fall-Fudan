@@ -38,7 +38,7 @@ void spawn_init_process() {
     // p = alloc_proc();
     /* TODO: Lab3 Process */
     BOOL trpen = arch_disable_trap();
-    KPROCESS p = PsCreateProcessEx();
+    PKPROCESS p = PsCreateProcessEx();
     if (p == NULL)
         goto fail;
     PMEMORY_SPACE m = MmCreateMemorySpace();
