@@ -84,7 +84,7 @@ void sys_switch_test_proc(ULONG64 arg)
         delay_us(1000 * 1000);
         if (arg == 0)
         {
-            printf("Process 0 exit.");
+            printf("Process 0 exit.\n");
             KeExitProcess();
         }
     }
@@ -92,7 +92,7 @@ void sys_switch_test_proc(ULONG64 arg)
 void sys_switch_test()
 {
     int pid[10];
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (!KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_switch_test_proc, i, &pid[i])))
             sys_test_fail("Fail: create");
@@ -110,6 +110,7 @@ void sys_switch_test()
     spawn_init_process();
     delay_us(1000 * 1000);
     printf("Main process, stack at %p\n", p);
+    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
     sys_test_pass("Pass: init");
 }
 
