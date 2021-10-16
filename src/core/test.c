@@ -75,7 +75,6 @@ void sys_switch_test_proc(ULONG64 arg)
 {
     PKPROCESS current = PsGetCurrentProcess();
     KeCreateApcEx(current, sys_switch_callback, arg);
-    KeCreateApcEx(current, sys_switch_callback, arg * 10);
     for(;;)
     {
         u64 p;
@@ -91,6 +90,8 @@ void sys_switch_test_proc(ULONG64 arg)
 }
 void sys_switch_test()
 {
+    u64 p, p2;
+    asm volatile("mov %[x], sp" : [x] "=r"(p));
     int pid[10];
     for (int i = 0; i < 3; i++)
     {
@@ -102,15 +103,16 @@ void sys_switch_test()
     KeCreateDpc(sys_switch_callback, 233);
     KeCreateDpc(sys_switch_callback, 2333);
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-    u64 p;
-    asm volatile("mov %[x], sp" : [x] "=r"(p));
-    printf("Main process, stack at %p\n", p);
     delay_us(3000 * 1000);
     sys_test_pass("Pass: switch");
     spawn_init_process();
     delay_us(1000 * 1000);
-    printf("Main process, stack at %p\n", p);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
     sys_test_pass("Pass: init");
+    asm volatile("mov %[x], sp" : [x] "=r"(p2));
+    if (p == p2)
+        sys_test_pass("Pass: balance");
+    else
+        sys_test_fail("Fail: balance");
 }
 
