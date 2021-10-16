@@ -111,8 +111,8 @@ void sys_switch_test()
     sys_test_pass("Pass: init");
     asm volatile("mov %[x], sp" : [x] "=r"(p2));
     if (p == p2)
-        sys_test_pass("Pass: balance");
+        sys_test_pass("Pass: balance")
     else
-        sys_test_fail("Fail: balance");
+        sys_test_fail("Fail: balance")
 }
 
