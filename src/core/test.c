@@ -11,9 +11,9 @@ void sys_mem_test();
 
 void sys_test()
 {
-    //sys_test_info("Test memory");
-	//sys_mem_test();
-    sys_test_info("Test switch");
+    sys_test_info("Test memory");
+	sys_mem_test();
+    sys_test_info("Test process");
     sys_switch_test();
     sys_test_info("Finish");
     while(1);
