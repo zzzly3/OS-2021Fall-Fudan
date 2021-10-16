@@ -80,10 +80,13 @@ void sys_switch_test_proc(ULONG64 arg)
     {
         u64 p;
         asm volatile("mov %[x], sp" : [x] "=r"(p));
-        printf("CPU %d, Process %d, pid = %d, Stack at %p\n", cpuid(), arg, current->ProcessId, p);
+        printf("CPU %d, Process %d, pid = %d, stack at %p\n", cpuid(), arg, current->ProcessId, p);
         delay_us(1000 * 1000);
         if (arg == 0)
+        {
+            printf("Process 0 exit.");
             KeExitProcess();
+        }
     }
 }
 void sys_switch_test()
@@ -96,18 +99,17 @@ void sys_switch_test()
         printf("pid[%d]=%d\n", i, pid[i]);
     }
     sys_test_pass("Pass: create");
-    for (int i = 0; i < 5; i++)
-    {
-        KeCreateDpc(sys_switch_callback, 233);
-        KeCreateDpc(sys_switch_callback, 2333);
-        KeTaskSwitch();
-        printf("Round #%d done\n", i + 1);
-    }
+    KeCreateDpc(sys_switch_callback, 233);
+    KeCreateDpc(sys_switch_callback, 2333);
+    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+    u64 p;
+    asm volatile("mov %[x], sp" : [x] "=r"(p));
+    printf("Main process, stack at %p\n", p);
+    delay_us(3000 * 1000);
     sys_test_pass("Pass: switch");
     spawn_init_process();
-    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
     delay_us(1000 * 1000);
-    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    printf("Main process, stack at %p\n", p);
     sys_test_pass("Pass: init");
 }
 
