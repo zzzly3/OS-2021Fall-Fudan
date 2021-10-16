@@ -25,7 +25,7 @@ void sys_mem_test()
 	PMEMORY_SPACE m;
 	int p0 = MmGetAllocatedPagesCount();
     vm_test();
-    puts("Pass: legacy");
+    sys_test_pass("Pass: legacy");
 	m = MmCreateMemorySpace();
 	ULONG64 j = 0;
     for (ULONG64 i = 0; i < 1000000; i++)
@@ -67,9 +67,11 @@ void sys_mem_test()
 
 extern PKPROCESS KernelProcess;
 static PKPROCESS NewProcess;
+static pt = 0;
 void swtch (PVOID kstack, PVOID* oldkstack);
 void sys_switch_callback(ULONG64 arg)
 {
+    pt++;
     printf("CB: arg = %d, pid = %d\n", arg, PsGetCurrentProcess()->ProcessId);
 }
 void sys_switch_test_proc(ULONG64 arg)
@@ -81,12 +83,12 @@ void sys_switch_test_proc(ULONG64 arg)
         u64 p;
         asm volatile("mov %[x], sp" : [x] "=r"(p));
         printf("CPU %d, Process %d, pid = %d, stack at %p\n", cpuid(), arg, current->ProcessId, p);
-        delay_us(1000 * 1000);
         if (arg == 0)
         {
             printf("Process 0 exit.\n");
             KeExitProcess();
         }
+        delay_us(1000 * 1000);
     }
 }
 void sys_switch_test()
@@ -105,7 +107,10 @@ void sys_switch_test()
     KeCreateDpc(sys_switch_callback, 2333);
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
     delay_us(3000 * 1000);
-    sys_test_pass("Pass: switch");
+    if (pt == 4)
+        sys_test_pass("Pass: switch");
+    else
+        sys_test_fail("Fail: switch")
     spawn_init_process();
     delay_us(1000 * 1000);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
