@@ -164,7 +164,7 @@ static inline void arch_yield() {
     asm volatile("yield" ::: "memory");
 }
 
-static inline bool arch_enable_trap() 
+static inline bool arch_enable_trap() {
     u64 t;
     asm volatile("mrs %[x], daif" : [x] "=r"(t));
     if (t == 0)
