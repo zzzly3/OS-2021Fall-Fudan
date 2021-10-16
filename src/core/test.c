@@ -2,19 +2,20 @@
 #include <core/virtual_memory.h>
 #include <core/proc.h>
 
-#define sys_test_pass(message) {puts(message);}
-#define sys_test_fail(message) {puts(message);while(1);}
+#define sys_test_pass(message) {puts("\033[43;32m"message"\033[0m");}
+#define sys_test_fail(message) {puts("\033[43;31m"message"\033[0m");while(1);}
+#define sys_test_info(message) {puts("\033[43;34m"message"\033[0m");}
 
 void sys_switch_test();
 void sys_mem_test();
 
 void sys_test()
 {
-    //puts("Memory");
+    //sys_test_info("Test memory");
 	//sys_mem_test();
-    puts("Switch");
+    sys_test_info("Test switch");
     sys_switch_test();
-    puts("Finish");
+    sys_test_info("Finish");
     while(1);
 }
 
