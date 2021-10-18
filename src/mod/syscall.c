@@ -2,6 +2,7 @@
 
 void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 {
+	arch_enable_trap();
 	ULONG64 callno = TrapFrame->x8;
 	ULONG64 arg1 = TrapFrame->x0;
 	ULONG64 arg2 = TrapFrame->x1;
