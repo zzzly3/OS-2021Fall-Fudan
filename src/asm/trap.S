@@ -35,7 +35,7 @@ trap_entry:
     stp x0, x1, [sp, #-16]!
 
     /*
-     * Call trap(struct *trapframe).
+     * Call trap_global_handler(Trapframe *frame).
      * Hint: The first argument is a stack pointer.
      */
 
