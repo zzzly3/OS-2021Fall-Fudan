@@ -29,7 +29,7 @@ typedef struct _APC_ENTRY
 void ObInitializeScheduler();
 EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL);
 void KeLowerExecuteLevel(EXECUTE_LEVEL);
-RT_ONLY void KeTaskSwitch();
+UNSAFE void KeTaskSwitch();
 UNSAFE APC_ONLY void KeClearApcList();
 UNSAFE RT_ONLY void KeClearDpcList();
 PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE, ULONG64);

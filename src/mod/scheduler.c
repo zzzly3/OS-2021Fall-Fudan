@@ -5,6 +5,8 @@ extern PKPROCESS KernelProcess;
 // Although one core has only one active list, locks are no longer needed.
 // But RT level is still needed to avoid being interrupted.
 // static SPINLOCK ActiveListLock;
+// static SPINLOCK InactiveListLock;
+static LIST_ENTRY InactiveList;
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -30,18 +32,14 @@ RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 {
 	// KeAcquireSpinLockFast(&ActiveListLock);
 	LibInsertListEntry(&PsGetCurrentProcess()->SchedulerList, &Process->SchedulerList);
-	Process->Status = PROCESS_STATUS_WAITING;
-	// After that, the process is visible in the process list, and MIGHT BE REFERENCED BY OTHERS.
+	Process->Status = PROCESS_STATUS_RUNABLE;
 	// KeReleaseSpinLockFast(&ActiveListLock);
 }
 
-RT_ONLY void PsiExitProcess()
+void PsiExitProcess()
 {
-	PKPROCESS cur = PsGetCurrentProcess();
-	// KeAcquireSpinLockFast(&ActiveListLock);
-	LibRemoveListEntry(&cur->SchedulerList);
-	// KeReleaseSpinLockFast(&ActiveListLock);
-	cur->Status = PROCESS_STATUS_ZOMBIE;
+	arch_disable_trap();
+	PsGetCurrentProcess()->Status = PROCESS_STATUS_ZOMBIE;
 	KeTaskSwitch();
 }
 
@@ -61,16 +59,7 @@ void KiClockTrapEntry()
 	PKPROCESS cur = PsGetCurrentProcess();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 		return;
-	// Raise EL to RT level and enable interrupt
-	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeTaskSwitch();
-	KeClearDpcList();
-	if (oldel < EXECUTE_LEVEL_APC)
-	{
-		cur->ExecuteLevel = EXECUTE_LEVEL_APC;
-		KeClearApcList();
-	}
-	cur->ExecuteLevel = oldel;
 	return;
 }
 
@@ -198,7 +187,7 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 	// ObUnlockObject(proc);
 }
 
-RT_ONLY void KeTaskSwitch() // MUST be called in RT level
+UNSAFE void KeTaskSwitch()
 {
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
@@ -211,19 +200,57 @@ RT_ONLY void KeTaskSwitch() // MUST be called in RT level
 		return;
 	}
 	// Do switch
-	nxt->Status = PROCESS_STATUS_RUNNING;
-	if (cur->Status == PROCESS_STATUS_RUNNING)
-		cur->Status = PROCESS_STATUS_WAITING;
-	else // For zombie, blocked and other inactive processes
-		LibRemoveListEntry(&cur->SchedulerList);
+	switch (nxt->Status)
+	{
+		case PROCESS_STATUS_RUNABLE:
+			nxt->Status = PROCESS_STATUS_RUNNING;
+			break;
+		default:
+			// TODO: PANIC
+			break;
+	}
+	switch (cur->Status)
+	{
+		case PROCESS_STATUS_RUNNING:
+			cur->Status = PROCESS_STATUS_RUNABLE;
+			break;
+		case PROCESS_STATUS_ZOMBIE:
+			LibRemoveListEntry(&cur->SchedulerList);
+			break;
+		case PROCESS_STATUS_WAIT:
+			LibRemoveListEntry(&cur->SchedulerList);
+			LibInsertListEntry(&InactiveList, &cur->SchedulerList);
+			break;
+		default:
+			// TODO: PANIC
+			break;
+	}
 	// KeReleaseSpinLockFast(&ActiveListLock);
-	BOOL trapen = arch_disable_trap();
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)nxt->Context.UserStack);
 	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
 	arch_set_tid((ULONG64)nxt);
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
-	if (trapen)
-		arch_enable_trap();
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	KeLowerExecuteLevel(oldel);
 }
 
+RT_ONLY void PsiCheckInactiveList()
+{
+	PLIST_ENTRY p = InactiveList.Backward;
+	for (;;)
+	{
+		PLIST_ENTRY np = p->Backward;
+		if (p == &InactiveList)
+			break;
+		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
+		if (proc->ApcList != NULL ||    // Alerted
+			proc->WaitMutex == NULL)    // Signaled
+		{
+			proc->Status = PROCESS_STATUS_RUNABLE;
+			LibRemoveListEntry(&proc->SchedulerList);
+			LibInsertListEntry(&KernelProcess->SchedulerList, &proc->SchedulerList);
+		}
+		p = np;
+	}
+}

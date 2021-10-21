@@ -53,6 +53,6 @@ typedef u64 usize;
 
 #define NO_RETURN _Noreturn
 
-NORETURN void no_return();
+NO_RETURN void no_return();
 
 #endif

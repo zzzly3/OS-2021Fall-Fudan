@@ -3,12 +3,14 @@
 
 #include <common/lutil.h>
 #include <ob/mem.h>
+#include <ob/mutex.h>
 #include <mod/scheduler.h>
 
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1
-#define PROCESS_STATUS_WAITING 2
+#define PROCESS_STATUS_RUNABLE 2
 #define PROCESS_STATUS_ZOMBIE 3
+#define PROCESS_STATUS_WAIT 4
 #define PROCESS_FLAG_KERNEL 1
 #define PROCESS_FLAG_REALTIME 2
 
@@ -23,8 +25,10 @@ typedef struct _KPROCESS
 	int ParentId;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
+	LIST_ENTRY WaitList;
 	PMEMORY_SPACE MemorySpace;
 	struct _APC_ENTRY* ApcList;
+	struct _MUTEX* WaitMutex;
 	struct
 	{
 		PVOID UserStack;
