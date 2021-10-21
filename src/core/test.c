@@ -96,6 +96,7 @@ void sys_switch_test_proc(ULONG64 arg)
         printf("Process %d get mutex.\n", arg);
     }
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+    printf("Process %d exit.\n", arg);
     KeExitProcess();
 }
 void sys_switch_test()
