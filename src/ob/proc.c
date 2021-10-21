@@ -8,7 +8,7 @@ PKPROCESS KernelProcess;
 void PsUserProcessEntry();
 void PsKernelProcessEntry();
 RT_ONLY void PsiStartNewProcess(PKPROCESS);
-RT_ONLY void PsiExitProcess();
+void PsiExitProcess();
 
 BOOL ObInitializeProcessManager()
 {
@@ -92,6 +92,6 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 
 void KeExitProcess()
 {
-	KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	// KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	PsiExitProcess();
 }

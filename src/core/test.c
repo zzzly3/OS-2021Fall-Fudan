@@ -68,7 +68,9 @@ void sys_mem_test()
 extern PKPROCESS KernelProcess;
 static PKPROCESS NewProcess;
 static pt = 0;
+static MUTEX mut;
 void swtch (PVOID kstack, PVOID* oldkstack);
+RT_ONLY void PsiCheckInactiveList();
 void sys_switch_callback(ULONG64 arg)
 {
     pt++;
@@ -78,24 +80,31 @@ void sys_switch_test_proc(ULONG64 arg)
 {
     PKPROCESS current = PsGetCurrentProcess();
     KeCreateApcEx(current, sys_switch_callback, arg);
-    for(;;)
+    for(int i = 0; i < 3; i++)
     {
         u64 p;
         asm volatile("mov %[x], sp" : [x] "=r"(p));
         printf("CPU %d, Process %d, pid = %d, stack at %p\n", cpuid(), arg, current->ProcessId, p);
-        if (arg == 0)
-        {
-            printf("Process 0 exit.\n");
-            KeExitProcess();
-        }
         delay_us(1000 * 1000);
     }
+    if (arg == 0)
+        KeCreateApcEx(PsGetCurrentProcess(), sys_switch_callback, arg);
+    KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+    if (KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
+    {
+        pt += 2;
+        printf("Process %d get mutex.\n", arg);
+    }
+    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+    KeExitProcess();
 }
 void sys_switch_test()
 {
     u64 p, p2;
     asm volatile("mov %[x], sp" : [x] "=r"(p));
     int pid[10];
+    KeInitializeMutex(&mut);
+    mut.Signaled = 0;
     for (int i = 0; i < 3; i++)
     {
         if (!KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_switch_test_proc, i, &pid[i])))
@@ -107,14 +116,25 @@ void sys_switch_test()
     KeCreateDpc(sys_switch_callback, 2333);
     KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
     delay_us(2000 * 1000);
-    if (pt == 4)
+    if (pt == 5)
         sys_test_pass("Pass: switch")
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
-    delay_us(2000 * 1000);
-    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    delay_us(1500 * 1000);
     sys_test_pass("Pass: init");
+    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    for (int i = 0; i < 3; i++)
+    {
+        PsiCheckInactiveList();
+        KeSetMutexSignaled(&mut);
+        delay_us(500 * 1000);
+        KeTaskSwitch();
+    }
+    if (pt == 10)
+        sys_test_pass("Pass: block")
+    else
+        sys_test_fail("Fail: block")
     asm volatile("mov %[x], sp" : [x] "=r"(p2));
     if (p == p2)
         sys_test_pass("Pass: balance")
