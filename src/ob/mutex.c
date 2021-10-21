@@ -27,8 +27,6 @@ void KeiSetMutexSignaled(PMUTEX Mutex)
 		PKPROCESS proc = container_of(Mutex->WaitList.Backward, KPROCESS, WaitList);
 		// Cancel the wait (means success)
 		KeiCancelMutexWait(proc);
-		uart_put_char('*');
-		uart_put_char('0' + proc->ProcessId);
 	}
 }
 
@@ -67,7 +65,5 @@ APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset
 		KeiSetMutexSignaled(Mutex);
 	ObUnlockObjectFast(Mutex);
 	if (trapen) arch_enable_trap();
-	uart_put_char('^');
-	uart_put_char('0' + cur->ProcessId);
 	return STATUS_SUCCESS;
 }

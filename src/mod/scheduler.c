@@ -251,8 +251,6 @@ RT_ONLY void PsiCheckInactiveList()
 			proc->Status = PROCESS_STATUS_RUNABLE;
 			LibRemoveListEntry(&proc->SchedulerList);
 			LibInsertListEntry(&KernelProcess->SchedulerList, &proc->SchedulerList);
-			uart_put_char('+');
-			uart_put_char('0' + proc->ProcessId);
 		}
 		p = np;
 	}

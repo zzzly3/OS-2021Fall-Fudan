@@ -128,7 +128,6 @@ void sys_switch_test()
     arch_disable_trap();
     for (int i = 0; i < 3; i++)
     {
-        delay_us(1000 * 1000);
         KeSetMutexSignaled(&mut);
         PsiCheckInactiveList();
         KeTaskSwitch();
