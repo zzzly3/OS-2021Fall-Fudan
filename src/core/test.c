@@ -90,7 +90,6 @@ void sys_switch_test_proc(ULONG64 arg)
     if (arg == 0)
         KeCreateApcEx(current, sys_switch_callback, arg);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
-    printf("Process %d try to get mutex.\n", arg);
     if (KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
     {
         pt += 2;
@@ -123,7 +122,7 @@ void sys_switch_test()
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
-    delay_us(5000 * 1000);
+    delay_us(4000 * 1000);
     sys_test_pass("Pass: init");
     arch_disable_trap();
     for (int i = 0; i < 3; i++)
