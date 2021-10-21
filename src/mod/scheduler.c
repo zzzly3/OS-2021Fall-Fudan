@@ -221,6 +221,7 @@ UNSAFE void KeTaskSwitch()
 		case PROCESS_STATUS_WAIT:
 			LibRemoveListEntry(&cur->SchedulerList);
 			LibInsertListEntry(&InactiveList, &cur->SchedulerList);
+			uart_put_char('a');
 			break;
 		default:
 			// TODO: PANIC
@@ -251,6 +252,7 @@ RT_ONLY void PsiCheckInactiveList()
 			proc->Status = PROCESS_STATUS_RUNABLE;
 			LibRemoveListEntry(&proc->SchedulerList);
 			LibInsertListEntry(&KernelProcess->SchedulerList, &proc->SchedulerList);
+			uart_put_char('b');
 		}
 		p = np;
 	}
