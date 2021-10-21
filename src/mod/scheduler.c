@@ -234,6 +234,8 @@ UNSAFE void KeTaskSwitch()
 	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeLowerExecuteLevel(oldel);
+	uart_put_char('/');
+	uart_put_char('0' + cur->ProcessId);
 }
 
 RT_ONLY void PsiCheckInactiveList()
