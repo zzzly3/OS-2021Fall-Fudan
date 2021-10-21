@@ -245,14 +245,15 @@ RT_ONLY void PsiCheckInactiveList()
 		if (p == &InactiveList)
 			break;
 		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
+		uart_put_char('a');
 		uart_put_char('0' + proc->ProcessId);
 		if (proc->ApcList != NULL ||    // Alerted
 			proc->WaitMutex == NULL)    // Signaled
 		{
+			uart_put_char('b');
 			proc->Status = PROCESS_STATUS_RUNABLE;
 			LibRemoveListEntry(&proc->SchedulerList);
 			LibInsertListEntry(&KernelProcess->SchedulerList, &proc->SchedulerList);
-			uart_put_char('b');
 		}
 		p = np;
 	}

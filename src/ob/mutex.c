@@ -27,6 +27,8 @@ void KeiSetMutexSignaled(PMUTEX Mutex)
 		PKPROCESS proc = container_of(Mutex->WaitList.Backward, KPROCESS, WaitList);
 		// Cancel the wait (means success)
 		KeiCancelMutexWait(proc);
+		uart_put_char('*');
+		uart_put_char('0' + proc->ProcessId);
 	}
 }
 
