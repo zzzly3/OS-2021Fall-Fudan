@@ -122,14 +122,14 @@ void sys_switch_test()
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
-    delay_us(1500 * 1000);
+    delay_us(1000 * 1000);
     sys_test_pass("Pass: init");
+    delay_us(2000 * 1000);
     arch_disable_trap();
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         PsiCheckInactiveList();
         KeSetMutexSignaled(&mut);
-        delay_us(500 * 1000);
         KeTaskSwitch();
     }
     if (pt == 10)
