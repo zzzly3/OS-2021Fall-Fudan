@@ -21,6 +21,7 @@ void ObInitializeScheduler()
 	MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
 	MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
 	DpcList = NULL;
+	InactiveList.Forward = InactiveList.Backward = &InactiveList;
 	arch_set_tid((ULONG64)KernelProcess);
 	KernelProcess->Status = PROCESS_STATUS_RUNNING;
 	init_clock();
