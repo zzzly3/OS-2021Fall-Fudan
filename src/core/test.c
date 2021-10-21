@@ -123,7 +123,7 @@ void sys_switch_test()
     else
         sys_test_fail("Fail: switch")
     spawn_init_process();
-    delay_us(1500 * 1000);
+    delay_us(2000 * 1000);
     sys_test_pass("Pass: init");
     arch_disable_trap();
     for (int i = 0; i < 3; i++)
