@@ -88,7 +88,7 @@ void sys_switch_test_proc(ULONG64 arg)
         delay_us(1000 * 1000);
     }
     if (arg == 0)
-        KeCreateApcEx(PsGetCurrentProcess(), sys_switch_callback, arg);
+        KeCreateApcEx(current, sys_switch_callback, arg);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
     if (KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
     {
@@ -123,7 +123,7 @@ void sys_switch_test()
     spawn_init_process();
     delay_us(1500 * 1000);
     sys_test_pass("Pass: init");
-    KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    arch_disable_trap();
     for (int i = 0; i < 3; i++)
     {
         PsiCheckInactiveList();
