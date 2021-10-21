@@ -70,7 +70,7 @@ typedef struct _LIST_ENTRY
 
 #define LibInsertListEntry(last_entry, new_entry) { PLIST_ENTRY __last = last_entry; \
 	((new_entry)->Backward = __last->Backward)->Forward = (new_entry); \
-	((new_entry)->Forward = __last)->Backward = (new_entry) }
+	((new_entry)->Forward = __last)->Backward = (new_entry); }
 #define LibRemoveListEntry(entry) { PLIST_ENTRY __entry = entry; \
 	(__entry->Forward->Backward = __entry->Backward)->Forward = __entry->Forward; }
 #define LibPopSingleListEntry(head) ({typeof(head) __r = (head); \
