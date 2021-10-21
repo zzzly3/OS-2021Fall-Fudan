@@ -90,6 +90,7 @@ void sys_switch_test_proc(ULONG64 arg)
     if (arg == 0)
         KeCreateApcEx(current, sys_switch_callback, arg);
     KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+    printf("x%d\n", arg);
     if (KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
     {
         pt += 2;
