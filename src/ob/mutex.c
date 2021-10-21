@@ -53,6 +53,8 @@ APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset
 		cur->Status = PROCESS_STATUS_WAIT;
 		ObUnlockObjectFast(Mutex);
 		KeTaskSwitch();
+		uart_put_char('$');
+		uart_put_char('0' + cur->ProcessId);
 		ObLockObjectFast(Mutex);
 		if (cur->WaitMutex != NULL)
 		{
