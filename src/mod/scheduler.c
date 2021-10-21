@@ -221,7 +221,6 @@ UNSAFE void KeTaskSwitch()
 		case PROCESS_STATUS_WAIT:
 			LibRemoveListEntry(&cur->SchedulerList);
 			LibInsertListEntry(&InactiveList, &cur->SchedulerList);
-			uart_put_char('a');
 			break;
 		default:
 			// TODO: PANIC
@@ -246,6 +245,7 @@ RT_ONLY void PsiCheckInactiveList()
 		if (p == &InactiveList)
 			break;
 		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
+		uart_put_char('0' + proc->ProcessId);
 		if (proc->ApcList != NULL ||    // Alerted
 			proc->WaitMutex == NULL)    // Signaled
 		{
