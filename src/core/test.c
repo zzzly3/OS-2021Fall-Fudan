@@ -128,8 +128,8 @@ void sys_switch_test()
     arch_disable_trap();
     for (int i = 0; i < 4; i++)
     {
-        PsiCheckInactiveList();
         KeSetMutexSignaled(&mut);
+        PsiCheckInactiveList();
         KeTaskSwitch();
     }
     if (pt == 10)
