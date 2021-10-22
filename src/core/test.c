@@ -65,81 +65,56 @@ void sys_mem_test()
     sys_test_pass("Pass: balance");
 }
 
-extern PKPROCESS KernelProcess;
-static PKPROCESS NewProcess;
-static pt = 0;
 static MUTEX mut;
-void swtch (PVOID kstack, PVOID* oldkstack);
-RT_ONLY void PsiCheckInactiveList();
-void sys_switch_callback(ULONG64 arg)
-{
-    pt++;
-    printf("CB: arg = %d, pid = %d\n", arg, PsGetCurrentProcess()->ProcessId);
-}
+static int a[1024];
 void sys_switch_test_proc(ULONG64 arg)
 {
-    PKPROCESS current = PsGetCurrentProcess();
-    KeCreateApcEx(current, sys_switch_callback, arg);
-    for(int i = 0; i < 3; i++)
+    switch (arg)
     {
-        u64 p;
-        asm volatile("mov %[x], sp" : [x] "=r"(p));
-        printf("CPU %d, Process %d, pid = %d, stack at %p\n", cpuid(), arg, current->ProcessId, p);
-        delay_us(1000 * 1000);
+        case 0: {
+            KeWaitForMutexSignaled(&mut, FALSE);
+            for (int i = 0; i < 1024; i++)
+            {
+                int sum = 0;
+                for (int j = 0; j < 1024; j++)
+                {
+                    sum += a[j];
+                }
+                sum %= 19260817;
+                a[i] = (a[i] + (i ^ sum)) % 19260817;
+            }
+            KeSetMutexSignaled(&mut);
+        } break;
+        case 1 : {
+            delay_us(15 * 1000 * 1000);
+            int sum = 0;
+            for (int i = 0; i < 1024; i++)
+            {
+                sum = (sum + a[i]) % 19260817;
+            }
+            printf("%d\n", sum);
+            if (sum == 16094207)
+                sys_test_pass("Pass: serial")
+            else
+                sys_test_fail("Fail: serial")
+        }
     }
-    if (arg == 0)
-        KeCreateApcEx(current, sys_switch_callback, arg);
-    KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
-    if (KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
-    {
-        pt += 2;
-        printf("Process %d get mutex.\n", arg);
-    }
-    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-    printf("Process %d exit.\n", arg);
     KeExitProcess();
 }
+
 void sys_switch_test()
 {
-    u64 p, p2;
-    asm volatile("mov %[x], sp" : [x] "=r"(p));
-    int pid[10];
-    KeInitializeMutex(&mut);
-    mut.Signaled = 0;
-    for (int i = 0; i < 3; i++)
+    delay_us(TIME_SLICE_MS * 2);
+    if (cpuid() == 0)
     {
-        if (!KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_switch_test_proc, i, &pid[i])))
-            sys_test_fail("Fail: create");
-        printf("pid[%d]=%d\n", i, pid[i]);
+        sys_test_info("Serial 100 Process")
+        KeInitializeMutex(&mut);
     }
-    sys_test_pass("Pass: create");
-    KeCreateDpc(sys_switch_callback, 233);
-    KeCreateDpc(sys_switch_callback, 2333);
-    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-    delay_us(2000 * 1000);
-    if (pt == 5)
-        sys_test_pass("Pass: switch")
-    else
-        sys_test_fail("Fail: switch")
-    spawn_init_process();
-    delay_us(2000 * 1000);
-    sys_test_pass("Pass: init");
-    delay_us(2000 * 1000);
-    arch_disable_trap();
-    for (int i = 0; i < 3; i++)
+    int pid[25]; // 25 * 4
+    for (int i = 0; i < 25; i++)
     {
-        KeSetMutexSignaled(&mut);
-        PsiCheckInactiveList();
-        KeTaskSwitch();
+        KeCreateProcess(NULL, sys_switch_test_proc, 0, &pid[i]);
     }
-    if (pt == 10)
-        sys_test_pass("Pass: block")
-    else
-        sys_test_fail("Fail: block")
-    asm volatile("mov %[x], sp" : [x] "=r"(p2));
-    if (p == p2)
-        sys_test_pass("Pass: balance")
-    else
-        sys_test_fail("Fail: balance")
+    if (cpuid() == 0)
+        KeCreateApcEx(PsGetCurrentProcess(), sys_switch_test_proc, 1);
 }
-

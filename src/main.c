@@ -54,11 +54,14 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 
+void sys_switch_test();
+
 NO_RETURN main()
 {
     system_init();
     printf("CPU %d init.\n", cpuid());
-    spawn_init_process();
+    //spawn_init_process();
+    KeCreateApcEx(PsGetCurrentProcess(), sys_switch_test, 0);
     KeSystemWorkerEntry();
 }
 
