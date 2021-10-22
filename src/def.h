@@ -27,6 +27,7 @@ static inline void system_init()
 		HalInitializeMemoryManager();
 		HalInitializeConsole();
 	}
+	delay_us(1000);
 	// Per CPU operations
 	ObInitializeProcessManager();
 	arch_enable_trap();
