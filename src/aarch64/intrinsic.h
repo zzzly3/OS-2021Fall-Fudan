@@ -115,6 +115,35 @@ static inline void arch_set_ttbr1(u64 addr) {
     arch_tlbi_vmalle1is();
 }
 
+// read & set tid (may be used as a pointer?)
+// No need to add fence since added in arch_set_tid
+static inline u64 arch_get_tid() {
+    u64 tid;
+    // arch_fence();
+    asm volatile("mrs %[x], tpidr_el1" : [x] "=r"(tid));
+    // arch_fence();
+    return tid;
+}
+static inline void arch_set_tid(u64 tid) {
+    arch_fence();
+    asm volatile("msr tpidr_el1, %[x]" : : [x] "r"(tid));
+    arch_fence();
+}
+
+// read & set user stack pointer
+static inline u64 arch_get_usp() {
+    u64 usp;
+    arch_fence();
+    asm volatile("mrs %[x], sp_el0" : [x] "=r"(usp));
+    arch_fence();
+    return usp;
+}
+static inline void arch_set_usp(u64 usp) {
+    arch_fence();
+    asm volatile("msr sp_el0, %[x]" : : [x] "r"(usp));
+    arch_fence();
+}
+
 // set-event instruction.
 static inline void arch_sev() {
     asm volatile("sev" ::: "memory");
@@ -135,12 +164,22 @@ static inline void arch_yield() {
     asm volatile("yield" ::: "memory");
 }
 
-static inline void arch_enable_trap() {
+static inline bool arch_enable_trap() {
+    u64 t;
+    asm volatile("mrs %[x], daif" : [x] "=r"(t));
+    if (t == 0)
+        return true;
     asm volatile("msr daif, %[x]" ::[x] "r"(0ll));
+    return false;
 }
 
-static inline void arch_disable_trap() {
+static inline bool arch_disable_trap() {
+    u64 t;
+    asm volatile("mrs %[x], daif" : [x] "=r"(t));
+    if (t != 0)
+        return false;
     asm volatile("msr daif, %[x]" ::[x] "r"(0xfll << 6));
+    return true;
 }
 
 void delay_us(u64 n);

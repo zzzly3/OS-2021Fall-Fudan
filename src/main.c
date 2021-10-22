@@ -1,3 +1,4 @@
+#if 0
 #include <aarch64/intrinsic.h>
 #include <common/string.h>
 #include <core/console.h>
@@ -35,7 +36,7 @@ NORETURN void main() {
 	/* TODO: Lab1 print */
 
     init_memory_manager();
-    init_virtual_memory();
+    //init_virtual_memory();
 
     init_system_per_cpu();
 
@@ -49,3 +50,15 @@ NORETURN void main() {
     }
 
 }
+#else
+#include <def.h>
+#include <core/console.h>
+
+NO_RETURN main()
+{
+    system_init();
+    // asserts(1==2, "PASS");
+    sys_test();
+}
+
+#endif

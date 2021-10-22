@@ -37,7 +37,7 @@ struct cpu {
     struct proc *proc;
 };
 #define NCPU       4    /* maximum number of CPUs */
-extern struct cpu cpus[NCPU];
+struct cpu cpus[NCPU];
 
 static inline struct cpu *thiscpu()
 {

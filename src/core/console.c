@@ -1,5 +1,6 @@
 #include <aarch64/intrinsic.h>
 #include <common/format.h>
+#define USE_LAGACY
 #include <core/console.h>
 #include <common/spinlock.h>
 

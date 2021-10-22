@@ -2,6 +2,7 @@
 #include <common/defines.h>
 // #include <core/sched.h>
 #include <core/trapframe.h>
+#include <mod/scheduler.h>
 
 
 #define NPROC      64   /* maximum number of processes */
@@ -17,7 +18,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 /* Stack must always be 16 bytes aligned. */
 struct context {
     /* TODO: Lab3 Process */
-
+    uint64_t reserved[16]; // See KPROCESS.Context
 };
 
 struct proc {
