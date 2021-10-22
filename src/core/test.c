@@ -87,14 +87,17 @@ void sys_switch_test_proc(ULONG64 arg)
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
             cnt++;
+            KeSetMutexSignaled(&mut);
             if (cnt < 100)
             {
-                KeSetMutexSignaled(&mut);
                 break;
+            }
+            else if (cnt > 100)
+            {
+                KeBugFault(BUG_STOP);
             }
         }
         case 1 : {
-            delay_us(5 * 1000 * 1000);
             int sum = 0;
             for (int i = 0; i < 1024; i++)
             {
