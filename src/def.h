@@ -9,6 +9,7 @@
 #include <ob/mutex.h>
 #include <mod/bug.h>
 #include <mod/scheduler.h>
+#include <mod/worker.h>
 
 static void hello()
 {

@@ -32,7 +32,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 {
 	BOOL trapen = arch_disable_trap();
 	KeBugFaultFlag = TRUE;
-	delay_us(1000);
+	delay_us(200 * 1000);
 	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
 	printf(BLUE("[*]")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
 	printf(BLUE("[*]")"Kernel fault in "RED("FILE %s, LINE %d")"\n", BugFile, BugLine);
