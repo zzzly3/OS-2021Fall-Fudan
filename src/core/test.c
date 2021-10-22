@@ -104,6 +104,7 @@ void sys_switch_test_proc(ULONG64 arg)
             {
                 sum = (sum + a[i]) % 19260817;
             }
+            printf("ans: %d\n", sum);
             if (sum == 6007406)
                 sys_test_pass("Pass: serial")
             else
