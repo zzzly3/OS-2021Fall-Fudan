@@ -53,7 +53,7 @@ NORETURN void main() {
 NO_RETURN main()
 {
     system_init();
-    //asserts(1==2, "PASS");
+    // asserts(1==2, "PASS");
     sys_test();
 }
 

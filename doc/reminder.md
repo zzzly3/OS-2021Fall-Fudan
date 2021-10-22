@@ -26,14 +26,15 @@
 | Resource         | Access mode | USR  | APC  | RT   | ISR  |
 | ---------------- | ----------- | ---- | ---- | ---- | ---- |
 | Device Directory | Fast locked | ○    | ○    | ✓    | ×    |
-| Console          | Locked | ✓    | ✓    | ✓    | ✓    |
+| Console          | Locked      | ✓    | ✓    | ✓    | ✓    |
 | PMem Manager     | Fast locked | □    | □    | □    | ✓    |
 | Object Pool      | Fast locked | □    | □    | □    | ✓    |
 | Memory Space     | Fast locked | □    | □    | □    | ✓    |
 | Process List     | Fast locked | ○    | ○    | ✓ | ×    |
-| Process Object | Locked      | ✓   | ✓   | ✓    | ✓    |
-| DPC List         | Locked      | ✓    | ✓    | ✓    | ✓    |
-| Scheduler      | No share    | ○    | ○    | ✓    | ×    |
+| Process Object   | Locked      | ✓    | ✓   | ✓    | ✓    |
+| DPC List         | Locked      | ✓    | ✓   | ✓    | ✓    |
+| Scheduler        | No share    | ○    | ○    | ✓    | ×    |
+| Mutex            | Locked      | □    | □    | □    | ✓    | 
 
 ## B
 

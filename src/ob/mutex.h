@@ -15,5 +15,6 @@ typedef struct _MUTEX
 void KeSetMutexSignaled(PMUTEX);
 APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX, BOOL);
 void KeInitializeMutex(PMUTEX);
+BOOL KeTestMutexSignaled(PMUTEX, BOOL);
 
 #endif

@@ -38,6 +38,21 @@ void KeSetMutexSignaled(PMUTEX Mutex)
 	ObUnlockObject(Mutex);
 }
 
+BOOL KeTestMutexSignaled(PMUTEX Mutex, BOOL Reset)
+{
+	BOOL ret = FALSE;
+	if (Reset)
+		ret = Mutex->Signaled;
+	else if (Mutex->Signaled)
+	{
+		ObLockObject(Mutex);
+		ret = Mutex->Signaled;
+		Mutex->Signaled = FALSE;
+		ObUnlockObject(Mutex);
+	}
+	return ret;
+}
+
 APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset to 1(signaled)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
