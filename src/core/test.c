@@ -66,7 +66,7 @@ void sys_mem_test()
 }
 
 static MUTEX mut;
-static int a[1024];
+static int a[1024], cnt;
 void sys_switch_test_proc(ULONG64 arg)
 {
     switch (arg)
@@ -83,17 +83,17 @@ void sys_switch_test_proc(ULONG64 arg)
                 sum %= 19260817;
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
-            putchar('.');
+            cnt++;
             KeSetMutexSignaled(&mut);
         } break;
         case 1 : {
-            delay_us(15 * 1000 * 1000);
+            delay_us(5 * 1000 * 1000);
             int sum = 0;
             for (int i = 0; i < 1024; i++)
             {
                 sum = (sum + a[i]) % 19260817;
             }
-            printf("%d\n", sum);
+            printf("%d %d\n", cnt, sum);
             if (sum == 16094207)
                 sys_test_pass("Pass: serial")
             else
