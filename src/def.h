@@ -19,7 +19,7 @@ static void hello()
 static inline void system_init()
 {
 	// Common operations
-	if (cpuid() == 0)
+	if (cpuid() == START_CPU)
 	{
 		extern char edata[], end[];
 	    memset(edata, 0, end - edata);
@@ -27,8 +27,8 @@ static inline void system_init()
 		HalInitializeMemoryManager();
 		HalInitializeConsole();
 	}
-	delay_us(100 * 1000);
-	uart_put_char('0' + cpuid());
+	else // Wait the start cpu to complete initializing.
+		delay_us(1000);
 	// Per CPU operations
 	ObInitializeProcessManager();
 	arch_enable_trap();
