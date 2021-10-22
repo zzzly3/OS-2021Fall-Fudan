@@ -65,8 +65,10 @@ void sys_test_callback()
 
 NO_RETURN main()
 {
-    init_interrupt();
-    init_uart();
+    if (cpuid() == 0)
+    {init_interrupt();
+    init_uart();}
+    delay_us(1000);
     uart_put_char('0' + cpuid());
     if (cpuid() < 2333) while (1);
 
