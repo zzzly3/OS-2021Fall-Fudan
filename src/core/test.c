@@ -105,10 +105,9 @@ void sys_switch_test_proc(ULONG64 arg)
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
             for (int i = 0; i < 40; i++)
             {
-                for (int j = 0; j < (a[n * 40 + i] & 0x1ffff); j++)
+                for (int j = 0; j < a[n * 40 + i]; j++)
                 {
                     a[n * 40 + i] = ((long long)a[n * 40 + i] * a[n * 40 + i] + chk) % 19260817;
-                    delay_us(1);
                 }
             }
             KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
@@ -144,7 +143,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 sum = (sum + a[i]) % 19260817;
             }
             printf("ans: %d\n", sum);
-            if (sum == 12415240)
+            if (sum == 16268470)
                 sys_test_pass("Pass: parallel")
             else
                 sys_test_fail("Fail: parallel")
