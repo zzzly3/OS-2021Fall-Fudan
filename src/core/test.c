@@ -67,6 +67,7 @@ void sys_mem_test()
 
 static MUTEX mut;
 static int a[1024], cnt;
+static SPINLOCK lock;
 void sys_switch_test_proc(ULONG64 arg)
 {
     switch (arg)
@@ -76,6 +77,7 @@ void sys_switch_test_proc(ULONG64 arg)
             if (!KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+            KeAcquireSpinLock(&lock);
             int sum;
             for (int i = 0; i < 1024; i++)
             {
@@ -89,6 +91,7 @@ void sys_switch_test_proc(ULONG64 arg)
             }
             cnt++;
             printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
+            KeReleaseSpinLock(&lock);
             KeSetMutexSignaled(&mut);
             if (cnt < 100)
             {
@@ -121,6 +124,7 @@ void sys_switch_test()
     {
         sys_test_info("Serial 100 Process")
         KeInitializeMutex(&mut);
+        KeInitializeSpinLock(&lock);
     }
     int pid[25]; // 25 * 4
     for (int i = 0; i < 25; i++)
