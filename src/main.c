@@ -66,6 +66,7 @@ void sys_test_callback()
 NO_RETURN main()
 {
     system_init();
+    printf("CPU %d init.\n", cpuid());
     // asserts(1==2, "PASS");
     int pid;
     if (KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_test_callback, 0, &pid)))
