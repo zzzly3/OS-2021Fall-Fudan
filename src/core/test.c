@@ -79,6 +79,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
             chk = PsGetCurrentProcess()->ProcessId;
+            printf("Run %d.\n", PsGetCurrentProcess()->ProcessId);
             int sum;
             for (int i = 0; i < 1024; i++)
             {
@@ -91,7 +92,8 @@ void sys_switch_test_proc(ULONG64 arg)
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
             cnt++;
-            printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
+            //printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
+            printf("%d Finish.\n", PsGetCurrentProcess()->ProcessId);
             if (chk != PsGetCurrentProcess()->ProcessId)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt < 100)
