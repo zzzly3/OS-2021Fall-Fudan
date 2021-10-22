@@ -28,7 +28,7 @@ static inline void system_init()
 		HalInitializeConsole();
 	}
 	else // Wait the start cpu to complete initializing.
-		delay_us(1000);
+		delay_us(200*1000);
 	// Per CPU operations
 	ObInitializeProcessManager();
 	arch_enable_trap();
