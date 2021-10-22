@@ -68,8 +68,8 @@ NO_RETURN main()
     init_interrupt();
     init_uart();
     uart_put_char('0' + cpuid());
-    while (1);
-    
+    if (cpuid() < 2333) while (1);
+
     system_init();
     printf("CPU %d init.\n", cpuid());
     // asserts(1==2, "PASS");
