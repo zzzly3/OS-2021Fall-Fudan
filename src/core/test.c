@@ -72,7 +72,10 @@ void sys_switch_test_proc(ULONG64 arg)
     switch (arg)
     {
         case 0: {
-            KeWaitForMutexSignaled(&mut, FALSE);
+            KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+            if (!KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
+                KeBugFault(BUG_STOP);
+            KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
             for (int i = 0; i < 1024; i++)
             {
                 int sum = 0;
@@ -84,8 +87,12 @@ void sys_switch_test_proc(ULONG64 arg)
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
             cnt++;
-            KeSetMutexSignaled(&mut);
-        } break;
+            if (cnt < 100)
+            {
+                KeSetMutexSignaled(&mut);
+                break;
+            }
+        }
         case 1 : {
             delay_us(5 * 1000 * 1000);
             int sum = 0;
@@ -116,6 +123,4 @@ void sys_switch_test()
     {
         KeCreateProcess(NULL, sys_switch_test_proc, 0, &pid[i]);
     }
-    if (cpuid() == 0)
-        KeCreateApcEx(PsGetCurrentProcess(), sys_switch_test_proc, 1);
 }
