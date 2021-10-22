@@ -66,7 +66,7 @@ void sys_mem_test()
 }
 
 static MUTEX mut;
-static int a[1024], cnt;
+static int a[4096], cnt;
 static SPINLOCK lock;
 static int chk;
 void sys_switch_test_proc(ULONG64 arg)
@@ -79,45 +79,36 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
             chk = PsGetCurrentProcess()->ProcessId;
-            printf("Run %d.\n", PsGetCurrentProcess()->ProcessId);
             int sum;
-            for (int i = 0; i < 1024; i++)
+            for (int i = 0; i < 4096; i++)
             {
                 sum = 0;
-                for (int j = 0; j < 1024; j++)
+                for (int j = 0; j < 4096; j++)
                 {
-                    sum += a[j];
+                    sum = (sum + a[j]) % 19260817;
                 }
-                sum %= 19260817;
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
             cnt++;
-            //printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
-            printf("%d Finish.\n", PsGetCurrentProcess()->ProcessId);
             if (chk != PsGetCurrentProcess()->ProcessId)
                 KeBugFault(BUG_CHECKFAIL);
-            if (cnt < 100)
-            {
-                KeSetMutexSignaled(&mut);
-                break;
-            }
-            else if (cnt > 100)
-            {
+            if (cnt > 100)
                 KeBugFault(BUG_CHECKFAIL);
-            }
-        }
+            if (cnt == 100)
+                KeCreateDpc(sys_switch_test_proc, 1);
+            KeSetMutexSignaled(&mut);
+        } break;
         case 1 : {
             int sum = 0;
-            for (int i = 0; i < 1024; i++)
+            for (int i = 0; i < 4096; i++)
             {
                 sum = (sum + a[i]) % 19260817;
             }
-            if (sum == 16094207)
+            if (sum == 6007406)
                 sys_test_pass("Pass: serial")
             else
                 sys_test_fail("Fail: serial")
-            KeSetMutexSignaled(&mut);
-        }
+        } break;
     }
     KeExitProcess();
 }

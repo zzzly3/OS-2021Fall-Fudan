@@ -12,7 +12,7 @@ static const struct
 	{BUG_PANIC, "PANIC (legacy bug interface) called."},
 	{BUG_STOP, "Kernel stopped initiatively."},
 	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."},
-	{BUG_CHECKFAIL, "Kernel self-check failed."}
+	{BUG_CHECKFAIL, "Self-check failed while testing."}
 };
 static const CPCHAR ELName[] = {"USR", "APC", "RT", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};
