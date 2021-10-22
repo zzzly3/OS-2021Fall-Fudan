@@ -91,10 +91,10 @@ void sys_switch_test_proc(ULONG64 arg)
             }
             cnt++;
             printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
-            KeReleaseSpinLock(&lock);
             KeSetMutexSignaled(&mut);
             if (cnt < 100)
             {
+                KeReleaseSpinLock(&lock);
                 break;
             }
             else if (cnt > 100)
@@ -108,11 +108,11 @@ void sys_switch_test_proc(ULONG64 arg)
             {
                 sum = (sum + a[i]) % 19260817;
             }
-            printf("Finished in CPU %d.\n", cpuid());
             if (sum == 16094207)
                 sys_test_pass("Pass: serial")
             else
                 sys_test_fail("Fail: serial")
+            KeReleaseSpinLock(&lock);
         }
     }
     KeExitProcess();
