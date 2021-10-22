@@ -32,18 +32,18 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	KeBugFaultFlag = TRUE;
 	delay_us(1000);
 	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
-	printf(BLUE("*")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
-	printf("Kernel fault in "RED("FILE %s, LINE %d")"\n", BugId, BugFile, BugLine);
+	printf(BLUE("[*]")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
+	printf("Kernel fault in "RED("FILE %s, LINE %d")"\n", BugFile, BugLine);
 	u64 p, t, x;
     asm volatile("mov %[x], sp" : [x] "=r"(p));
     asm volatile("mov %[x], x18" : [x] "=r"(x));
     asm volatile("mrs %[x], ttbr0_el1" : [x] "=r"(t));
-    printf(BLUE("*")"sp = 0x%p, x18 = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.", p, x, t, arch_get_elr(), arch_get_esr());
+    printf(BLUE("[*]")"sp = 0x%p, x18 = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.\n", p, x, t, arch_get_elr(), arch_get_esr());
 	PKPROCESS cur = PsGetCurrentProcess();
-	printf(BLUE("*")"Current CPU is %d, PCB at 0x%p, trap %s.\n", cpuid(), (PVOID)cur, trapen ? "enabled" : "disabled");
+	printf(BLUE("[*]")"Current CPU is %d, PCB at 0x%p, trap %s.\n", cpuid(), (PVOID)cur, trapen ? "enabled" : "disabled");
 	printf("PID = %d, Status = %d, Execute Level = %d, Flags = 0x%x.\n", cur->ProcessId, cur->Status, cur->ExecuteLevel, cur->Flags);
 	printf("Name = %s, APC List: %s, Wait Mutex: %s, %s\n", &cur->DebugName, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
-	printf(BLUE("*")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
+	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	while (1);
 }
 
