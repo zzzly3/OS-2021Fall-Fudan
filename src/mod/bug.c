@@ -33,7 +33,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	delay_us(1000);
 	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
 	printf(BLUE("[*]")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
-	printf("Kernel fault in "RED("FILE %s, LINE %d")"\n", BugFile, BugLine);
+	printf(BLUE("[*]")"Kernel fault in "RED("FILE %s, LINE %d")"\n", BugFile, BugLine);
 	u64 p, t, x;
     asm volatile("mov %[x], sp" : [x] "=r"(p));
     asm volatile("mov %[x], x18" : [x] "=r"(x));
