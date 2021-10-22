@@ -93,7 +93,7 @@ void sys_switch_test_proc(ULONG64 arg)
             cnt++;
             printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
             if (chk != PsGetCurrentProcess()->ProcessId)
-                KeBugFault(BUG_STOP);
+                KeBugFault(BUG_CHECKFAIL);
             if (cnt < 100)
             {
                 KeSetMutexSignaled(&mut);
@@ -101,7 +101,7 @@ void sys_switch_test_proc(ULONG64 arg)
             }
             else if (cnt > 100)
             {
-                KeBugFault(BUG_STOP);
+                KeBugFault(BUG_CHECKFAIL);
             }
         }
         case 1 : {

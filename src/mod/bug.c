@@ -11,7 +11,8 @@ static const struct
 } BugList[] = {
 	{BUG_PANIC, "PANIC (legacy bug interface) called."},
 	{BUG_STOP, "Kernel stopped initiatively."},
-	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."}
+	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."},
+	{BUG_CHECKFAIL, "Kernel self-check failed."}
 };
 static const CPCHAR ELName[] = {"USR", "APC", "RT", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};
@@ -31,6 +32,7 @@ CPCHAR KeiGetBugDescription(ULONG64 BugId)
 void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 {
 	BOOL trapen = arch_disable_trap();
+	if (KeBugFaultFlag) while (1);
 	KeBugFaultFlag = TRUE;
 	delay_us(200 * 1000);
 	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
