@@ -83,6 +83,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 sum %= 19260817;
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
+            putchar('.');
             KeSetMutexSignaled(&mut);
         } break;
         case 1 : {
