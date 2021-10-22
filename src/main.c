@@ -69,6 +69,7 @@ NO_RETURN main()
     printf("CPU %d init.\n", cpuid());
     // asserts(1==2, "PASS");
     int pid;
+    spawn_init_process();
     if (KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_test_callback, 0, &pid)))
     {
         KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
