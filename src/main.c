@@ -59,7 +59,7 @@ void sys_test_callback()
     while(1)
     {
         printf("CPU %d hello!\n", cpuid());
-        delay_us(1000 * 1000);
+        delay_us(3000 * 1000);
     }
 }
 
