@@ -1,11 +1,63 @@
 #include <mod/bug.h>
 #include <def.h>
 
+#define BLUE(text) "\033[47;34m"text"\033[0m"
+#define RED(text) "\033[47;31m"text"\033[0m"
+
+static const struct
+{
+	ULONG64 Id;
+	CPCHAR Description;
+} BugList[] = {
+	{BUG_PANIC, "PANIC (legacy bug interface) called."},
+	{BUG_STOP, "Kernel stopped initiatively."},
+	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."}
+};
+
+BOOL KeBugFaultFlag = FALSE;
+
+CPCHAR KeiGetBugDescription(ULONG64 BugId)
+{
+	for (int i = 0; i < sizeof(BugList) / 16; i++)
+	{
+		if (BugList[i].Id == BugId)
+			return BugList[i].Description;
+	}
+	return "Unknown error.";
+}
+
 void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 {
-	arch_disable_trap();
+	BOOL trapen = arch_disable_trap();
+	KeBugFaultFlag = TRUE;
 	delay_us(1000);
-	puts("\033[41;33m================KERNEL FAULT================\033[0m");
-	printf("Bug \033[41;30m0x%p\033[0m detected in FILE %s, LINE %d\n", BugId, BugFile, BugLine);
+	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
+	printf(BLUE("*")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
+	printf("Kernel fault in "RED("FILE %s, LINE %d")"\n", BugId, BugFile, BugLine);
+	u64 p, t, x;
+    asm volatile("mov %[x], sp" : [x] "=r"(p));
+    asm volatile("mov %[x], x18" : [x] "=r"(x));
+    asm volatile("mrs %[x], ttbr0_el1" : [x] "=r"(t));
+    printf(BLUE("*")"sp = 0x%p, x18 = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.", p, x, t, arch_get_elr(), arch_get_esr());
+	PKPROCESS cur = PsGetCurrentProcess();
+	printf(BLUE("*")"Current CPU is %d, PCB at 0x%p, trap %s.\n", cpuid(), (PVOID)cur, trapen ? "enabled" : "disabled");
+	printf("PID = %d, Status = %d, Execute Level = %d, Flags = 0x%x.\n", cur->ProcessId, cur->Status, cur->ExecuteLevel, cur->Flags);
+	printf("Name = %s, APC List: %s, Wait Mutex: %s, %s\n", &cur->DebugName, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
+	printf(BLUE("*")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	while (1);
+}
+
+void KiExceptionEntry(PTRAP_FRAME TrapFrame)
+{
+	if ((TrapFrame->elr & (1ull << 63)) ||
+		(PsGetCurrentProcess()->Flags & PROCESS_FLAG_KERNEL))
+	{
+		// Kernel exception
+
+	}
+	else
+	{
+		// User exception
+		KeExitProcess();
+	}
 }

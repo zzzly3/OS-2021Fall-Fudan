@@ -1,6 +1,7 @@
 #include <mod/scheduler.h>
 #include <driver/uart.h>
 
+extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
 // Although one core has only one active list, locks are no longer needed.
 // But RT level is still needed to avoid being interrupted.
@@ -59,6 +60,7 @@ void PsiProcessEntry()
 
 void KiClockTrapEntry()
 {
+	if (KeBugFaultFlag) for(arch_disable_trap();;);
 	reset_clock(TIME_SLICE_MS);
 	//uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
@@ -243,6 +245,7 @@ UNSAFE void KeTaskSwitch()
 
 RT_ONLY void PsiCheckInactiveList()
 {
+	if (KeBugFaultFlag) for(arch_disable_trap();;);
 	int cid = cpuid();
 	PLIST_ENTRY p = InactiveList[cid].Backward;
 	for (;;)

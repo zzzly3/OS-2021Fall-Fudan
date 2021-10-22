@@ -59,7 +59,7 @@ void sys_test_callback()
     while(1)
     {
         printf("CPU %d hello!\n", cpuid());
-        delay_us(3000 * 1000);
+        delay_us(5000 * 1000);
     }
 }
 
@@ -73,7 +73,12 @@ NO_RETURN main()
     if (KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_test_callback, 0, &pid)))
     {
         KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-        while(1);
+        if (cpuid() == 0)
+        {
+            delay_us(15 * 1000 * 1000);
+            KeBugFault(BUG_STOP);
+        }
+        while(1) arch_wfi();
     }
     else
         KeBugFault(0x19260817);

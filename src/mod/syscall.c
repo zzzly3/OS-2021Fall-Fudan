@@ -1,7 +1,10 @@
 #include <mod/syscall.h>
 
+extern BOOL KeBugFaultFlag;
+
 void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 {
+	if (KeBugFaultFlag) for(arch_disable_trap();;);
 	arch_enable_trap();
 	ULONG64 callno = TrapFrame->x8;
 	ULONG64 arg1 = TrapFrame->x0;
