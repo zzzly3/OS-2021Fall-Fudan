@@ -66,8 +66,6 @@ void sys_test_callback()
 NO_RETURN main()
 {
     system_init();
-    uart_put_char('0' + cpuid());
-    if (cpuid() < 999) while(1);
     printf("CPU %d init.\n", cpuid());
     // asserts(1==2, "PASS");
     int pid;
