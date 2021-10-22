@@ -13,8 +13,8 @@ static const struct
 	{BUG_STOP, "Kernel stopped initiatively."},
 	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."}
 };
-
 static const CPCHAR ELName[] = {"USR", "APC", "RT", "ISR"};
+static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};
 
 BOOL KeBugFaultFlag = FALSE;
 
@@ -42,7 +42,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
     asm volatile("mrs %[x], ttbr0_el1" : [x] "=r"(t));
     printf(BLUE("[*]")"sp = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.\n", p, t, arch_get_elr(), arch_get_esr());
 	PKPROCESS cur = PsGetCurrentProcess();
-	printf(BLUE("[*]")"Current CPU is %d, PID = %d, Status = %d, Execute Level = %s, Trap %s.\n", cpuid(), cur->ProcessId, cur->Status, ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
+	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
 	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	while (1);
