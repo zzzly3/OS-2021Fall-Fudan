@@ -29,7 +29,7 @@
 #else
 
     #include <def.h>
-    #define PANIC(...) {printf(__VA_ARGS__); KeBugFault(0x23333333); }
+    #define PANIC(...) printf(__VA_ARGS__),KeBugFault(0x23333333)
 
 #endif
 
