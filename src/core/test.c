@@ -132,6 +132,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 sys_test_pass("Pass: serial")
             else
                 sys_test_fail("Fail: serial")
+            sys_test_info("Parallel 100 Process")
             chk = 12345;
             KeSetMutexSignaled(&mut2);
         } return;
