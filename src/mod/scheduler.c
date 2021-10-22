@@ -1,12 +1,12 @@
 #include <mod/scheduler.h>
 #include <driver/uart.h>
 
-extern PKPROCESS KernelProcess;
+extern PKPROCESS KernelProcess[CPU_NUM];
 // Although one core has only one active list, locks are no longer needed.
 // But RT level is still needed to avoid being interrupted.
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
-static LIST_ENTRY InactiveList;
+static LIST_ENTRY InactiveList[CPU_NUM];
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -16,14 +16,18 @@ void KiClockTrapEntry();
 
 void ObInitializeScheduler()
 {
+	int cid = cpuid();
 	// KeInitializeSpinLock(&ActiveListLock);
-	KeInitializeSpinLock(&DpcListLock);
-	MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
-	MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
-	DpcList = NULL;
-	InactiveList.Forward = InactiveList.Backward = &InactiveList;
-	arch_set_tid((ULONG64)KernelProcess);
-	KernelProcess->Status = PROCESS_STATUS_RUNNING;
+	if (cid == START_CPU)
+	{
+		KeInitializeSpinLock(&DpcListLock);
+		MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
+		MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
+		DpcList = NULL;
+	}
+	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
+	arch_set_tid((ULONG64)KernelProcess[cid]);
+	KernelProcess[cid]->Status = PROCESS_STATUS_RUNNING;
 	init_clock();
 	set_clock_handler(KiClockTrapEntry);
 	init_trap();
@@ -190,6 +194,7 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 
 UNSAFE void KeTaskSwitch()
 {
+	int cid = cpuid();
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
@@ -220,7 +225,7 @@ UNSAFE void KeTaskSwitch()
 			break;
 		case PROCESS_STATUS_WAIT:
 			LibRemoveListEntry(&cur->SchedulerList);
-			LibInsertListEntry(&InactiveList, &cur->SchedulerList);
+			LibInsertListEntry(&InactiveList[cid], &cur->SchedulerList);
 			break;
 		default:
 			// TODO: PANIC
@@ -238,11 +243,12 @@ UNSAFE void KeTaskSwitch()
 
 RT_ONLY void PsiCheckInactiveList()
 {
-	PLIST_ENTRY p = InactiveList.Backward;
+	int cid = cpuid();
+	PLIST_ENTRY p = InactiveList[cid].Backward;
 	for (;;)
 	{
 		PLIST_ENTRY np = p->Backward;
-		if (p == &InactiveList)
+		if (p == &InactiveList[cid])
 			break;
 		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
 		if (proc->ApcList != NULL ||    // Alerted
@@ -250,7 +256,7 @@ RT_ONLY void PsiCheckInactiveList()
 		{
 			proc->Status = PROCESS_STATUS_RUNABLE;
 			LibRemoveListEntry(&proc->SchedulerList);
-			LibInsertListEntry(&KernelProcess->SchedulerList, &proc->SchedulerList);
+			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &proc->SchedulerList);
 		}
 		p = np;
 	}

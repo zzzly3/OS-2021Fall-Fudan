@@ -54,11 +54,27 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 
+void sys_test_callback()
+{
+    while(1)
+    {
+        printf("CPU %d hello!\n", cpuid());
+        delay_us(1000 * 1000);
+    }
+}
+
 NO_RETURN main()
 {
     system_init();
     // asserts(1==2, "PASS");
-    sys_test();
+    int pid;
+    if (KSUCCESS(KeCreateProcess(NULL, (PVOID)sys_test_callback, 0, &pid)))
+    {
+        KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+        while(1);
+    }
+    else
+        KeBugFault(0x19260817);
 }
 
 #endif

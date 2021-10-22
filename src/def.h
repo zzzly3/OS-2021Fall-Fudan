@@ -18,11 +18,16 @@ static void hello()
 
 static inline void system_init()
 {
-	extern char edata[], end[];
-    memset(edata, 0, end - edata);
-	HalInitializeDeviceManager();
-	HalInitializeMemoryManager();
-	HalInitializeConsole();
+	// Common operations
+	if (cpuid() == 0)
+	{
+		extern char edata[], end[];
+	    memset(edata, 0, end - edata);
+		HalInitializeDeviceManager();
+		HalInitializeMemoryManager();
+		HalInitializeConsole();
+	}
+	// Per CPU operations
 	ObInitializeProcessManager();
 	arch_enable_trap();
 }

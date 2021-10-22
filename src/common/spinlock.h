@@ -34,6 +34,4 @@ typedef SpinLock SPINLOCK, *PSPINLOCK;
     release_spinlock(lock); \
     if (__t) arch_enable_trap();})
 
-// TODO: scheduler-related lock
-
 #endif

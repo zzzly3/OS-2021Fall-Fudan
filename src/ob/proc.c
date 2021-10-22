@@ -1,9 +1,9 @@
 #include <ob/proc.h>
 
 static OBJECT_POOL ProcessPool;
-static SPINLOCK ProcessListLock;
-int NextProcessId;
-PKPROCESS KernelProcess;
+static SPINLOCK ProcessListLock[CPU_NUM];
+int NextProcessId[CPU_NUM];
+PKPROCESS KernelProcess[CPU_NUM];
 
 void PsUserProcessEntry();
 void PsKernelProcessEntry();
@@ -12,22 +12,25 @@ void PsiExitProcess();
 
 BOOL ObInitializeProcessManager()
 {
-	MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
-	KeInitializeSpinLock(&ProcessListLock);
-	KernelProcess = PsCreateProcessEx();
-	if (KernelProcess == NULL)
+	int cid = cpuid();
+	if (cid == START_CPU)
+		MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
+	KeInitializeSpinLock(&ProcessListLock[cid]);
+	KernelProcess[cid] = PsCreateProcessEx();
+	if (KernelProcess[cid] == NULL)
 		return FALSE;
-	KernelProcess->ExecuteLevel = EXECUTE_LEVEL_RT;
-	KernelProcess->Flags |= PROCESS_FLAG_KERNEL;
-	KernelProcess->ProcessList.Forward = KernelProcess->ProcessList.Backward = &KernelProcess->ProcessList;
-	KernelProcess->SchedulerList.Forward = KernelProcess->SchedulerList.Backward = &KernelProcess->SchedulerList;
-	KernelProcess->WaitList.Forward = KernelProcess->WaitList.Backward = &KernelProcess->WaitList;
+	KernelProcess[cid]->ExecuteLevel = EXECUTE_LEVEL_RT;
+	KernelProcess[cid]->Flags |= PROCESS_FLAG_KERNEL;
+	KernelProcess[cid]->ProcessList.Forward = KernelProcess[cid]->ProcessList.Backward = &KernelProcess[cid]->ProcessList;
+	KernelProcess[cid]->SchedulerList.Forward = KernelProcess[cid]->SchedulerList.Backward = &KernelProcess[cid]->SchedulerList;
+	KernelProcess[cid]->WaitList.Forward = KernelProcess[cid]->WaitList.Backward = &KernelProcess[cid]->WaitList;
 	ObInitializeScheduler();
 	return TRUE;
 }
 
 PKPROCESS PsCreateProcessEx()
 {
+	int cid = cpuid();
 	BOOL trapen = arch_disable_trap();
 	PKPROCESS p = (PKPROCESS)MmAllocateObject(&ProcessPool);
 	if (p == NULL)
@@ -44,9 +47,9 @@ PKPROCESS PsCreateProcessEx()
 		return NULL;
 	}
 	p->Context.KernelStack.p = (PVOID)((ULONG64)g + PAGE_SIZE - 192);
-	KeAcquireSpinLockFast(&ProcessListLock);
-	p->ProcessId = NextProcessId++;
-	KeReleaseSpinLockFast(&ProcessListLock);
+	KeAcquireSpinLockFast(&ProcessListLock[cid]);
+	p->ProcessId = (NextProcessId[cid]++) * CPU_NUM + cid;
+	KeReleaseSpinLockFast(&ProcessListLock[cid]);
 	if (trapen)
 		arch_enable_trap();
 	return p;
@@ -55,6 +58,7 @@ PKPROCESS PsCreateProcessEx()
 // Create & run the process described by the object
 RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
+	int cid = cpuid();
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
 		Process->Context.KernelStack.d->lr = (ULONG64)PsKernelProcessEntry;
@@ -67,9 +71,9 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
 	}
-	KeAcquireSpinLockFast(&ProcessListLock);
-	LibInsertListEntry(&KernelProcess->ProcessList, &Process->ProcessList);
-	KeReleaseSpinLockFast(&ProcessListLock);
+	KeAcquireSpinLockFast(&ProcessListLock[cid]);
+	LibInsertListEntry(&KernelProcess[cid]->ProcessList, &Process->ProcessList);
+	KeReleaseSpinLockFast(&ProcessListLock[cid]);
 	PsiStartNewProcess(Process);
 }
 
@@ -81,7 +85,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->Flags |= PROCESS_FLAG_KERNEL;
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
-	p->ParentId = KernelProcess->ProcessId;
+	p->ParentId = KernelProcess[cpuid()]->ProcessId;
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);

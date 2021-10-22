@@ -9,6 +9,8 @@
 #include <ob/mem.h>
 
 #define TIME_SLICE_MS 100
+#define CPU_NUM 4
+#define START_CPU 0
 
 struct _KPROCESS;
 typedef void (*PDPC_ROUTINE)(ULONG64);
