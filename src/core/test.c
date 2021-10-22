@@ -76,9 +76,10 @@ void sys_switch_test_proc(ULONG64 arg)
             if (!KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+            int sum;
             for (int i = 0; i < 1024; i++)
             {
-                int sum = 0;
+                sum = 0;
                 for (int j = 0; j < 1024; j++)
                 {
                     sum += a[j];
@@ -87,6 +88,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
             cnt++;
+            printf("%d %d\n", cnt, (sum + (1023 ^ sum)) % 19260817);
             KeSetMutexSignaled(&mut);
             if (cnt < 100)
             {
@@ -103,7 +105,6 @@ void sys_switch_test_proc(ULONG64 arg)
             {
                 sum = (sum + a[i]) % 19260817;
             }
-            printf("%d %d\n", cnt, sum);
             if (sum == 16094207)
                 sys_test_pass("Pass: serial")
             else
