@@ -108,6 +108,8 @@ void sys_switch_test_proc(ULONG64 arg)
             {
                 sum = (sum + a[i]) % 19260817;
             }
+            if (cnt != 100)
+                KeBugFault(BUG_STOP);
             if (sum == 16094207)
                 sys_test_pass("Pass: serial")
             else
