@@ -65,12 +65,12 @@ void sys_mem_test()
     sys_test_pass("Pass: balance");
 }
 
-static MUTEX mut;
+static MUTEX mut, mut2;
 static int a[4096], cnt;
-static SPINLOCK lock;
 static int chk;
 void sys_switch_test_proc(ULONG64 arg)
 {
+    int n;
     switch (arg)
     {
         case 0: {
@@ -89,16 +89,39 @@ void sys_switch_test_proc(ULONG64 arg)
                 }
                 a[i] = (a[i] + (i ^ sum)) % 19260817;
             }
-            cnt++;
+            n = cnt++;
             if (chk != PsGetCurrentProcess()->ProcessId)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt > 100)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt == 100)
-                KeCreateDpc(sys_switch_test_proc, 1);
+                KeCreateDpc(sys_switch_test_proc, 2);
+            KeSetMutexSignaled(&mut);
+        }
+        case 1 : {
+            KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+            if (!KSUCCESS(KeWaitForMutexSignaled(&mut2, TRUE)))
+                KeBugFault(BUG_STOP);
+            KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+            for (int i = 0; i < 40; i++)
+            {
+                for (int j = 0; j < (a[n * 40 + i] & 0x1ffff); j++)
+                {
+                    a[n * 40 + i] = ((long long)a[n * 40 + i] * a[n * 40 + i] + chk) % 19260817;
+                }
+            }
+            KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+            if (!KSUCCESS(KeWaitForMutexSignaled(&mut, FALSE)))
+                KeBugFault(BUG_STOP);
+            KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+            cnt++;
+            if (cnt > 200)
+                KeBugFault(BUG_CHECKFAIL);
+            if (cnt == 200)
+                KeCreateDpc(sys_switch_test_proc, 3);
             KeSetMutexSignaled(&mut);
         } break;
-        case 1 : {
+        case 2 : {
             int sum = 0;
             for (int i = 0; i < 4096; i++)
             {
@@ -109,7 +132,21 @@ void sys_switch_test_proc(ULONG64 arg)
                 sys_test_pass("Pass: serial")
             else
                 sys_test_fail("Fail: serial")
-        } break;
+            chk = 12345;
+            KeSetMutexSignaled(&mut2);
+        } return;
+        case 3 : {
+            int sum = 0;
+            for (int i = 0; i < 4096; i++)
+            {
+                sum = (sum + a[i]) % 19260817;
+            }
+            printf("ans: %d\n", sum);
+            if (sum == 12415240)
+                sys_test_pass("Pass: parallel")
+            else
+                sys_test_fail("Fail: parallel")
+        } return;
     }
     KeExitProcess();
 }
@@ -121,7 +158,8 @@ void sys_switch_test()
     {
         sys_test_info("Serial 100 Process")
         KeInitializeMutex(&mut);
-        KeInitializeSpinLock(&lock);
+        KeInitializeMutex(&mut2);
+        mut2.Signaled = FALSE;
     }
     int pid[25]; // 25 * 4
     for (int i = 0; i < 25; i++)
