@@ -76,6 +76,7 @@ APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset
 			return STATUS_ALERTED;
 		}
 	}
+	Mutex->Signaled = FALSE;
 	if (Reset)
 		KeiSetMutexSignaled(Mutex);
 	ObUnlockObjectFast(Mutex);

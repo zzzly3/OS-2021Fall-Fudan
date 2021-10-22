@@ -7,7 +7,7 @@
 
 typedef struct _MUTEX
 {
-	BOOL Signaled;
+	volatile BOOL Signaled;
 	SPINLOCK Lock;
 	LIST_ENTRY WaitList;
 } MUTEX, *PMUTEX;

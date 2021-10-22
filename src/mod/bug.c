@@ -17,7 +17,7 @@ static const struct
 static const CPCHAR ELName[] = {"USR", "APC", "RT", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};
 
-BOOL KeBugFaultFlag = FALSE;
+volatile BOOL KeBugFaultFlag = FALSE;
 
 CPCHAR KeiGetBugDescription(ULONG64 BugId)
 {
