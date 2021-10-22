@@ -16,7 +16,7 @@ void sys_test()
     sys_test_info("Test process");
     sys_switch_test();
     sys_test_info("Finish");
-    while(1);
+    KeBugFault(0xDEEDBEEF);
 }
 
 void sys_mem_test()

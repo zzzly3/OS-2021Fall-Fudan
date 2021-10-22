@@ -41,9 +41,11 @@
 
 原则上KPROCESS.Status的修改似乎应当加锁，但考虑到只要设计的时候小心一些，便不存在多核同时更改进程状态的情形，因此做了无锁设计。下面列出了不同进程状态间切换的情形。
 
-* RUNNING - WAITING 调度器switch out
-* WAITING - RUNNING 调度器switch in
-* RUNNING - BLOCKED 进程自身wait（状态切换是整个wait原子操作的一部分）
-* BLOCKED - WAITING signal
+* RUNNING - RUNABLE 调度器switch out
+* RUNABLE - RUNNING 调度器switch in
+* RUNNING - WAIT 进程wait
+* WAIT - RUNABLE 调度器根据APC和Mutex决定
 
-进程状态与其处于调度器的Active list还是Inactive list并无直接联系。后者由调度器依据进程状态进行管理，并非一一对应。
+wait mutex可能成功，也可能被APC打断，看返回值。即使成功也不代表没有APC，请慎重降低级别。
+
+保持Mutex期间原则上应当保证至少APC level，除非你觉得退出不释放没事。
