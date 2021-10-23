@@ -1,4 +1,5 @@
 #include <mod/worker.h>
+#include <def.h>
 
 // extern PKPROCESS KernelProcess[CPU_NUM]; // use self instead
 RT_ONLY void PsiCheckInactiveList();
@@ -6,6 +7,7 @@ RT_ONLY void PsiCheckInactiveList();
 void KeSystemWorkerEntry()
 {
 	PKPROCESS cur = PsGetCurrentProcess();
+	printf("%d worker.\n", cpuid());
 	while (1)
 	{
 		// Awake waiting process
@@ -15,7 +17,7 @@ void KeSystemWorkerEntry()
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{
 			// Scheduler list is empty
-			delay_us(TIME_SLICE_MS / 2);
+			delay_us(TIME_SLICE_MS / 8);
 		}
 		else
 		{
