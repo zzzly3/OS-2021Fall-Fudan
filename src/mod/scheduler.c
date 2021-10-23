@@ -127,7 +127,7 @@ UNSAFE RT_ONLY void KeClearDpcList()
 	arch_enable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
 	{
-		DpcWatchTimer[cid] = 2;
+		DpcWatchTimer[cid] = 3;
 		p->DpcRoutine(p->DpcArgument);
 	}
 	arch_disable_trap();
