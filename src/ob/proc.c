@@ -1,8 +1,9 @@
 #include <ob/proc.h>
+#include <def.h>
 
 static OBJECT_POOL ProcessPool;
-static SPINLOCK ProcessListLock[CPU_NUM];
-int NextProcessId[CPU_NUM];
+static SPINLOCK ProcessListLock;
+int NextProcessId;
 PKPROCESS KernelProcess[CPU_NUM];
 
 void PsUserProcessEntry();
@@ -16,16 +17,27 @@ BOOL ObInitializeProcessManager()
 {
 	int cid = cpuid();
 	if (cid == START_CPU)
+	{
 		MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
-	KeInitializeSpinLock(&ProcessListLock[cid]);
+		KeInitializeSpinLock(&ProcessListLock);
+	}
 	KernelProcess[cid] = PsCreateProcessEx();
 	if (KernelProcess[cid] == NULL)
 		return FALSE;
 	KernelProcess[cid]->ExecuteLevel = EXECUTE_LEVEL_RT;
 	KernelProcess[cid]->Flags |= PROCESS_FLAG_KERNEL;
-	KernelProcess[cid]->ProcessList.Forward = KernelProcess[cid]->ProcessList.Backward = &KernelProcess[cid]->ProcessList;
 	KernelProcess[cid]->SchedulerList.Forward = KernelProcess[cid]->SchedulerList.Backward = &KernelProcess[cid]->SchedulerList;
 	KernelProcess[cid]->WaitList.Forward = KernelProcess[cid]->WaitList.Backward = &KernelProcess[cid]->WaitList;
+	KeAcquireSpinLockFast(&ProcessListLock);
+	if (cid == START_CPU)
+	{
+		KernelProcess[cid]->ProcessList.Forward = KernelProcess[cid]->ProcessList.Backward = &KernelProcess[cid]->ProcessList;
+	}
+	else
+	{
+		LibInsertListEntry(&KernelProcess[START_CPU]->ProcessList, &KernelProcess[cid]->ProcessList);
+	}
+	KeReleaseSpinLockFast(&ProcessListLock);
 	ObInitializeScheduler();
 	return TRUE;
 }
@@ -49,9 +61,9 @@ PKPROCESS PsCreateProcessEx()
 		return NULL;
 	}
 	p->Context.KernelStack.p = (PVOID)((ULONG64)g + PAGE_SIZE - 192);
-	KeAcquireSpinLockFast(&ProcessListLock[cid]);
-	p->ProcessId = (NextProcessId[cid]++) * CPU_NUM + cid;
-	KeReleaseSpinLockFast(&ProcessListLock[cid]);
+	KeAcquireSpinLockFast(&ProcessListLock);
+	p->ProcessId = (NextProcessId++) * CPU_NUM + cid;
+	KeReleaseSpinLockFast(&ProcessListLock);
 	if (trapen)
 		arch_enable_trap();
 	return p;
@@ -61,7 +73,6 @@ PKPROCESS PsCreateProcessEx()
 RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
 	ASSERT(PsGetCurrentProcess()->ExecuteLevel == EXECUTE_LEVEL_RT, BUG_BADLEVEL);
-	int cid = cpuid();
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
 		Process->Context.KernelStack.d->lr = (ULONG64)PsKernelProcessEntry;
@@ -74,9 +85,9 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
 	}
-	KeAcquireSpinLockFast(&ProcessListLock[cid]);
-	LibInsertListEntry(&KernelProcess[cid]->ProcessList, &Process->ProcessList);
-	KeReleaseSpinLockFast(&ProcessListLock[cid]);
+	KeAcquireSpinLockFast(&ProcessListLock);
+	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
+	KeReleaseSpinLockFast(&ProcessListLock);
 	PsiStartNewProcess(Process);
 }
 
@@ -105,12 +116,11 @@ void KeExitProcess()
 
 KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 {
-	int cid = cpuid();
 	KSTATUS ret = STATUS_OBJECT_NOT_FOUND;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	KeAcquireSpinLockFast(&ProcessListLock[cid]);
-	PKPROCESS p = next_process(KernelProcess[cid]);
-	while (p != KernelProcess[cid])
+	KeAcquireSpinLockFast(&ProcessListLock);
+	PKPROCESS p = next_process(KernelProcess[0]);
+	while (p != KernelProcess[0])
 	{
 		if (p->ProcessId == ProcessId)
 		{
@@ -127,7 +137,7 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 			break;
 		}
 	}
-	KeReleaseSpinLockFast(&ProcessListLock[cid]);
+	KeReleaseSpinLockFast(&ProcessListLock);
 	KeLowerExecuteLevel(oldel);
 	return ret;
 }

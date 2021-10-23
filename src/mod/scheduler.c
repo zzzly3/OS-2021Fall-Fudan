@@ -1,5 +1,4 @@
 #include <mod/scheduler.h>
-#include <def.h>
 
 extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
