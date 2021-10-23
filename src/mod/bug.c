@@ -53,7 +53,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	printf(BLUE("[*]")"Stack:\n");
-	for (int i = 0; i < 32; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		printf("+0x%x\t%p\n", i * 8, ((ULONG64*)p)[i]);
 	}
