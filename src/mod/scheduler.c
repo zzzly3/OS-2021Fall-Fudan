@@ -69,6 +69,8 @@ void KiClockTrapEntry()
 	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
+		uart_put_char('+');
+		uart_put_char('1' + DpcWatchTimer[cid]);
 		ASSERT(DpcWatchTimer[cid] == 0, BUG_BADDPC);
 		if (DpcWatchTimer[cid] != -1)
 			DpcWatchTimer[cid]--;
