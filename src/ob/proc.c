@@ -122,6 +122,7 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	PKPROCESS p = next_process(KernelProcess[0]);
 	while (p != KernelProcess[0])
 	{
+		printf("%p\n", (PVOID)p);
 		if (p->ProcessId == ProcessId)
 		{
 			if (p->Status != PROCESS_STATUS_INITIALIZE)
