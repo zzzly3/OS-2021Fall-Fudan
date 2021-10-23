@@ -1,5 +1,5 @@
 #include <mod/scheduler.h>
-#include <driver/uart.h>
+#include <def.h>
 
 extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
@@ -69,6 +69,7 @@ void KiClockTrapEntry()
 	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
+		printf("cpu %d watch %d\n", cid, DpcWatchTimer[cid]);
 		ASSERT(DpcWatchTimer[cid] != 0, BUG_BADDPC);
 		if (DpcWatchTimer[cid] != -1)
 			DpcWatchTimer[cid]--;
@@ -128,11 +129,7 @@ UNSAFE RT_ONLY void KeClearDpcList()
 	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
 	{
 		DpcWatchTimer[cid] = 3;
-		uart_put_char('*');
-		uart_put_char('1' + DpcWatchTimer[cid]);
 		p->DpcRoutine(p->DpcArgument);
-		uart_put_char('&');
-		uart_put_char('1' + DpcWatchTimer[cid]);
 	}
 	arch_disable_trap();
 	DpcWatchTimer[cid] = -1;
