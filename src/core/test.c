@@ -152,9 +152,9 @@ void sys_switch_test_proc(ULONG64 arg)
             KeCreateDpc(sys_switch_test_proc, 4);
         } return;
         case 4: {
-            printf("CPU %d take c4\n", cpuid());
             delay_us(100 * 1000);
             PKPROCESS p;
+            printf("CPU %d take c4\n", cpuid());
             ASSERT(KSUCCESS(PsReferenceProcessById(100, &p)), BUG_STOP);
             ASSERT(p->ProcessId == 100, BUG_CHECKFAIL);
             printf("%d\n", p->Status);
