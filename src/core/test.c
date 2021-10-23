@@ -154,10 +154,12 @@ void sys_switch_test_proc(ULONG64 arg)
         case 4: {
             delay_us(100 * 1000);
             PKPROCESS p;
-            printf("CPU %d take c4\n", cpuid());
+            printf("CPU %d A\n", cpuid());
             ASSERT(KSUCCESS(PsReferenceProcessById(100, &p)), BUG_STOP);
+            printf("CPU %d B\n", cpuid());
             ASSERT(p->ProcessId == 100, BUG_CHECKFAIL);
             printf("%d\n", p->Status);
+            printf("CPU %d C\n", cpuid());
         } return;
     }
     KeExitProcess();
