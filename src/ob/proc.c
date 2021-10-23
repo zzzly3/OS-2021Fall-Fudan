@@ -122,7 +122,6 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	PKPROCESS p = next_process(KernelProcess[0]);
 	while (p != KernelProcess[0])
 	{
-		printf("%p %p\n", (PVOID)p, (PVOID)KernelProcess[0]);
 		if (p->ProcessId == ProcessId)
 		{
 			if (p->Status != PROCESS_STATUS_INITIALIZE)
@@ -137,6 +136,7 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 			}
 			break;
 		}
+		p = next_process(p);
 	}
 	KeReleaseSpinLockFast(&ProcessListLock);
 	KeLowerExecuteLevel(oldel);

@@ -68,7 +68,7 @@ void KiClockTrapEntry()
 	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
-		printf("cpu %d watch %d\n", cid, DpcWatchTimer[cid]);
+		//printf("cpu %d watch %d\n", cid, DpcWatchTimer[cid]);
 		ASSERT(DpcWatchTimer[cid] != 0, BUG_BADDPC);
 		if (DpcWatchTimer[cid] != -1)
 			DpcWatchTimer[cid]--;
