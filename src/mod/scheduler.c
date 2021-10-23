@@ -186,8 +186,8 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
 	ASSERT(proc->ExecuteLevel >= OriginalExecuteLevel, BUG_BADLEVEL);
-	ASSERT(DpcWatchTimer[cpuid()] != -1, BUG_BADLEVEL);
-	ASSERT(proc->Flags & PROCESS_FLAG_APCSTATE, BUG_BADLEVEL);
+	ASSERT(OriginalExecuteLevel >= EXECUTE_LEVEL_RT || DpcWatchTimer[cpuid()] == -1, BUG_BADLEVEL);
+	ASSERT(OriginalExecuteLevel >= EXECUTE_LEVEL_APC || !(proc->Flags & PROCESS_FLAG_APCSTATE), BUG_BADLEVEL);
 	// ObLockObject(proc);
 	if (proc->ExecuteLevel >= EXECUTE_LEVEL_RT && OriginalExecuteLevel < EXECUTE_LEVEL_RT)
 	{
