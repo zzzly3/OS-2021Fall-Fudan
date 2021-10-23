@@ -8,7 +8,7 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
 static LIST_ENTRY InactiveList[CPU_NUM];
-static int DpcWatchTimer[CPU_NUM];
+int DpcWatchTimer[CPU_NUM];
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;

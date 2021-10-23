@@ -7,7 +7,6 @@ RT_ONLY void PsiCheckInactiveList();
 void KeSystemWorkerEntry()
 {
 	PKPROCESS cur = PsGetCurrentProcess();
-	printf("%d worker.\n", cpuid());
 	while (1)
 	{
 		// Awake waiting process
