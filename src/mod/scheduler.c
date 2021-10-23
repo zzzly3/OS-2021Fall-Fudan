@@ -8,7 +8,7 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
 static LIST_ENTRY InactiveList[CPU_NUM];
-int DpcWatchTimer[CPU_NUM];
+int DpcWatchTimer[CPU_NUM]; // default is unsigned in arm??
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -70,7 +70,7 @@ void KiClockTrapEntry()
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
 		ASSERT(DpcWatchTimer[cid] == 0, BUG_BADDPC);
-		if (DpcWatchTimer[cid] > 0)
+		if (DpcWatchTimer[cid] != -1)
 			DpcWatchTimer[cid]--;
 		return;
 	}
