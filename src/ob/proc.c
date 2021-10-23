@@ -10,6 +10,8 @@ void PsKernelProcessEntry();
 RT_ONLY void PsiStartNewProcess(PKPROCESS);
 void PsiExitProcess();
 
+#define next_process(proc) container_of((proc)->ProcessList.Backward, KPROCESS, ProcessList)
+
 BOOL ObInitializeProcessManager()
 {
 	int cid = cpuid();
@@ -99,4 +101,33 @@ void KeExitProcess()
 {
 	// KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	PsiExitProcess();
+}
+
+KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
+{
+	int cid = cpuid();
+	KSTATUS ret = STATUS_OBJECT_NOT_FOUND;
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	KeAcquireSpinLockFast(&ProcessListLock[cid]);
+	PKPROCESS p = next_process(KernelProcess[cid]);
+	while (p != KernelProcess[cid])
+	{
+		if (p->ProcessId == ProcessId)
+		{
+			if (p->Status != PROCESS_STATUS_INITIALIZE)
+			{
+				if (ObReferenceObjectFast(p))
+				{
+					ret = STATUS_SUCCESS;
+					*Process = p;
+				}
+				else
+					ret = STATUS_MAX_REFERENCE;
+			}
+			break;
+		}
+	}
+	KeReleaseSpinLockFast(&ProcessListLock[cid]);
+	KeLowerExecuteLevel(oldel);
+	return ret;
 }

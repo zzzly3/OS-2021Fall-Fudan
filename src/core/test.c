@@ -153,6 +153,10 @@ void sys_switch_test_proc(ULONG64 arg)
         } return;
         case 4: {
             delay_us(100 * 1000);
+            PKPROCESS p;
+            ASSERT(KSUCCESS(PsReferenceProcessById(100, &p)), BUG_STOP);
+            ASSERT(p->ProcessId == 100, BUG_CHECKFAIL);
+            printf("%d\n", p->Status);
         } return;
     }
     KeExitProcess();
