@@ -131,7 +131,7 @@ UNSAFE RT_ONLY void KeClearDpcList()
 		uart_put_char('*');
 		uart_put_char('1' + DpcWatchTimer[cid]);
 		p->DpcRoutine(p->DpcArgument);
-		uart_put_char('*');
+		uart_put_char('&');
 		uart_put_char('1' + DpcWatchTimer[cid]);
 	}
 	arch_disable_trap();
