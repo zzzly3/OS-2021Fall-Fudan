@@ -152,7 +152,7 @@ void sys_switch_test_proc(ULONG64 arg)
             KeCreateDpc(sys_switch_test_proc, 4);
         } return;
         case 4: {
-            delay_us(1000 * 1000);
+            delay_us(100 * 1000);
         } return;
     }
     KeExitProcess();
