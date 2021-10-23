@@ -108,6 +108,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 for (int j = 0; j < a[n * 40 + i]; j++)
                 {
                     a[n * 40 + i] = ((long long)a[n * 40 + i] * a[n * 40 + i] + chk) % 19260817;
+                    delay_us(5);
                 }
             }
             KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);

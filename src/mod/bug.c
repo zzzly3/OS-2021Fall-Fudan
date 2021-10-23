@@ -12,7 +12,11 @@ static const struct
 	{BUG_PANIC, "PANIC (legacy bug interface) called."},
 	{BUG_STOP, "Kernel stopped initiatively."},
 	{BUG_EXCEPTION, "Unknown kernel-mode exception detected."},
-	{BUG_CHECKFAIL, "Self-check failed while testing."}
+	{BUG_CHECKFAIL, "Self-check failed while testing."},
+	{BUG_BADLEVEL, "Execute level mismatching."},
+	{BUG_BADLOCK, "Kernel-mode lock objects corruptted."},
+	{BUG_BADDPC, "DPC routine takes too much time."},
+	{BUG_UNSAFETRAP, "Trap enabled during unsafe operations."}
 };
 static const CPCHAR ELName[] = {"USR", "APC", "RT", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};

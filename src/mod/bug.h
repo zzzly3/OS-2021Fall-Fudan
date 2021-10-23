@@ -8,9 +8,13 @@
 #define BUG_STOP 0xdeedbeef
 #define BUG_CHECKFAIL 0x11111111
 #define BUG_EXCEPTION 0x1
-
+#define BUG_BADLEVEL 0x2
+#define BUG_BADLOCK 0x3
+#define BUG_BADDPC 0x4
+#define BUG_UNSAFETRAP 0x5
 
 void KeBugFaultEx(CPCHAR, ULONG64, ULONG64);
 #define KeBugFault(id) KeBugFaultEx(__FILE__, __LINE__, id)
+#define ASSERT(expr, id) if (!(expr)) KeBugFault(id)
 
 #endif

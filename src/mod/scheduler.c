@@ -8,6 +8,7 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
 static LIST_ENTRY InactiveList[CPU_NUM];
+static int DpcWatchTimer[CPU_NUM];
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -26,6 +27,7 @@ void ObInitializeScheduler()
 		MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
 		DpcList = NULL;
 	}
+	DpcWatchTimer[cid] = -1;
 	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
 	arch_set_tid((ULONG64)KernelProcess[cid]);
 	KernelProcess[cid]->Status = PROCESS_STATUS_RUNNING;
@@ -64,8 +66,14 @@ void KiClockTrapEntry()
 	reset_clock(TIME_SLICE_MS);
 	//uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
+	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
+	{
+		ASSERT(DpcWatchTimer[cid] == 0, BUG_BADDPC);
+		if (DpcWatchTimer[cid] > 0)
+			DpcWatchTimer[cid]--;
 		return;
+	}
 	KeTaskSwitch();
 	return;
 }
@@ -108,6 +116,7 @@ PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argume
 
 UNSAFE RT_ONLY void KeClearDpcList()
 {
+	int cid = cpuid();
 	// Batch processing
 	KeAcquireSpinLockFast(&DpcListLock);
 	PDPC_ENTRY dpc = DpcList;
@@ -118,8 +127,10 @@ UNSAFE RT_ONLY void KeClearDpcList()
 	arch_enable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
 	{
+		DpcWatchTimer[cid] = 2;
 		p->DpcRoutine(p->DpcArgument);
 	}
+	DpcWatchTimer[cid] = -1;
 	arch_disable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL;)
 	{
@@ -139,12 +150,15 @@ UNSAFE APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 	ObUnlockObjectFast(cur);
 	if (apc == NULL)
 		return;
+	// If trap enabled, should use atomic bit-set operation instead.
+	cur->Flags |= PROCESS_FLAG_APCSTATE;
 	arch_enable_trap();
 	for (PAPC_ENTRY p = apc; p != NULL; p = p->NextEntry)
 	{
 		p->ApcRoutine(p->ApcArgument);
 	}
 	arch_disable_trap();
+	cur->Flags &= ~PROCESS_FLAG_APCSTATE;
 	for (PAPC_ENTRY p = apc; p != NULL;)
 	{
 		PAPC_ENTRY np = p->NextEntry;
@@ -156,9 +170,11 @@ UNSAFE APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 // No need to lock the process, since only the process itself can change its realtime-state.
 EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL TargetExecuteLevel)
 {
+	ASSERT(TargetExecuteLevel < EXECUTE_LEVEL_ISR, BUG_BADLEVEL);
 	PKPROCESS proc = PsGetCurrentProcess();
 	// ObLockObject(proc);
 	EXECUTE_LEVEL old = proc->ExecuteLevel;
+	ASSERT(TargetExecuteLevel >= old, BUG_BADLEVEL);
 	proc->ExecuteLevel = TargetExecuteLevel;
 	// ObUnlockObject(proc);
 	return old;
@@ -169,6 +185,9 @@ EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL TargetExecuteLevel)
 void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 {
 	PKPROCESS proc = PsGetCurrentProcess();
+	ASSERT(proc->ExecuteLevel >= OriginalExecuteLevel, BUG_BADLEVEL);
+	ASSERT(DpcWatchTimer[cpuid()] >= 0, BUG_BADLEVEL);
+	ASSERT(proc->Flags & PROCESS_FLAG_APCSTATE, BUG_BADLEVEL);
 	// ObLockObject(proc);
 	if (proc->ExecuteLevel >= EXECUTE_LEVEL_RT && OriginalExecuteLevel < EXECUTE_LEVEL_RT)
 	{
@@ -196,6 +215,7 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 
 UNSAFE void KeTaskSwitch()
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	int cid = cpuid();
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.

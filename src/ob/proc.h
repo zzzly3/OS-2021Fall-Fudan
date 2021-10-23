@@ -5,6 +5,7 @@
 #include <ob/mem.h>
 #include <ob/mutex.h>
 #include <mod/scheduler.h>
+#include <mod/bug.h>
 
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1
@@ -13,6 +14,7 @@
 #define PROCESS_STATUS_WAIT 4
 #define PROCESS_FLAG_KERNEL 1
 #define PROCESS_FLAG_REALTIME 2
+#define PROCESS_FLAG_APCSTATE 4
 
 typedef struct _KPROCESS
 {

@@ -18,5 +18,6 @@ PsKernelProcessEntry: // x0: KernelEntry; x1: KernelArgument
 	mov x0, #0
 	msr daif, x0
 	mov x0, x20
+	mov x30, KeExitProcess // return to exit
 	br x19
 	

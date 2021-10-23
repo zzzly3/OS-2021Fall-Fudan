@@ -4,6 +4,7 @@
 #include <common/lutil.h>
 #include <common/spinlock.h>
 #include <ob/proc.h>
+#include <mod/bug.h>
 
 typedef struct _MUTEX
 {

@@ -56,6 +56,7 @@ BOOL KeTestMutexSignaled(PMUTEX Mutex, BOOL Reset)
 APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset to 1(signaled)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
+	ASSERT(cur->ExecuteLevel == EXECUTE_LEVEL_APC, BUG_BADLEVEL);
 	// Disable interrupt to avoid unexpected context switching. (APC level)
 	BOOL trapen = arch_disable_trap();
 	ObLockObjectFast(Mutex);
@@ -75,8 +76,13 @@ APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset
 			if (trapen) arch_enable_trap();
 			return STATUS_ALERTED;
 		}
+		ASSERT(Mutex->Signaled == FALSE, BUG_BADLOCK);
 	}
-	Mutex->Signaled = FALSE;
+	else
+	{
+		ASSERT(Mutex->WaitList.Backward == &Mutex->WaitList, BUG_BADLOCK);
+		Mutex->Signaled = FALSE;
+	}
 	if (Reset)
 		KeiSetMutexSignaled(Mutex);
 	ObUnlockObjectFast(Mutex);

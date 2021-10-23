@@ -31,7 +31,7 @@ static inline void system_init()
 	else // Wait the start cpu to complete initializing.
 		delay_us(200*1000);
 	// Per CPU operations
-	ObInitializeProcessManager();
+	ASSERT(ObInitializeProcessManager(), BUG_STOP);
 	arch_enable_trap();
 }
 
