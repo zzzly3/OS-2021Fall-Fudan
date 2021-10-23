@@ -8,7 +8,7 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
 static LIST_ENTRY InactiveList[CPU_NUM];
-int DpcWatchTimer[CPU_NUM]; // default is unsigned in arm??
+int DpcWatchTimer[CPU_NUM];
 static SPINLOCK DpcListLock;
 static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
@@ -69,9 +69,7 @@ void KiClockTrapEntry()
 	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
-		uart_put_char('+');
-		uart_put_char('1' + DpcWatchTimer[cid]);
-		ASSERT(DpcWatchTimer[cid] == 0, BUG_BADDPC);
+		ASSERT(DpcWatchTimer[cid] != 0, BUG_BADDPC);
 		if (DpcWatchTimer[cid] != -1)
 			DpcWatchTimer[cid]--;
 		return;
@@ -129,7 +127,7 @@ UNSAFE RT_ONLY void KeClearDpcList()
 	arch_enable_trap();
 	for (PDPC_ENTRY p = dpc; p != NULL; p = p->NextEntry)
 	{
-		DpcWatchTimer[cid] = 3;
+		DpcWatchTimer[cid] = 2;
 		p->DpcRoutine(p->DpcArgument);
 	}
 	arch_disable_trap();

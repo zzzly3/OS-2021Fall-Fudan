@@ -16,7 +16,7 @@ void KeSystemWorkerEntry()
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{
 			// Scheduler list is empty
-			delay_us(TIME_SLICE_MS / 8);
+			delay_us(TIME_SLICE_MS / 10);
 		}
 		else
 		{

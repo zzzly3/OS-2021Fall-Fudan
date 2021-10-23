@@ -148,7 +148,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 sys_test_pass("Pass: parallel")
             else
                 sys_test_fail("Fail: parallel")
-            //KeCreateDpc(sys_switch_test_proc, 4);
+            KeCreateDpc(sys_switch_test_proc, 4);
         } return;
         case 4: {
             delay_us(1000 * 1000);
