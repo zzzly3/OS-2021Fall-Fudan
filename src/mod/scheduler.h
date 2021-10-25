@@ -8,7 +8,7 @@
 #include <ob/proc.h>
 #include <ob/mem.h>
 
-#define TIME_SLICE_MS 50
+#define TIME_SLICE_MS 20
 #define CPU_NUM 4
 #define START_CPU 0
 
