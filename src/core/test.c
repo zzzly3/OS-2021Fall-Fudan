@@ -188,6 +188,7 @@ void sys_transfer_test_proc(ULONG64 arg)
         for (int i = 0; i < CPU_NUM; i++)
             ASSERT(ActiveProcessCount[i] == 1, BUG_CHECKFAIL);
         sys_test_pass("Pass: transfer");
+        delay_us(1000 * 1000);
         return;
     }
     delay_us(arg * 1000 * 1000);

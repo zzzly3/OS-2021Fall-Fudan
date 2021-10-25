@@ -12,7 +12,7 @@ PDPC_ENTRY DpcList;
 static SPINLOCK DpcListLock;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
 int ActiveProcessCount[CPU_NUM];
-static PKPROCESS TransferProcess;
+PKPROCESS TransferProcess;
 static SPINLOCK TransferListLock;
 
 void swtch (PVOID kstack, PVOID* oldkstack);

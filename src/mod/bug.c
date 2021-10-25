@@ -24,6 +24,8 @@ static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT
 
 volatile BOOL KeBugFaultFlag = FALSE;
 extern int DpcWatchTimer[CPU_NUM];
+extern int ActiveProcessCount[CPU_NUM];
+extern PKPROCESS TransferProcess;
 
 CPCHAR KeiGetBugDescription(ULONG64 BugId)
 {
@@ -40,7 +42,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	BOOL trapen = arch_disable_trap();
 	if (KeBugFaultFlag) while (1);
 	KeBugFaultFlag = TRUE;
-	delay_us(200 * 1000);
+	delay_us(300 * 1000);
 	puts("\n\n\033[41;33m================KERNEL FAULT================\033[0m\n");
 	printf(BLUE("[*]")"Bug: \033[41;30m0x%p\033[0m "RED("%s")"\n", BugId, KeiGetBugDescription(BugId));
 	printf(BLUE("[*]")"Kernel fault in "RED("FILE %s, LINE %d")"\n", BugFile, BugLine);
@@ -52,6 +54,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	PKPROCESS cur = PsGetCurrentProcess();
 	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
 	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
+	printf(BLUE("[*]")"Active Process Count = %d %d %d %d, Transferring Process = %p.\n", ActiveProcessCount[0], ActiveProcessCount[1], ActiveProcessCount[2], ActiveProcessCount[3], (PVOID)TransferProcess);
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	printf(BLUE("[*]")"Stack:\n");
 	for (int i = 0; i < 16; i++)
