@@ -20,12 +20,12 @@ void KeSystemWorkerEntry()
 		PsiCheckInactiveList();
 		PsiTransferProcess();
 		WorkerSwitchTimer[cpuid()] = WORKER_SWITCH_ROUND; // Reset the timer
-		printf("Worker %d: active %d, waiting %d, transfer %p %p\n", cpuid(), ActiveProcessCount[cpuid()], WaitingProcessCount[cpuid()], TransferProcess, TransferWaitingProcess);
+		//printf("Worker %d: active %d, waiting %d, transfer %p %p\n", cpuid(), ActiveProcessCount[cpuid()], WaitingProcessCount[cpuid()], TransferProcess, TransferWaitingProcess);
 		KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{
 			// Scheduler list is empty
-			delay_us(TIME_SLICE_MS * 1000);
+			delay_us(TIME_SLICE_MS);
 		}
 		else
 		{

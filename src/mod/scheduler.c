@@ -125,7 +125,7 @@ RT_ONLY BOOL PsiTransferProcess()
 		}
 		KeReleaseSpinLockFast(&TransferWaitingListLock);
 	}
-	if (mn == minn && TransferProcess != NULL)
+	if (mn == minn && TransferWaitingProcess != NULL)
 	{
 		// Accept
 		KeAcquireSpinLockFast(&TransferWaitingListLock);
