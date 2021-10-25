@@ -63,8 +63,8 @@ NO_RETURN main()
     printf("CPU %d init.\n", cpuid());
     //spawn_init_process();
     if (cpuid() == 0)
-        KeCreateDpc(sys_switch_test, 0);
-        // KeCreateDpc(sys_transfer_test, 0);
+        // KeCreateDpc(sys_switch_test, 0);
+        KeCreateDpc(sys_transfer_test, 0);
     KeSystemWorkerEntry();
 }
 

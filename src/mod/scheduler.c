@@ -12,9 +12,12 @@ PDPC_ENTRY DpcList;
 static SPINLOCK DpcListLock;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
 int ActiveProcessCount[CPU_NUM];
+int WaitingProcessCount[CPU_NUM];
 PKPROCESS TransferProcess;
-int WorkerSwitchTimer[CPU_NUM];
+PKPROCESS TransferWaitingProcess;
 static SPINLOCK TransferListLock;
+static SPINLOCK TransferWaitingListLock;
+int WorkerSwitchTimer[CPU_NUM];
 
 void swtch (PVOID kstack, PVOID* oldkstack);
 void KiClockTrapEntry();
@@ -27,13 +30,16 @@ void ObInitializeScheduler()
 	{
 		KeInitializeSpinLock(&DpcListLock);
 		KeInitializeSpinLock(&TransferListLock);
+		KeInitializeSpinLock(&TransferWaitingListLock);
 		MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
 		MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
 		DpcList = NULL;
 		TransferProcess = NULL;
+		TransferWaitingProcess = NULL;
 	}
 	WorkerSwitchTimer[cid] = -1;
 	ActiveProcessCount[cid] = 1;
+	WaitingProcessCount[cid] = 0;
 	DpcWatchTimer[cid] = -1;
 	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
 	arch_set_tid((ULONG64)KernelProcess[cid]);
@@ -72,37 +78,65 @@ void PsiProcessEntry()
 RT_ONLY BOOL PsiTransferProcess()
 {
 	// No need for precision
+	// Active process
 	int maxn = 0, minn = ~(1 << 31), cid = cpuid(), mn = ActiveProcessCount[cid];
 	for (int i = 0; i < CPU_NUM; i++)
 		maxn = max(maxn, ActiveProcessCount[i]), minn = min(minn, ActiveProcessCount[i]);
-	if (maxn > minn)
+	if (maxn > minn && mn == maxn && mn > 2 && TransferProcess == NULL)
 	{
-		if (mn == maxn && mn > 2)
+		// Push out
+		KeAcquireSpinLockFast(&TransferListLock);
+		if (TransferProcess == NULL)
 		{
-			// Push out
-			KeAcquireSpinLockFast(&TransferListLock);
-			if (TransferProcess == NULL)
-			{
-				PKPROCESS p = container_of(KernelProcess[cid]->SchedulerList.Forward, KPROCESS, SchedulerList);
-				LibRemoveListEntry(&p->SchedulerList);
-				ActiveProcessCount[cid]--;
-				TransferProcess = p;
-			}
-			KeReleaseSpinLockFast(&TransferListLock);
+			PKPROCESS p = container_of(KernelProcess[cid]->SchedulerList.Forward, KPROCESS, SchedulerList);
+			LibRemoveListEntry(&p->SchedulerList);
+			ActiveProcessCount[cid]--;
+			TransferProcess = p;
 		}
-		else if (mn == minn)
+		KeReleaseSpinLockFast(&TransferListLock);
+	}
+	if (mn == minn && TransferProcess != NULL)
+	{
+		// Accept
+		KeAcquireSpinLockFast(&TransferListLock);
+		if (TransferProcess != NULL)
 		{
-			// Accept
-			KeAcquireSpinLockFast(&TransferListLock);
-			if (TransferProcess != NULL)
-			{
-				PKPROCESS p = TransferProcess;
-				TransferProcess = NULL;
-				LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &p->SchedulerList);
-				ActiveProcessCount[cid]++;
-			}
-			KeReleaseSpinLockFast(&TransferListLock);
+			PKPROCESS p = TransferProcess;
+			TransferProcess = NULL;
+			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &p->SchedulerList);
+			ActiveProcessCount[cid]++;
 		}
+		KeReleaseSpinLockFast(&TransferListLock);
+	}
+	// Waiting process
+	maxn = 0, minn = ~(1 << 31), mn = WaitingProcessCount[cid];
+	for (int i = 0; i < CPU_NUM; i++)
+		maxn = max(maxn, WaitingProcessCount[i]), minn = min(minn, WaitingProcessCount[i]);
+	if (maxn > minn + 5 && mn == maxn && TransferWaitingProcess == NULL) // threshold: 5
+	{
+		// Push out
+		KeAcquireSpinLockFast(&TransferWaitingListLock);
+		if (TransferWaitingProcess == NULL)
+		{
+			PKPROCESS p = container_of(InactiveList[cid].Forward, KPROCESS, SchedulerList);
+			LibRemoveListEntry(&p->SchedulerList);
+			WaitingProcessCount[cid]--;
+			TransferWaitingProcess = p;
+		}
+		KeReleaseSpinLockFast(&TransferWaitingListLock);
+	}
+	if (mn == minn && TransferProcess != NULL)
+	{
+		// Accept
+		KeAcquireSpinLockFast(&TransferWaitingListLock);
+		if (TransferWaitingProcess != NULL)
+		{
+			PKPROCESS p = TransferWaitingProcess;
+			TransferWaitingProcess = NULL;
+			LibInsertListEntry(&InactiveList[cid], &p->SchedulerList);
+			WaitingProcessCount[cid]++;
+		}
+		KeReleaseSpinLockFast(&TransferWaitingListLock);
 	}
 }
 
