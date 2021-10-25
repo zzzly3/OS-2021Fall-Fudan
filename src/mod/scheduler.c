@@ -88,6 +88,7 @@ RT_ONLY BOOL PsiTransferProcess()
 		KeAcquireSpinLockFast(&TransferListLock);
 		if (TransferProcess == NULL)
 		{
+			// Choose the last one
 			PKPROCESS p = container_of(KernelProcess[cid]->SchedulerList.Forward, KPROCESS, SchedulerList);
 			LibRemoveListEntry(&p->SchedulerList);
 			ActiveProcessCount[cid]--;
@@ -118,7 +119,8 @@ RT_ONLY BOOL PsiTransferProcess()
 		KeAcquireSpinLockFast(&TransferWaitingListLock);
 		if (TransferWaitingProcess == NULL)
 		{
-			PKPROCESS p = container_of(InactiveList[cid].Forward, KPROCESS, SchedulerList);
+			// Choose the first one, i.e. the last waiting one
+			PKPROCESS p = container_of(InactiveList[cid].Backward, KPROCESS, SchedulerList);
 			LibRemoveListEntry(&p->SchedulerList);
 			WaitingProcessCount[cid]--;
 			TransferWaitingProcess = p;
