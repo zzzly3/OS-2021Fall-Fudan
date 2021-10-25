@@ -54,6 +54,7 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 
+void sys_switch_test();
 void sys_transfer_test();
 
 NO_RETURN main()
@@ -62,7 +63,8 @@ NO_RETURN main()
     printf("CPU %d init.\n", cpuid());
     //spawn_init_process();
     if (cpuid() == 0)
-        KeCreateDpc(sys_switch_test_proc, 0);
+        KeCreateDpc(sys_switch_test, 0);
+        // KeCreateDpc(sys_transfer_test, 0);
     KeSystemWorkerEntry();
 }
 
