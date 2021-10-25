@@ -68,6 +68,7 @@ void sys_mem_test()
 static MUTEX mut, mut2;
 static int a[4096], cnt;
 static int chk;
+static int core1[CPU_NUM], core2[CPU_NUM];
 void sys_switch_test_proc(ULONG64 arg)
 {
     int n;
@@ -96,7 +97,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt == 100)
                 KeCreateDpc(sys_switch_test_proc, 2);
-            printf("#1 proc %d in cpu %d\n", n, cpuid());
+            core1[cpuid()]++;
             KeSetMutexSignaled(&mut);
         }
         case 1 : {
@@ -104,7 +105,6 @@ void sys_switch_test_proc(ULONG64 arg)
             if (!KSUCCESS(KeWaitForMutexSignaled(&mut2, TRUE)))
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-            printf("#2 proc %d in cpu %d\n", n, cpuid());
             for (int i = 0; i < 40; i++)
             {
                 for (int j = 0; j < a[n * 40 + i]; j++)
@@ -123,6 +123,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt == 200)
                 KeCreateDpc(sys_switch_test_proc, 3);
+            core2[cpuid()]++;
             KeSetMutexSignaled(&mut);
         } break;
         case 2 : {
@@ -151,7 +152,8 @@ void sys_switch_test_proc(ULONG64 arg)
                 sys_test_pass("Pass: parallel")
             else
                 sys_test_fail("Fail: parallel")
-            KeCreateDpc(sys_switch_test_proc, 4);
+            printf("Core balance: #1 [%d %d %d %d]; #2 [%d %d %d %d]\n", core1[0], core1[1], core1[2], core1[3], core2[0], core2[1], core2[2], core2[3]);
+            // KeCreateDpc(sys_switch_test_proc, 4);
         } return;
         case 4: {
             delay_us(100 * 1000);
