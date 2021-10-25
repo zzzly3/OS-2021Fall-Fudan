@@ -2,6 +2,7 @@
 #include <def.h>
 
 // extern PKPROCESS KernelProcess[CPU_NUM]; // use self instead
+extern int WorkerSwitchTimer[CPU_NUM];
 RT_ONLY void PsiCheckInactiveList();
 RT_ONLY BOOL PsiTransferProcess();
 
@@ -14,6 +15,7 @@ void KeSystemWorkerEntry()
 		KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 		PsiCheckInactiveList();
 		PsiTransferProcess();
+		WorkerSwitchTimer[cpuid()] = WORKER_SWITCH_ROUND; // Reset the timer
 		KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{

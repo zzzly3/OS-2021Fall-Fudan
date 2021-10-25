@@ -13,6 +13,7 @@ static SPINLOCK DpcListLock;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
 int ActiveProcessCount[CPU_NUM];
 PKPROCESS TransferProcess;
+int WorkerSwitchTimer[CPU_NUM];
 static SPINLOCK TransferListLock;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
@@ -31,6 +32,7 @@ void ObInitializeScheduler()
 		DpcList = NULL;
 		TransferProcess = NULL;
 	}
+	WorkerSwitchTimer[cid] = -1;
 	ActiveProcessCount[cid] = 1;
 	DpcWatchTimer[cid] = -1;
 	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
@@ -265,8 +267,20 @@ UNSAFE void KeTaskSwitch()
 	// Find the next
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
-	// KeAcquireSpinLockFast(&ActiveListLock);
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
+	// KeAcquireSpinLockFast(&ActiveListLock);
+	if (WorkerSwitchTimer[cid] == 0)
+	{
+		WorkerSwitchTimer[cid] = WORKER_SWITCH_ROUND;
+		if (cur != KernelProcess[cid] && nxt != KernelProcess[cid])
+		{
+			LibRemoveListEntry(&KernelProcess[cid]->SchedulerList);
+			LibInsertListEntry(&cur->SchedulerList, &KernelProcess[cid]->SchedulerList);
+			nxt = KernelProcess[cid];
+		}
+	}
+	else if (WorkerSwitchTimer[cid] != -1)
+		WorkerSwitchTimer[cid]--;
 	if (nxt == cur) // No more process
 	{
 		// KeReleaseSpinLockFast(&ActiveListLock);
