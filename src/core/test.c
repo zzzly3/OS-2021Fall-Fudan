@@ -183,13 +183,18 @@ extern int ActiveProcessCount[CPU_NUM];
 static int cntt;
 void sys_transfer_test_proc(ULONG64 arg)
 {
-    delay_us(arg * 1000 * 1000);
-    printf("CPU %d, Process %d\n", cpuid(), arg);
-    if (++cntt == 25)
+    if (arg == 23333)
     {
         for (int i = 0; i < CPU_NUM; i++)
             ASSERT(ActiveProcessCount[i] == 1, BUG_CHECKFAIL);
         sys_test_pass("Pass: transfer");
+        return;
+    }
+    delay_us(arg * 1000 * 1000);
+    printf("CPU %d, Process %d\n", cpuid(), arg);
+    if (++cntt == 25)
+    {
+        KeCreateDpc(sys_transfer_test_proc, 23333);
     }
 }
 void sys_transfer_test()
