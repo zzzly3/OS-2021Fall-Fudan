@@ -341,8 +341,9 @@ UNSAFE void KeTaskSwitch()
 			break;
 		case PROCESS_STATUS_WAIT:
 			LibRemoveListEntry(&cur->SchedulerList);
-			ActiveProcessCount[cid]--;
 			LibInsertListEntry(&InactiveList[cid], &cur->SchedulerList);
+			ActiveProcessCount[cid]--;
+			WaitingProcessCount[cid]++;
 			break;
 		default:
 			KeBugFault(BUG_SCHEDULER);
@@ -376,6 +377,7 @@ RT_ONLY void PsiCheckInactiveList()
 			LibRemoveListEntry(&proc->SchedulerList);
 			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &proc->SchedulerList);
 			ActiveProcessCount[cid]++;
+			WaitingProcessCount[cid]--;
 		}
 		p = np;
 	}
