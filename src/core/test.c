@@ -96,6 +96,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt == 100)
                 KeCreateDpc(sys_switch_test_proc, 2);
+            printf("#1 proc %d in cpu %d\n", n, cpuid());
             KeSetMutexSignaled(&mut);
         }
         case 1 : {
@@ -103,6 +104,7 @@ void sys_switch_test_proc(ULONG64 arg)
             if (!KSUCCESS(KeWaitForMutexSignaled(&mut2, TRUE)))
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+            printf("#2 proc %d in cpu %d\n", n, cpuid());
             for (int i = 0; i < 40; i++)
             {
                 for (int j = 0; j < a[n * 40 + i]; j++)
