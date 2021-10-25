@@ -165,15 +165,12 @@ void sys_switch_test_proc(ULONG64 arg)
 void sys_switch_test()
 {
     delay_us(TIME_SLICE_MS * 2);
-    if (cpuid() == 0)
-    {
-        sys_test_info("Serial 100 Process")
-        KeInitializeMutex(&mut);
-        KeInitializeMutex(&mut2);
-        mut2.Signaled = FALSE;
-    }
-    int pid[25]; // 25 * 4
-    for (int i = 0; i < 25; i++)
+    sys_test_info("Serial 100 Process")
+    KeInitializeMutex(&mut);
+    KeInitializeMutex(&mut2);
+    mut2.Signaled = FALSE;
+    int pid[100]; // 25 * 4
+    for (int i = 0; i < 100; i++)
     {
         KeCreateProcess(NULL, sys_switch_test_proc, 0, &pid[i]);
     }
