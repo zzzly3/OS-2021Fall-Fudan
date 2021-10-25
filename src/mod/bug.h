@@ -12,6 +12,7 @@
 #define BUG_BADLOCK 0x3
 #define BUG_BADDPC 0x4
 #define BUG_UNSAFETRAP 0x5
+#define BUG_SCHEDULER 0x6
 
 void KeBugFaultEx(CPCHAR, ULONG64, ULONG64);
 #define KeBugFault(id) KeBugFaultEx(__FILE__, __LINE__, id)

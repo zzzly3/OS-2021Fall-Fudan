@@ -3,6 +3,7 @@
 
 // extern PKPROCESS KernelProcess[CPU_NUM]; // use self instead
 RT_ONLY void PsiCheckInactiveList();
+RT_ONLY BOOL PsiTransferProcess();
 
 void KeSystemWorkerEntry()
 {
@@ -12,6 +13,7 @@ void KeSystemWorkerEntry()
 		// Awake waiting process
 		KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 		PsiCheckInactiveList();
+		PsiTransferProcess();
 		KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{

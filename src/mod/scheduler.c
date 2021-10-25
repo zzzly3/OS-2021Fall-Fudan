@@ -8,9 +8,12 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // static SPINLOCK InactiveListLock;
 static LIST_ENTRY InactiveList[CPU_NUM];
 int DpcWatchTimer[CPU_NUM];
+PDPC_ENTRY DpcList;
 static SPINLOCK DpcListLock;
-static PDPC_ENTRY DpcList;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
+int ActiveProcessCount[CPU_NUM];
+static PKPROCESS TransferProcess;
+static SPINLOCK TransferListLock;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
 void KiClockTrapEntry();
@@ -22,10 +25,13 @@ void ObInitializeScheduler()
 	if (cid == START_CPU)
 	{
 		KeInitializeSpinLock(&DpcListLock);
+		KeInitializeSpinLock(&TransferListLock);
 		MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
 		MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
 		DpcList = NULL;
+		TransferProcess = NULL;
 	}
+	ActiveProcessCount[cid] = 1;
 	DpcWatchTimer[cid] = -1;
 	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
 	arch_set_tid((ULONG64)KernelProcess[cid]);
@@ -35,10 +41,12 @@ void ObInitializeScheduler()
 	init_trap();
 }
 
+
 RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 {
 	// KeAcquireSpinLockFast(&ActiveListLock);
 	LibInsertListEntry(&PsGetCurrentProcess()->SchedulerList, &Process->SchedulerList);
+	ActiveProcessCount[cpuid()]++;
 	Process->Status = PROCESS_STATUS_RUNABLE;
 	// KeReleaseSpinLockFast(&ActiveListLock);
 }
@@ -57,6 +65,43 @@ void PsiProcessEntry()
 	EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	KeLowerExecuteLevel(el);
 	return;
+}
+
+RT_ONLY BOOL PsiTransferProcess()
+{
+	// No need for precision
+	int maxn = 0, minn = ~(1 << 31), cid = cpuid(), mn = ActiveProcessCount[cid];
+	for (int i = 0; i < CPU_NUM; i++)
+		maxn = max(maxn, ActiveProcessCount[i]), minn = min(minn, ActiveProcessCount[i]);
+	if (maxn > minn)
+	{
+		if (mn == maxn && mn > 2)
+		{
+			// Push out
+			KeAcquireSpinLockFast(&TransferListLock);
+			if (TransferProcess == NULL)
+			{
+				PKPROCESS p = container_of(KernelProcess[cid]->SchedulerList.Forward, KPROCESS, SchedulerList);
+				LibRemoveListEntry(&p->SchedulerList);
+				ActiveProcessCount[cid]--;
+				TransferProcess = p;
+			}
+			KeReleaseSpinLockFast(&TransferListLock);
+		}
+		else if (mn == minn)
+		{
+			// Accept
+			KeAcquireSpinLockFast(&TransferListLock);
+			if (TransferProcess != NULL)
+			{
+				PKPROCESS p = TransferProcess;
+				TransferProcess = NULL;
+				LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &p->SchedulerList);
+				ActiveProcessCount[cid]++;
+			}
+			KeReleaseSpinLockFast(&TransferListLock);
+		}
+	}
 }
 
 void KiClockTrapEntry()
@@ -234,7 +279,7 @@ UNSAFE void KeTaskSwitch()
 			nxt->Status = PROCESS_STATUS_RUNNING;
 			break;
 		default:
-			// TODO: PANIC
+			KeBugFault(BUG_SCHEDULER);
 			break;
 	}
 	switch (cur->Status)
@@ -244,13 +289,15 @@ UNSAFE void KeTaskSwitch()
 			break;
 		case PROCESS_STATUS_ZOMBIE:
 			LibRemoveListEntry(&cur->SchedulerList);
+			ActiveProcessCount[cid]--;
 			break;
 		case PROCESS_STATUS_WAIT:
 			LibRemoveListEntry(&cur->SchedulerList);
+			ActiveProcessCount[cid]--;
 			LibInsertListEntry(&InactiveList[cid], &cur->SchedulerList);
 			break;
 		default:
-			// TODO: PANIC
+			KeBugFault(BUG_SCHEDULER);
 			break;
 	}
 	// KeReleaseSpinLockFast(&ActiveListLock);
@@ -280,6 +327,7 @@ RT_ONLY void PsiCheckInactiveList()
 			proc->Status = PROCESS_STATUS_RUNABLE;
 			LibRemoveListEntry(&proc->SchedulerList);
 			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &proc->SchedulerList);
+			ActiveProcessCount[cid]++;
 		}
 		p = np;
 	}

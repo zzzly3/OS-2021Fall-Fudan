@@ -8,6 +8,9 @@ typedef unsigned char BOOL;
 #define TRUE ((BOOL)1)
 #define FALSE ((BOOL)0)
 
+#define max(x,y) ((x) > (y) ? (x) : (y))
+#define min(x,y) ((x) < (y) ? (x) : (y))
+
 #define OBJECT_MAX_REFERENCE 32767
 
 #define offsetof(TYPE,MEMBER)   ((size_t) &((TYPE *)0)->MEMBER)

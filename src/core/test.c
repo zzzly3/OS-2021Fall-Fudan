@@ -16,7 +16,7 @@ void sys_test()
     sys_test_info("Test process");
     sys_switch_test();
     sys_test_info("Finish");
-    KeBugFault(0xDEEDBEEF);
+    KeBugFault(BUG_STOP);
 }
 
 void sys_mem_test()
@@ -176,5 +176,28 @@ void sys_switch_test()
     for (int i = 0; i < 25; i++)
     {
         KeCreateProcess(NULL, sys_switch_test_proc, 0, &pid[i]);
+    }
+}
+
+extern int ActiveProcessCount[CPU_NUM];
+static int cntt;
+void sys_transfer_test_proc(ULONG64 arg)
+{
+    delay_us(arg * 1000 * 1000);
+    printf("CPU %d, Process %d\n", cpuid(), arg);
+    if (++cntt == 25)
+    {
+        for (int i = 0; i < CPU_NUM; i++)
+            ASSERT(ActiveProcessCount[i] == 1, BUG_CHECKFAIL);
+        sys_test_pass("Pass: transfer");
+    }
+}
+void sys_transfer_test()
+{
+    sys_test_info("Process transfer test");
+    int pid[25];
+    for (int i = 0; i < 25; i++)
+    {
+        KeCreateProcess(NULL, sys_transfer_test_proc, i, &pid[i]);
     }
 }
