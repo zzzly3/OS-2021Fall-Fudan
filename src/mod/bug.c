@@ -26,8 +26,9 @@ volatile BOOL KeBugFaultFlag = FALSE;
 extern int DpcWatchTimer[CPU_NUM];
 extern int ActiveProcessCount[CPU_NUM];
 extern PKPROCESS TransferProcess;
-extern int WaitingProcessCount[CPU_NUM];
-extern PKPROCESS TransferWaitingProcess;
+extern int WakenProcessCount;
+// extern int WaitingProcessCount[CPU_NUM];
+// extern PKPROCESS TransferWaitingProcess;
 
 CPCHAR KeiGetBugDescription(ULONG64 BugId)
 {
@@ -56,8 +57,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	PKPROCESS cur = PsGetCurrentProcess();
 	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
 	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
-	printf(BLUE("[*]")"Active Process Count = %d %d %d %d, Transferring Process = %p,\n", ActiveProcessCount[0], ActiveProcessCount[1], ActiveProcessCount[2], ActiveProcessCount[3], (PVOID)TransferProcess);
-	printf("Waiting Process Count = %d %d %d %d, Transferring Waiting Process = %p.\n", WaitingProcessCount[0], WaitingProcessCount[1], WaitingProcessCount[2], WaitingProcessCount[3], (PVOID)TransferWaitingProcess);
+	printf(BLUE("[*]")"Process Active Count = %d %d %d %d, Waken Count = %d, Transferring = %p,\n", ActiveProcessCount[0], ActiveProcessCount[1], ActiveProcessCount[2], ActiveProcessCount[3], WakenProcessCount, (PVOID)TransferProcess);
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	printf(BLUE("[*]")"Stack:\n");
 	for (int i = 0; i < 16; i++)
