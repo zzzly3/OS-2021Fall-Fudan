@@ -98,6 +98,7 @@ void sys_switch_test_proc(ULONG64 arg)
             if (cnt == 100)
                 KeCreateDpc(sys_switch_test_proc, 2);
             core1[cpuid()]++;
+            printf("#1 proc %d run in cpu %d\n", n, cpuid());
             KeSetMutexSignaled(&mut);
         }
         case 1 : {
@@ -124,6 +125,7 @@ void sys_switch_test_proc(ULONG64 arg)
             if (cnt == 200)
                 KeCreateDpc(sys_switch_test_proc, 3);
             core2[cpuid()]++;
+            printf("#2 proc %d run in cpu %d\n", n, cpuid());
             KeSetMutexSignaled(&mut);
         } break;
         case 2 : {

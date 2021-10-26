@@ -3,12 +3,12 @@
 
 // extern PKPROCESS KernelProcess[CPU_NUM]; // use self instead
 extern int WorkerSwitchTimer[CPU_NUM];
-RT_ONLY void PsiCheckInactiveList();
-RT_ONLY BOOL PsiTransferProcess();
+// RT_ONLY void PsiCheckInactiveList();
+RT_ONLY void PsiTransferProcess();
 extern int ActiveProcessCount[CPU_NUM];
-extern int WaitingProcessCount[CPU_NUM];
+// extern int WaitingProcessCount[CPU_NUM];
 extern PKPROCESS TransferProcess;
-extern PKPROCESS TransferWaitingProcess;
+// extern PKPROCESS TransferWaitingProcess;
 
 void KeSystemWorkerEntry()
 {
@@ -17,10 +17,9 @@ void KeSystemWorkerEntry()
 	{
 		// Awake waiting process
 		KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-		PsiCheckInactiveList();
+		// PsiCheckInactiveList();
 		PsiTransferProcess();
 		WorkerSwitchTimer[cpuid()] = WORKER_SWITCH_ROUND; // Reset the timer
-		//printf("Worker %d: active %d, waiting %d, transfer %p %p\n", cpuid(), ActiveProcessCount[cpuid()], WaitingProcessCount[cpuid()], TransferProcess, TransferWaitingProcess);
 		KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{

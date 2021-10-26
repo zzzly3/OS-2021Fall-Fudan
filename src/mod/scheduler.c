@@ -6,18 +6,21 @@ extern PKPROCESS KernelProcess[CPU_NUM];
 // But RT level is still needed to avoid being interrupted.
 // static SPINLOCK ActiveListLock;
 // static SPINLOCK InactiveListLock;
-static LIST_ENTRY InactiveList[CPU_NUM];
+int WorkerSwitchTimer[CPU_NUM];
 int DpcWatchTimer[CPU_NUM];
 PDPC_ENTRY DpcList;
 static SPINLOCK DpcListLock;
 static OBJECT_POOL ApcObjectPool, DpcObjectPool;
 int ActiveProcessCount[CPU_NUM];
-int WaitingProcessCount[CPU_NUM];
+int WakenProcessCount;
 PKPROCESS TransferProcess;
-PKPROCESS TransferWaitingProcess;
 static SPINLOCK TransferListLock;
-static SPINLOCK TransferWaitingListLock;
-int WorkerSwitchTimer[CPU_NUM];
+static SPINLOCK WakenListLock;
+LIST_ENTRY WakenList;
+// int WaitingProcessCount[CPU_NUM];
+// PKPROCESS TransferWaitingProcess;
+// static LIST_ENTRY InactiveList[CPU_NUM];
+// static SPINLOCK TransferWaitingListLock;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
 void KiClockTrapEntry();
@@ -30,18 +33,21 @@ void ObInitializeScheduler()
 	{
 		KeInitializeSpinLock(&DpcListLock);
 		KeInitializeSpinLock(&TransferListLock);
-		KeInitializeSpinLock(&TransferWaitingListLock);
+		KeInitializeSpinLock(&WakenListLock);
+		// KeInitializeSpinLock(&TransferWaitingListLock);
 		MmInitializeObjectPool(&ApcObjectPool, sizeof(APC_ENTRY));
 		MmInitializeObjectPool(&DpcObjectPool, sizeof(DPC_ENTRY));
 		DpcList = NULL;
 		TransferProcess = NULL;
-		TransferWaitingProcess = NULL;
+		WakenList.Backward = WakenList.Forward = &WakenList;
+		// TransferWaitingProcess = NULL;
 	}
 	WorkerSwitchTimer[cid] = -1;
 	ActiveProcessCount[cid] = 1;
-	WaitingProcessCount[cid] = 0;
+	// WaitingProcessCount[cid] = 0;
+	WakenProcessCount = 0;
 	DpcWatchTimer[cid] = -1;
-	InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
+	// InactiveList[cid].Forward = InactiveList[cid].Backward = &InactiveList[cid];
 	arch_set_tid((ULONG64)KernelProcess[cid]);
 	KernelProcess[cid]->Status = PROCESS_STATUS_RUNNING;
 	init_clock();
@@ -75,7 +81,7 @@ void PsiProcessEntry()
 	return;
 }
 
-RT_ONLY BOOL PsiTransferProcess()
+RT_ONLY void PsiTransferProcess()
 {
 	// No need for precision
 	// Active process
@@ -109,37 +115,44 @@ RT_ONLY BOOL PsiTransferProcess()
 		}
 		KeReleaseSpinLockFast(&TransferListLock);
 	}
-	// Waiting process
-	maxn = 0, minn = ~(1 << 31), mn = WaitingProcessCount[cid];
-	for (int i = 0; i < CPU_NUM; i++)
-		maxn = max(maxn, WaitingProcessCount[i]), minn = min(minn, WaitingProcessCount[i]);
-	if (maxn > minn + 5 && mn == maxn && TransferWaitingProcess == NULL) // threshold: 5
+	// Accept waken process
+	if (WakenList.Backward != &WakenList)
 	{
-		// Push out
-		KeAcquireSpinLockFast(&TransferWaitingListLock);
-		if (TransferWaitingProcess == NULL)
+		KeAcquireSpinLockFast(&WakenListLock);
+		// NOTE: Magic numberrrrrrrr
+		PLIST_ENTRY insert_node = &KernelProcess[cid]->SchedulerList;
+		for (int i = 0; i < WORKER_SWITCH_ROUND / 2 + 1; i++)
 		{
-			// Choose the first one, i.e. the last waiting one
-			PKPROCESS p = container_of(InactiveList[cid].Backward, KPROCESS, SchedulerList);
-			LibRemoveListEntry(&p->SchedulerList);
-			WaitingProcessCount[cid]--;
-			TransferWaitingProcess = p;
+			PLIST_ENTRY pe = WakenList.Backward;
+			if (pe == &WakenList)
+				break;
+			LibRemoveListEntry(pe);
+			LibInsertListEntry(insert_node, pe);
+			container_of(pe, KPROCESS, SchedulerList)->Status = PROCESS_STATUS_RUNABLE;
+			ActiveProcessCount[cid]++;
+			WakenProcessCount--;
 		}
-		KeReleaseSpinLockFast(&TransferWaitingListLock);
+		KeReleaseSpinLockFast(&WakenListLock);
 	}
-	if (mn == minn && TransferWaitingProcess != NULL)
+}
+
+UNSAFE void PsiAwakeProcess(PKPROCESS Process)
+{
+	if (Process->Flags & PROCESS_FLAG_WAITING)
 	{
-		// Accept
-		KeAcquireSpinLockFast(&TransferWaitingListLock);
-		if (TransferWaitingProcess != NULL)
-		{
-			PKPROCESS p = TransferWaitingProcess;
-			TransferWaitingProcess = NULL;
-			LibInsertListEntry(&InactiveList[cid], &p->SchedulerList);
-			WaitingProcessCount[cid]++;
-		}
-		KeReleaseSpinLockFast(&TransferWaitingListLock);
+		Process->Flags &= ~PROCESS_FLAG_WAITING;
+		KeAcquireSpinLockFast(&WakenListLock);
+		LibInsertListEntry(WakenList.Forward, &Process->SchedulerList);
+		WakenProcessCount++;
+		KeReleaseSpinLockFast(&WakenListLock);
 	}
+}
+
+void PsAlertProcess(PKPROCESS Process)
+{
+	ObLockObject(Process);
+	PsiAwakeProcess(Process);
+	ObUnlockObject(Process);
 }
 
 void KiClockTrapEntry()
@@ -190,6 +203,7 @@ PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argume
 		ObLockObjectFast(Process);
 		p->NextEntry = Process->ApcList;
 		Process->ApcList = p;
+		PsiAwakeProcess(Process);
 		ObUnlockObjectFast(Process);
 	}
 	if (trapen)
@@ -323,6 +337,7 @@ UNSAFE void KeTaskSwitch()
 		return;
 	}
 	// Do switch
+	ASSERT(nxt->Flags & PROCESS_FLAG_WAITING == 0, BUG_SCHEDULER);
 	switch (nxt->Status)
 	{
 		case PROCESS_STATUS_RUNABLE:
@@ -342,10 +357,19 @@ UNSAFE void KeTaskSwitch()
 			ActiveProcessCount[cid]--;
 			break;
 		case PROCESS_STATUS_WAIT:
-			LibRemoveListEntry(&cur->SchedulerList);
-			LibInsertListEntry(&InactiveList[cid], &cur->SchedulerList);
-			ActiveProcessCount[cid]--;
-			WaitingProcessCount[cid]++;
+			ObLockObjectFast(cur);
+			if (cur->WaitMutex == NULL || cur->ApcList != NULL)
+			{
+				// Awake immediately
+				cur->Status = PROCESS_STATUS_RUNABLE;
+			}
+			else
+			{
+				LibRemoveListEntry(&cur->SchedulerList);
+				cur->Flags |= PROCESS_FLAG_WAITING;
+				ActiveProcessCount[cid]--;
+			}
+			ObUnlockObjectFast(cur);
 			break;
 		default:
 			KeBugFault(BUG_SCHEDULER);
@@ -361,26 +385,26 @@ UNSAFE void KeTaskSwitch()
 	KeLowerExecuteLevel(oldel);
 }
 
-RT_ONLY void PsiCheckInactiveList()
-{
-	if (KeBugFaultFlag) for(arch_disable_trap();;);
-	int cid = cpuid();
-	PLIST_ENTRY p = InactiveList[cid].Backward;
-	for (;;)
-	{
-		PLIST_ENTRY np = p->Backward;
-		if (p == &InactiveList[cid])
-			break;
-		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
-		if (proc->ApcList != NULL ||    // Alerted
-			proc->WaitMutex == NULL)    // Signaled
-		{
-			proc->Status = PROCESS_STATUS_RUNABLE;
-			LibRemoveListEntry(&proc->SchedulerList);
-			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &proc->SchedulerList);
-			ActiveProcessCount[cid]++;
-			WaitingProcessCount[cid]--;
-		}
-		p = np;
-	}
-}
+// RT_ONLY void PsiCheckInactiveList()
+// {
+// 	if (KeBugFaultFlag) for(arch_disable_trap();;);
+// 	int cid = cpuid();
+// 	PLIST_ENTRY p = InactiveList[cid].Backward;
+// 	for (;;)
+// 	{
+// 		PLIST_ENTRY np = p->Backward;
+// 		if (p == &InactiveList[cid])
+// 			break;
+// 		PKPROCESS proc = container_of(p, KPROCESS, SchedulerList);
+// 		if (proc->ApcList != NULL ||    // Alerted
+// 			proc->WaitMutex == NULL)    // Signaled
+// 		{
+// 			proc->Status = PROCESS_STATUS_RUNABLE;
+// 			LibRemoveListEntry(&proc->SchedulerList);
+// 			LibInsertListEntry(&KernelProcess[cid]->SchedulerList, &proc->SchedulerList);
+// 			ActiveProcessCount[cid]++;
+// 			WaitingProcessCount[cid]--;
+// 		}
+// 		p = np;
+// 	}
+// }

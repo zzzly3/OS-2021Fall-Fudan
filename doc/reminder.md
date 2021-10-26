@@ -45,8 +45,11 @@
 * RUNNING - RUNABLE 调度器switch out
 * RUNABLE - RUNNING 调度器switch in
 * RUNNING - WAIT 进程wait
-* WAIT - RUNABLE 调度器根据APC和Mutex决定
+* WAIT - RUNABLE 进程alert
 
 wait mutex可能成功，也可能被APC打断，看返回值。即使成功也不代表没有APC，请慎重降低级别。
 
 保持Mutex期间原则上应当保证至少APC level，除非你觉得退出不释放没事。
+
+对于wait的进程，调度器检查其是否被立即唤醒，如果不是，加锁，将其从列表中移除，设置flag中的waiting。
+唤醒进程时，检查其flag中的waiting，若有，加锁，清除waiting，加入waken list

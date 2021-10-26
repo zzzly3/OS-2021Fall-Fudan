@@ -1,6 +1,8 @@
 #include <ob/mutex.h>
 #include <driver/uart.h>
 
+UNSAFE void PsiAwakeProcess(PKPROCESS);
+
 void KeInitializeMutex(PMUTEX Mutex)
 {
 	KeInitializeSpinLock(&Mutex->Lock);
@@ -8,10 +10,13 @@ void KeInitializeMutex(PMUTEX Mutex)
 	Mutex->WaitList.Backward = Mutex->WaitList.Forward = &Mutex->WaitList;
 }
 
-void KeiCancelMutexWait(PKPROCESS Process)
+UNSAFE void KeiCancelMutexWait(PKPROCESS Process)
 {
 	LibRemoveListEntry(&Process->WaitList);
+	ObLockObjectFast(Process);
 	Process->WaitMutex = NULL;
+	PsiAwakeProcess(Process);
+	ObUnlockObjectFast(Process);
 }
 
 void KeiSetMutexSignaled(PMUTEX Mutex)

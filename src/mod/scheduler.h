@@ -9,7 +9,7 @@
 #include <ob/mem.h>
 
 #define TIME_SLICE_MS 20
-#define WORKER_SWITCH_ROUND 10
+#define WORKER_SWITCH_ROUND 5
 #define CPU_NUM 4
 #define START_CPU 0
 
