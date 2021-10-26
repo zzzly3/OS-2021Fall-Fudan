@@ -155,7 +155,7 @@ void sys_switch_test_proc(ULONG64 arg)
             else
                 sys_test_fail("Fail: parallel")
             printf("Core balance: #1 [%d %d %d %d]; #2 [%d %d %d %d]\n", core1[0], core1[1], core1[2], core1[3], core2[0], core2[1], core2[2], core2[3]);
-            // KeCreateDpc(sys_switch_test_proc, 4);
+            KeCreateDpc(sys_switch_test_proc, 4);
         } return;
         case 4: {
             delay_us(100 * 1000);
