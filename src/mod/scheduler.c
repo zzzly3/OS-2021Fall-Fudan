@@ -337,7 +337,7 @@ UNSAFE void KeTaskSwitch()
 		return;
 	}
 	// Do switch
-	ASSERT(nxt->Flags & PROCESS_FLAG_WAITING == 0, BUG_SCHEDULER);
+	ASSERT((nxt->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
 	switch (nxt->Status)
 	{
 		case PROCESS_STATUS_RUNABLE:
