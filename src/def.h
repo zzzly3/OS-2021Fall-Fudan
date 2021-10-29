@@ -11,8 +11,6 @@
 #include <mod/scheduler.h>
 #include <mod/worker.h>
 
-#define enter_scheduler KeSystemWorkerEntry
-
 // static void hello()
 // {
 // 	uart_put_char('h');
