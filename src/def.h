@@ -11,15 +11,17 @@
 #include <mod/scheduler.h>
 #include <mod/worker.h>
 
-static void hello()
-{
-	uart_put_char('h');
-	reset_clock(1000);
-}
+#define enter_scheduler KeSystemWorkerEntry
+
+// static void hello()
+// {
+// 	uart_put_char('h');
+// 	reset_clock(1000);
+// }
 
 static inline void system_init()
 {
-	// Common operations
+	// Global operations
 	if (cpuid() == START_CPU)
 	{
 		extern char edata[], end[];

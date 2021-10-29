@@ -56,12 +56,13 @@ NORETURN void main() {
 
 void sys_switch_test();
 void sys_transfer_test();
+void spawn_init_process();
 
 NO_RETURN main()
 {
     system_init();
     printf("CPU %d init.\n", cpuid());
-    //spawn_init_process();
+    spawn_init_process();
     if (cpuid() == 0)
         KeCreateDpc(sys_switch_test, 0);
         // KeCreateDpc(sys_transfer_test, 0);
