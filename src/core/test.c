@@ -106,14 +106,13 @@ void sys_switch_test_proc(ULONG64 arg)
             if (!KSUCCESS(KeWaitForMutexSignaled(&mut2, TRUE)))
                 KeBugFault(BUG_STOP);
             KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-            // printf("#2 proc %d run in cpu %d\n", n, cpuid());
+            printf("#2 proc %d run in cpu %d\n", n, cpuid());
             for (int i = 0; i < 40; i++)
             {
                 for (int j = 0; j < a[n * 40 + i]; j++)
                 {
                     a[n * 40 + i] = ((long long)a[n * 40 + i] * a[n * 40 + i] + chk) % 19260817;
-                    if (j < 2000)
-                        delay_us(2);
+                    delay_us(1);
                 }
             }
             KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
@@ -125,6 +124,7 @@ void sys_switch_test_proc(ULONG64 arg)
                 KeBugFault(BUG_CHECKFAIL);
             if (cnt == 200)
                 KeCreateDpc(sys_switch_test_proc, 3);
+            printf("#3 proc %d run in cpu %d\n", n, cpuid());
             core2[cpuid()]++;
             KeSetMutexSignaled(&mut);
         } break;
