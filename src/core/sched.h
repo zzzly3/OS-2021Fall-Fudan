@@ -4,6 +4,7 @@
 #include <core/console.h>
 #include <aarch64/intrinsic.h>
 #include <mod/worker.h>
+#include <mod/scheduler.h>
 
 struct scheduler;
 
@@ -78,7 +79,9 @@ static inline void acquire_sched_lock() {
 static inline void release_sched_lock() {
     thiscpu()->scheduler->op->release_lock();
 }
+
 #else
+
 static inline struct cpu *thiscpu()
 {
     return &cpus[cpuid()];
@@ -95,7 +98,9 @@ static inline void init_cpu(struct scheduler *scheduler) {
 
 #define enter_scheduler KeSystemWorkerEntry
 
-#define sched KeTaskSwitch // Hope the interrupt is disabled
+static inline void sched() {
+    KeTaskSwitch();
+} // Hope the interrupt is disabled
 
 static inline struct proc *alloc_pcb() {
     return NULL;
