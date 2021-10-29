@@ -4,7 +4,7 @@
 #include <core/virtual_memory.h>
 #include <core/physical_memory.h>
 #include <common/string.h>
-#include <core/sched.h>
+// #include <core/sched.h>
 #include <core/console.h>
 #include <ob/proc.h>
 #include <ob/mem.h>
