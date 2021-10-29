@@ -2,15 +2,18 @@
 #include <common/spinlock.h>
 #include <core/cpu.h>
 
-void init_spinlock(SpinLock *lock, const char *name) {
+/* 
+ * Init a spinlock and assign a name to it.
+ */
+void init_spinlock(SpinLock *lock) {
     lock->locked = 0;
-    lock->cpu = NULL;
-    lock->name = name;
+    //lock->cpu = 0;
+    //lock->name = name;
 }
 
 bool try_acquire_spinlock(SpinLock *lock) {
     if (!lock->locked && !__atomic_test_and_set(&lock->locked, __ATOMIC_ACQUIRE)) {
-        lock->cpu = thiscpu();
+        //lock->cpu = thiscpu();
         return true;
     } else {
         return false;
@@ -24,9 +27,9 @@ bool try_acquire_spinlock(SpinLock *lock) {
  */
 
 void acquire_spinlock(SpinLock *lock) {
-    if (holding_spinlock(lock)) {
-        PANIC("acquire: lock already held\n");
-    }
+    //if (holding_spinlock(lock)) {
+    //    PANIC("acquire: lock already held\n");
+    //}
     while (!try_acquire_spinlock(lock)) {}
 }
 
@@ -36,10 +39,10 @@ void acquire_spinlock(SpinLock *lock) {
  */
 
 void release_spinlock(SpinLock *lock) {
-    if (!holding_spinlock(lock)) {
-        PANIC("release: lock %s not held\n", lock->name);
-    }
-    lock->cpu = NULL;
+    //if (!holding_spinlock(lock)) {
+    //    PANIC("release: lock not held\n");
+    //}
+	//lock->cpu = 0;
     __atomic_clear(&lock->locked, __ATOMIC_RELEASE);
 }
 
@@ -53,5 +56,5 @@ void wait_spinlock(SpinLock *lock) {
  */
 
 bool holding_spinlock(SpinLock *lock) {
-    return lock->locked && lock->cpu == thiscpu();
+    return lock->locked ;//&& lock->cpu == thiscpu();
 }

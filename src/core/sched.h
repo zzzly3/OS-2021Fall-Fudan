@@ -3,6 +3,9 @@
 #include <aarch64/intrinsic.h>
 #include <common/defines.h>
 #include <core/console.h>
+#include <aarch64/intrinsic.h>
+#include <mod/worker.h>
+#include <mod/scheduler.h>
 
 struct scheduler;
 
@@ -36,10 +39,12 @@ struct cpu {
     struct scheduler *scheduler;
     struct proc *proc;
 };
-#define NCPU 4 /* maximum number of CPUs */
-extern struct cpu cpus[NCPU];
+#define NCPU       4    /* maximum number of CPUs */
+struct cpu cpus[NCPU];
 
-static inline struct cpu *thiscpu() {
+#ifdef USE_LAGACY
+static inline struct cpu *thiscpu()
+{
     return &cpus[cpuid()];
 }
 
@@ -76,3 +81,38 @@ static inline void acquire_sched_lock() {
 static inline void release_sched_lock() {
     thiscpu()->scheduler->op->release_lock();
 }
+
+#else
+
+static inline struct cpu *thiscpu()
+{
+    return &cpus[cpuid()];
+}
+
+static inline void init_sched() {
+    thiscpu()->scheduler->op->init();
+}
+
+static inline void init_cpu(struct scheduler *scheduler) {
+    thiscpu()->scheduler = scheduler;
+    init_sched();
+}
+
+#define enter_scheduler KeSystemWorkerEntry
+
+static inline void sched() {
+    KeTaskSwitch();
+} // Hope the interrupt is disabled
+
+static inline struct proc *alloc_pcb() {
+    return NULL;
+}
+
+static inline void acquire_sched_lock() {
+    return;
+}
+
+static inline void release_sched_lock() {
+    return;
+}
+#endif

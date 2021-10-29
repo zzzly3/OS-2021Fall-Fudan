@@ -3,6 +3,12 @@
 #include <core/syscall.h>
 #include <core/trap.h>
 #include <driver/interrupt.h>
+#include <driver/uart.h>
+#include <mod/scheduler.h>
+#include <mod/syscall.h>
+#include <mod/bug.h>
+
+void KiExceptionEntry(PTRAP_FRAME);
 
 void init_trap() {
     extern char exception_vector[];
@@ -34,8 +40,8 @@ void trap_global_handler(Trapframe *frame) {
 			 * Note: this function returns void,
 			 * where to record the return value?
 			 */
-            /* TODO: Lab3 Syscall */
-
+			/* TODO: Lab3 Syscall */
+            KiSystemCallEntry((PTRAP_FRAME)frame);
             // TODO: warn if `iss` is not zero.
             (void)iss;
         } break;
@@ -43,6 +49,7 @@ void trap_global_handler(Trapframe *frame) {
         default: {
             // TODO: should exit current process here.
             // exit(1);
+            KiExceptionEntry((PTRAP_FRAME)frame);
         }
     }
     /*
