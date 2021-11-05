@@ -1,3 +1,4 @@
+#include <common/lutil.h>
 #include <ob/proc.h>
 #include <def.h>
 
@@ -54,6 +55,7 @@ PKPROCESS PsCreateProcessEx()
 	p->ApcList = NULL;
 	p->WaitMutex = NULL;
 	KeInitializeSpinLock(&p->Lock);
+	init_rc(&p->ReferenceCount);
 	PVOID g = MmAllocatePhysicalPage();
 	if (g == NULL)
 	{

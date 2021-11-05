@@ -6,6 +6,8 @@ typedef struct {
     isize count;
 } RefCount;
 
+#define REF_COUNT RefCount;
+
 // initialize reference count to zero.
 void init_rc(RefCount *rc);
 

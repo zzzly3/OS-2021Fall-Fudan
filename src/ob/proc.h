@@ -2,6 +2,7 @@
 #define __PROC_H__
 
 #include <common/lutil.h>
+#include <common/rc.h>
 #include <ob/mem.h>
 #include <ob/mutex.h>
 #include <mod/scheduler.h>
@@ -23,7 +24,7 @@ typedef struct _KPROCESS
 	USHORT Status;
 	USHORT Flags;
 	SPINLOCK Lock;
-	USHORT ReferenceCount;
+	REF_COUNT ReferenceCount;
 	int ProcessId;
 	int ParentId;
 	LIST_ENTRY ProcessList;

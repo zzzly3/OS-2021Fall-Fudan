@@ -138,19 +138,9 @@ static inline int itos(long long n, char* s, int base)
 #define ObTryToLockObjectFast(obj) KeTryToAcquireSpinLockFast(&(obj)->Lock)
 #define ObLockObjectFast(obj) KeAcquireSpinLockFast(&(obj)->Lock)
 #define ObUnlockObjectFast(obj) KeReleaseSpinLockFast(&(obj)->Lock)
-#define ObReferenceObjectFast(obj) ({ObLockObjectFast(obj); \
-	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \
-	(obj)->ReferenceCount += __mret ? 1 : 0; \
-	ObUnlockObjectFast(obj); \
-	__mret;})
-#define ObDereferenceObjectFast(obj) (ObLockObjectFast(obj),(obj)->ReferenceCount--,ObUnlockObjectFast(obj))
 #define ObLockObject(obj) KeAcquireSpinLock(&(obj)->Lock)
 #define ObUnlockObject(obj) KeReleaseSpinLock(&(obj)->Lock)
-#define ObReferenceObject(obj) ({ObLockObject(obj); \
-	BOOL __mret = (obj)->ReferenceCount < OBJECT_MAX_REFERENCE; \
-	(obj)->ReferenceCount += __mret ? 1 : 0; \
-	ObUnlockObject(obj); \
-	__mret;})
-#define ObDereferenceObject(obj) (ObLockObject(obj),(obj)->ReferenceCount--,ObUnlockObject(obj))
+#define ObReferenceObject(obj) increment_rc(&(obj)->ReferenceCount)
+#define ObDereferenceObject(obj) ((BOOL)decrement_rc(&(obj)->ReferenceCount))
 
 #endif
