@@ -63,4 +63,3 @@ typedef PTEntry *PTEntriesPtr;
 #define PTE_FLAGS(pte)  ((pte) & 0xFFFF000000000FFF)
 #define P2N(addr) (addr>>12)
 
-#endif
