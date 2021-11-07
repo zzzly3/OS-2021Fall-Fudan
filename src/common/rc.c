@@ -17,6 +17,8 @@ BOOL increment_rc(RefCount *rc) {
 
 BOOL decrement_rc(RefCount *rc) {
     i64 r = __atomic_sub_fetch(&rc->count, 1, __ATOMIC_ACQ_REL);
+    #ifndef USE_LAGACY
     ASSERT(r >= 0, BUG_BADREF);
+    #endif
     return r <= 0;
 }

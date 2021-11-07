@@ -1,17 +1,19 @@
+#ifndef UPDATE_API
+#define USE_LAGACY
+#endif
 #include <common/string.h>
 #include <fs/inode.h>
 #include <core/arena.h>
 #include <common/lutil.h>
 #include <mod/scheduler.h>
+#include <core/console.h>
 // TODO: Replace API after satisfying TAs.
 #ifdef UPDATE_API
 #include <ob/mem.h>
 #include <mod/bug.h>
 #else
 #include <core/physical_memory.h>
-#define USE_LAGACY
 #endif
-#include <core/console.h>
 
 // this lock mainly prevents concurrent access to inode list `head`, reference
 // count increment and decrement.
