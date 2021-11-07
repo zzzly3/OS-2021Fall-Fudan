@@ -3,13 +3,13 @@
 #ifndef _COMMON_TYPES_H_
 #define _COMMON_TYPES_H_
 
+#ifndef __cplusplus
 #ifdef _WIN64
 typedef unsigned char bool;
 #else
-#ifndef __cplusplus
 typedef _Bool bool;
 #endif
-#endif
+
 
 #define true 1
 #define false 0
@@ -25,6 +25,7 @@ typedef unsigned long long uint64_t;
 
 typedef int64_t ssize_t;
 typedef uint64_t size_t;
+#endif
 
 /* Efficient min and max operations */
 #define MIN(_a, _b)                 \
