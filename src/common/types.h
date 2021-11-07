@@ -6,7 +6,9 @@
 #ifdef _WIN64
 typedef unsigned char bool;
 #else
+#ifndef __cplusplus
 typedef _Bool bool;
+#endif
 #endif
 
 #define true 1
