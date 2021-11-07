@@ -4,6 +4,7 @@
 #include <core/console.h>
 #include <ob/mem.h>
 #include <driver/uart.h>
+#include <core/virtual_memory.h>
 #define pdgir pgdir
 /*
     This module is reserved to fool the examination.
