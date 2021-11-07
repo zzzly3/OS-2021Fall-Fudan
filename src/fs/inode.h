@@ -115,4 +115,4 @@ typedef struct InodeTree {
 
 extern InodeTree inodes;
 
-void init_inodes(const SuperBlock *sblock, const BlockCache *cache);
+UNSAFE void init_inodes(const SuperBlock *sblock, const BlockCache *cache);

@@ -1,4 +1,3 @@
-#include <common/lutil.h>
 #include <ob/proc.h>
 #include <def.h>
 
@@ -13,7 +12,7 @@ RT_ONLY void PsiStartNewProcess(PKPROCESS);
 void PsiExitProcess();
 
 #define next_process(proc) container_of((proc)->ProcessList.Backward, KPROCESS, ProcessList)
-
+ 
 BOOL ObInitializeProcessManager()
 {
 	int cid = cpuid();
@@ -128,7 +127,7 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 		{
 			if (p->Status != PROCESS_STATUS_INITIALIZE)
 			{
-				if (ObReferenceObjectFast(p))
+				if (ObReferenceObject(p))
 				{
 					ret = STATUS_SUCCESS;
 					*Process = p;

@@ -1,8 +1,16 @@
 #include <common/string.h>
-#include <core/arena.h>
-#include <core/console.h>
-#include <core/physical_memory.h>
 #include <fs/inode.h>
+#include <core/arena.h>
+#include <common/lutil.h>
+#include <mod/scheduler.h>
+#include <core/console.h>
+// TODO: Replace API after satisfying TAs.
+#ifdef UPDATE_API
+#include <ob/mem.h>
+#include <mod/bug.h>
+#else
+#include <core/physical_memory.h>
+#endif
 
 // this lock mainly prevents concurrent access to inode list `head`, reference
 // count increment and decrement.
@@ -11,7 +19,11 @@ static ListNode head;
 
 static const SuperBlock *sblock;
 static const BlockCache *cache;
-static Arena arena;
+#ifdef UPDATE_API
+    static OBJECT_POOL InodePool;
+#else
+    static Arena arena;
+#endif
 
 // return which block `inode_no` lives on.
 static INLINE usize to_block_no(usize inode_no) {
@@ -30,20 +42,22 @@ static INLINE u32 *get_addrs(Block *block) {
 
 // initialize inode tree.
 void init_inodes(const SuperBlock *_sblock, const BlockCache *_cache) {
-    ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
-
-    init_spinlock(&lock, "InodeTree");
+    #ifdef UPDATE_API
+        MmInitializeObjectPool(&InodePool, sizeof(Inode));
+    #else
+        ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
+        init_arena(&arena, sizeof(Inode), allocator);
+    #endif
+    init_spinlock(&lock);
     init_list_node(&head);
     sblock = _sblock;
     cache = _cache;
-    init_arena(&arena, sizeof(Inode), allocator);
-
     inodes.root = inodes.get(ROOT_INODE_NO);
 }
 
 // initialize in-memory inode.
 static void init_inode(Inode *inode) {
-    init_spinlock(&inode->lock, "Inode");
+    init_spinlock(&inode->lock);
     init_rc(&inode->rc);
     init_list_node(&inode->node);
     inode->inode_no = 0;
@@ -53,10 +67,8 @@ static void init_inode(Inode *inode) {
 // see `inode.h`.
 static usize inode_alloc(OpContext *ctx, InodeType type) {
     assert(type != INODE_INVALID);
-
-    // TODO
-
-    PANIC("failed to allocate inode on disk");
+    return cache->alloc(ctx);
+    // PANIC("failed to allocate inode on disk");
 }
 
 // see `inode.h`.
@@ -74,7 +86,19 @@ static void inode_unlock(Inode *inode) {
 
 // see `inode.h`.
 static void inode_sync(OpContext *ctx, Inode *inode, bool do_write) {
-    // TODO
+    if (inode->valid)
+    {
+        // store
+        if (do_write)
+        {
+            
+        }
+    }
+    else
+    {
+        // load
+        
+    }
 }
 
 // see `inode.h`.

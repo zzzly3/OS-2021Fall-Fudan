@@ -17,7 +17,9 @@ static const struct
 	{BUG_BADLOCK, "Kernel-mode lock objects corruptted."},
 	{BUG_BADDPC, "DPC routine takes too much time."},
 	{BUG_UNSAFETRAP, "Trap enabled during unsafe operations."},
-	{BUG_SCHEDULER, "Invalid scheduler status."}
+	{BUG_SCHEDULER, "Invalid scheduler status."},
+	{BUG_BADREF, "Invalid reference count."},
+	{BUG_FSFAULT, "Filesystem internal fault."}
 };
 static const CPCHAR ELName[] = {"USR", "RES_1", "APC", "RES_3", "RT", "RES_5", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};

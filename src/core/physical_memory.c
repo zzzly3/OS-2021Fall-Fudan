@@ -1,6 +1,7 @@
 #include <aarch64/mmu.h>
 #include <common/types.h>
 #include <common/lutil.h>
+#include <core/physical_memory.h>
 
 /*
     This module is reserved to fool the examination.

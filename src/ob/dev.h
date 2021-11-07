@@ -4,6 +4,7 @@
 #include <common/spinlock.h>
 #include <common/string.h>
 #include <common/lutil.h>
+#include <common/rc.h>
 #include <driver/uart.h>
 #include <driver/interrupt.h>
 
@@ -52,7 +53,7 @@ typedef BOOL(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _DEVICE_OBJECT
 {
 	USHORT Flags;
-	USHORT ReferenceCount;
+	REF_COUNT ReferenceCount;
 	PKSTRING DeviceName;
 	PDEVICE_DISPATCH IOHandler;
 	PVOID DeviceStorage; // Implementation-dependent

@@ -12,7 +12,7 @@ Map<struct SpinLock *, Lock> map;
 }  // namespace
 
 extern "C" {
-void init_spinlock(struct SpinLock *lock, const char *name [[maybe_unused]]) {
+void init_spinlock(struct SpinLock *lock/*, const char *name [[maybe_unused]]*/) {
     map.try_add(lock);
 }
 

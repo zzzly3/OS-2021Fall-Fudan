@@ -85,6 +85,7 @@ void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 	memset(DeviceObject, 0, sizeof(DEVICE_OBJECT));
 	KeInitializeSpinLock(&DeviceObject->Lock);
 	KeInitializeSpinLock(&DeviceObject->IOLock);
+	init_rc(&DeviceObject->ReferenceCount);
 }
 
 RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
