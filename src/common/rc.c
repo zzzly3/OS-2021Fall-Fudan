@@ -6,7 +6,7 @@ void init_rc(RefCount *rc) {
 }
 
 BOOL increment_rc(RefCount *rc) {
-    int64_t r = __atomic_fetch_add(&rc->count, 1, __ATOMIC_ACQ_REL);
+    i64 r = __atomic_fetch_add(&rc->count, 1, __ATOMIC_ACQ_REL);
     if (r > OBJECT_MAX_REFERENCE)
     {
         decrement_rc(rc);
@@ -16,7 +16,7 @@ BOOL increment_rc(RefCount *rc) {
 }
 
 BOOL decrement_rc(RefCount *rc) {
-    int64_t r = __atomic_sub_fetch(&rc->count, 1, __ATOMIC_ACQ_REL);
+    i64 r = __atomic_sub_fetch(&rc->count, 1, __ATOMIC_ACQ_REL);
     ASSERT(r >= 0, BUG_BADREF);
     return r <= 0;
 }
