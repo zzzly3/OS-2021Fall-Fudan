@@ -70,8 +70,22 @@ static void init_inode(Inode *inode) {
 // see `inode.h`.
 static usize inode_alloc(OpContext *ctx, InodeType type) {
     assert(type != INODE_INVALID);
-    return cache->alloc(ctx);
-    // PANIC("failed to allocate inode on disk");
+    usize step = 0, count = 0;
+    for (usize i = 0; i < sblock->num_inodes; i++)
+    {
+        usize bno = to_block_no(i);
+        Block* b = cache->acquire(bno);
+        InodeEntry* ie = get_entry(b, i);
+        if (ie->type == INODE_INVALID)
+        {
+            ie->type = type;
+            cache->sync(ctx, b);
+            cache->release(b);
+            return i;
+        }
+        cache->release(b);
+    }
+    PANIC("failed to allocate inode on disk");
 }
 
 // see `inode.h`.
