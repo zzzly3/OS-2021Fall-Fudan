@@ -82,7 +82,7 @@ static usize inode_alloc(OpContext *ctx, InodeType type) {
             ie->type = type;
             cache->sync(ctx, b);
             cache->release(b);
-            printf("???%d\n", ie->addrs[0]);
+            //printf("???%d\n", ie->addrs[0]);
             return i;
         }
         cache->release(b);
@@ -139,7 +139,7 @@ static Inode *inode_get(usize inode_no) {
     init_inode(in);
     in->inode_no = inode_no;
     inode_sync(NULL, in, false);
-    printf("!!!%d\n", in->entry.addrs[0]);
+    //printf("!!!%d\n", in->entry.addrs[0]);
     increment_rc(&in->rc);
     acquire_spinlock(&lock);
     merge_list(&head, &in->node);
@@ -150,17 +150,17 @@ static Inode *inode_get(usize inode_no) {
 // see `inode.h`.
 static void inode_clear(OpContext *ctx, Inode *inode) {
     InodeEntry *entry = &inode->entry;
-    //printf("clearrrrr\n");
+    printf("clearrrrr\n");
     for (int i = 0; i < INODE_NUM_DIRECT; i++)
     {
-        //printf("%d %d\n", i, entry->addrs[i]);
+        printf("%d %d\n", i, entry->addrs[i]);
         if (entry->addrs[i] > 0)
         {
             cache->free(ctx, entry->addrs[i]);
             entry->addrs[i] = 0;
         }
     }
-    //printf("%d \n", entry->indirect);
+    printf("%d \n", entry->indirect);
     if (entry->indirect > 0)
     {
         Block* b = cache->acquire(entry->indirect);

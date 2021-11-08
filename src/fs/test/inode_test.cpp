@@ -22,7 +22,7 @@ namespace adhoc {
 static OpContext _ctx, *ctx = &_ctx;
 
 int test_alloc() {
-    
+
     mock.begin_op(ctx);
     usize ino = inodes.alloc(ctx, INODE_REGULAR);
 
@@ -33,13 +33,13 @@ int test_alloc() {
     assert_eq(mock.count_inodes(), 2);
 
     auto *p = inodes.get(ino);
-
+printf("ggggg\n");
     inodes.lock(p);
     inodes.unlock(p);
 
     mock.begin_op(ctx);
     inodes.put(ctx, p);
-
+printf("pppppp\n");
     assert_eq(mock.count_inodes(), 2);
     mock.end_op(ctx);
 
