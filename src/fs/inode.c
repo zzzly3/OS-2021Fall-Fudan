@@ -189,12 +189,12 @@ static Inode *inode_share(Inode *inode) {
 
 // see `inode.h`.
 static void inode_put(OpContext *ctx, Inode *inode) {
-    printf("putttt\n");
+    //printf("putttt\n");
     assert(inode->valid);
     acquire_spinlock(&lock);
     if (decrement_rc(&inode->rc))
     {
-        printf("freeeeee %d\n", inode->entry.num_links);
+        //printf("freeeeee %d\n", inode->entry.num_links);
         detach_from_list(&inode->node);
         release_spinlock(&lock);
         if (inode->entry.num_links == 0)
@@ -203,16 +203,15 @@ static void inode_put(OpContext *ctx, Inode *inode) {
             inode->entry.type = INODE_INVALID;
             inode_sync(ctx, inode, true);
         }
-        printf("clearrrrrr\n");
+        //printf("clearrrrrr\n");
         #ifdef UPDATE_API
-            MmFreeObject(&InodePool, &inode);
+            MmFreeObject(&InodePool, inode);
         #else
-            free_object(&inode);
+            free_object(inode);
         #endif
     }
     else
         release_spinlock(&lock);
-    printf("doneeeee\n");
 }
 
 // this function is private to inode interface, because it can allocate block
