@@ -142,13 +142,36 @@ static Inode *inode_get(usize inode_no) {
     acquire_spinlock(&lock);
     merge_list(&head, &in->node);
     release_spinlock(&lock);
+    return in;
 }
 
 // see `inode.h`.
 static void inode_clear(OpContext *ctx, Inode *inode) {
     InodeEntry *entry = &inode->entry;
-
-    // TODO
+    for (int i = 0; i < INODE_NUM_DIRECT; i++)
+    {
+        if (entry->addrs[i] > 0)
+        {
+            cache->free(ctx, entry->addrs[i]);
+            entry->addrs[i] = 0;
+        }
+    }
+    if (entry->indirect > 0)
+    {
+        Block* b = cache->acquire(entry->indirect);
+        for (int i = 0; i < INODE_NUM_INDIRECT; i++)
+        {
+            if (((IndirectBlock*)b)->addrs[i] > 0)
+            {
+                cache->free(ctx, ((IndirectBlock*)b)->addrs[i]);
+                ((IndirectBlock*)b)->addrs[i] = 0;
+            }
+        }
+        cache->release(b);
+        cache->free(ctx, entry->indirect);
+        entry->indirect = 0;
+    }
+    entry->num_bytes = 0;
 }
 
 // see `inode.h`.
@@ -161,7 +184,26 @@ static Inode *inode_share(Inode *inode) {
 
 // see `inode.h`.
 static void inode_put(OpContext *ctx, Inode *inode) {
-    // TODO
+    assert(inode->valid);
+    acquire_spinlock(&lock);
+    if (decrement_rc(&inode->rc))
+    {
+        detach_from_list(&inode->node);
+        release_spinlock(&lock);
+        if (inode->entry.num_links == 0)
+        {
+            inode_clear(ctx, inode);
+            inode->entry.type = INODE_INVALID;
+            inode_sync(ctx, inode, true);
+        }
+        #ifdef UPDATE_API
+            MmFreeObject(&InodePool, &inode);
+        #else
+            free_object(&inode);
+        #endif
+    }
+    else
+        release_spinlock(&lock);
 }
 
 // this function is private to inode interface, because it can allocate block
