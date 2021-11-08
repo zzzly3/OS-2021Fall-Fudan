@@ -71,7 +71,7 @@ static void init_inode(Inode *inode) {
 static usize inode_alloc(OpContext *ctx, InodeType type) {
     assert(type != INODE_INVALID);
     usize step = 0, count = 0;
-    for (usize i = 0; i < sblock->num_inodes; i++)
+    for (usize i = 1; i < sblock->num_inodes; i++)
     {
         usize bno = to_block_no(i);
         Block* b = cache->acquire(bno);
