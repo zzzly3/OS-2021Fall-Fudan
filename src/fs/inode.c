@@ -78,6 +78,7 @@ static usize inode_alloc(OpContext *ctx, InodeType type) {
         InodeEntry* ie = get_entry(b, i);
         if (ie->type == INODE_INVALID)
         {
+            memset(ie, 0, sizeof(ie));
             ie->type = type;
             cache->sync(ctx, b);
             cache->release(b);
@@ -108,13 +109,19 @@ static void inode_sync(OpContext *ctx, Inode *inode, bool do_write) {
         // store
         if (do_write)
         {
-            
+            Block* b = cache->acquire(to_block_no(inode->inode_no));
+            memcpy(get_entry(b, inode->inode_no), &inode->entry, sizeof(InodeEntry));
+            cache->sync(ctx, b);
+            cache->release(b);
         }
     }
     else
     {
         // load
-        
+        Block* b = cache->acquire(to_block_no(inode->inode_no));
+        memcpy(&inode->entry, get_entry(b, inode->inode_no), sizeof(InodeEntry));
+        cache->release(b);
+        inode->valid = true;
     }
 }
 
@@ -122,10 +129,19 @@ static void inode_sync(OpContext *ctx, Inode *inode, bool do_write) {
 static Inode *inode_get(usize inode_no) {
     assert(inode_no > 0);
     assert(inode_no < sblock->num_inodes);
-
-    // TODO
-
-    return NULL;
+    #ifdef UPDATE_API
+        Inode* in = MmAllocateObject(&InodePool);
+        ASSERT(in != NULL, BUG_FSFAULT);
+    #else
+        Inode* in = alloc_object(&arena);
+    #endif
+    init_inode(in);
+    in->inode_no = inode_no;
+    inode_sync(NULL, in, false);
+    increment_rc(&in->rc);
+    acquire_spinlock(&lock);
+    merge_list(&head, &in->node);
+    release_spinlock(&lock);
 }
 
 // see `inode.h`.
