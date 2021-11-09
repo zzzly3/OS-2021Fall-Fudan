@@ -337,7 +337,8 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
         }
     }
     // printf("l %d\n", o);
-    *index = o;
+    if (name == NULL)
+        *index = o;
     return 0;
 }
 
