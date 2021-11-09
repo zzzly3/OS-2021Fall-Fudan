@@ -298,9 +298,26 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
 static usize inode_lookup(Inode *inode, const char *name, usize *index) {
     InodeEntry *entry = &inode->entry;
     assert(entry->type == INODE_DIRECTORY);
-
-    // TODO
-
+    DirEntry de;
+    usize o;
+    for (o = 0; o < entry->num_bytes; o += sizeof(DirEntry))
+    {
+        inode_read(inode, (u8*)&de, o, sizeof(DirEntry));
+        if (de.inode_no > 0)
+        {
+            if (strncmp(de.name, name, FILE_NAME_MAX_LENGTH) == 0)
+            {
+                *index = o / sizeof(DirEntry);
+                return de.inode_no;
+            }
+        }
+        else if (name == NULL)
+        {
+            *index = o;
+            return 0;
+        }
+    }
+    *index = o;
     return 0;
 }
 
@@ -308,9 +325,12 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
 static usize inode_insert(OpContext *ctx, Inode *inode, const char *name, usize inode_no) {
     InodeEntry *entry = &inode->entry;
     assert(entry->type == INODE_DIRECTORY);
-
-    // TODO
-
+    DirEntry de;
+    de.inode_no = inode_no;
+    strncpy(de.name, name, FILE_NAME_MAX_LENGTH);
+    usize i;
+    inode_lookup(inode, NULL, &i);
+    inode_write(ctx, inode, (u8*)&de, i, sizeof(DirEntry));
     return 0;
 }
 
@@ -318,8 +338,9 @@ static usize inode_insert(OpContext *ctx, Inode *inode, const char *name, usize 
 static void inode_remove(OpContext *ctx, Inode *inode, usize index) {
     InodeEntry *entry = &inode->entry;
     assert(entry->type == INODE_DIRECTORY);
-
-    // TODO
+    DirEntry de;
+    memset(&de, 0, sizeof(DirEntry));
+    inode_write(ctx, inode, (u8*)&de, index * sizeof(DirEntry), sizeof(DirEntry));
 }
 
 InodeTree inodes = {
