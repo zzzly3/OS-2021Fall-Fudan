@@ -302,6 +302,7 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
     usize o;
     for (o = 0; o < entry->num_bytes; o += sizeof(DirEntry))
     {
+        printf("l %d\n", o);
         inode_read(inode, (u8*)&de, o, sizeof(DirEntry));
         if (de.inode_no > 0)
         {
@@ -317,6 +318,7 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
             return 0;
         }
     }
+    printf("l %d\n", o);
     *index = o;
     return 0;
 }
