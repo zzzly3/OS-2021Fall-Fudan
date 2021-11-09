@@ -130,6 +130,19 @@ static void inode_sync(OpContext *ctx, Inode *inode, bool do_write) {
 static Inode *inode_get(usize inode_no) {
     assert(inode_no > 0);
     assert(inode_no < sblock->num_inodes);
+    Inode* q = NULL;
+    acquire_spinlock(&lock);
+    for (ListNode* p = head.next; p != &head; p = p->next)
+    {
+        if (container_of(p, Inode, node)->inode_no == inode_no)
+        {
+            increment_rc(&(q = container_of(p, Inode, node))->rc);
+            break;
+        }
+    }
+    release_spinlock(&lock);
+    if (q != NULL)
+        return q;
     #ifdef UPDATE_API
         Inode* in = MmAllocateObject(&InodePool);
         ASSERT(in != NULL, BUG_FSFAULT);
@@ -332,9 +345,9 @@ static usize inode_insert(OpContext *ctx, Inode *inode, const char *name, usize 
     de.inode_no = inode_no;
     strncpy(de.name, name, FILE_NAME_MAX_LENGTH);
     usize i;
-    printf("i %s = %d\n", name, inode_no);
+    //printf("i %s = %d\n", name, inode_no);
     inode_lookup(inode, NULL, &i);
-    printf("i to %d\n", i);
+    //printf("i to %d\n", i);
     inode_write(ctx, inode, (u8*)&de, i, sizeof(DirEntry));
     return 0;
 }
