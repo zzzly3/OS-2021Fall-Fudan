@@ -315,6 +315,9 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
     assert(entry->type == INODE_DIRECTORY);
     DirEntry de;
     usize o;
+    usize i;
+    if (index == NULL)
+        index = &i;
     for (o = 0; o < entry->num_bytes; o += sizeof(DirEntry))
     {
         // printf("l %d\n", o);
