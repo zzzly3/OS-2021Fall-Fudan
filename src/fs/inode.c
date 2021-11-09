@@ -262,7 +262,7 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
     {
         bool x;
         usize bn = inode_map(NULL, inode, o, &x);
-        printf("%d in %d\n", o, bn);
+        //printf("%d in %d\n", o, bn);
         assert(x == false);
         if (bn == 0)
             *dest = 0;
@@ -303,21 +303,17 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
     usize o;
     for (o = 0; o < entry->num_bytes; o += sizeof(DirEntry))
     {
-        printf("l %d\n", o);
+        // printf("l %d\n", o);
         inode_read(inode, (u8*)&de, o, sizeof(DirEntry));
-        printf("rd\n");
-        if (de.inode_no > 0)
-        {
-            if (strncmp(de.name, name, FILE_NAME_MAX_LENGTH) == 0)
-            {
-                *index = o / sizeof(DirEntry);
-                return de.inode_no;
-            }
-        }
-        else if (name == NULL)
+        if (name == NULL && de.inode_no == 0)
         {
             *index = o;
             return 0;
+        }
+        else if (strncmp(de.name, name, FILE_NAME_MAX_LENGTH) == 0)
+        {
+            *index = o / sizeof(DirEntry);
+            return de.inode_no;
         }
     }
     printf("l %d\n", o);
