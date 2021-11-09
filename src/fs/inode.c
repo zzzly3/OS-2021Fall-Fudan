@@ -190,6 +190,7 @@ static void inode_clear(OpContext *ctx, Inode *inode) {
         entry->indirect = 0;
     }
     entry->num_bytes = 0;
+    inode_sync(ctx, inode, true);
 }
 
 // see `inode.h`.
@@ -332,7 +333,7 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
             return de.inode_no;
         }
     }
-    printf("l %d\n", o);
+    // printf("l %d\n", o);
     *index = o;
     return 0;
 }
