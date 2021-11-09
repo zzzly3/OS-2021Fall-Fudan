@@ -166,10 +166,10 @@ static void inode_clear(OpContext *ctx, Inode *inode) {
         Block* b = cache->acquire(entry->indirect);
         for (int i = 0; i < INODE_NUM_INDIRECT; i++)
         {
-            if (((IndirectBlock*)b)->addrs[i] > 0)
+            if (get_addrs(b)[i] > 0)
             {
-                cache->free(ctx, ((IndirectBlock*)b)->addrs[i]);
-                ((IndirectBlock*)b)->addrs[i] = 0;
+                cache->free(ctx, get_addrs(b)[i]);
+                get_addrs(b)[i] = 0;
             }
         }
         cache->release(b);
@@ -224,10 +224,30 @@ static void inode_put(OpContext *ctx, Inode *inode) {
 //
 // NOTE: caller must hold `inode`'s lock.
 static usize inode_map(OpContext *ctx, Inode *inode, usize offset, bool *modified) {
+    assert(offset < INODE_MAX_BYTES);
     InodeEntry *entry = &inode->entry;
-
-    // TODO
-
+    int bi = offset / BLOCK_SIZE;
+    *modified = false;
+    #define get(t) if (t == 0 && ctx != NULL) {usize a = cache->alloc(ctx); assert(a > 0); t = a; *modified = true;}
+    if (bi < INODE_NUM_DIRECT)
+    {
+        // direct
+        get(inode->entry.addrs[bi])
+        return inode->entry.addrs[bi];
+    }
+    else
+    {
+        // indirect
+        if (ctx == NULL && inode->entry.indirect == 0)
+            return 0;
+        get(inode->entry.indirect)
+        Block* b = cache->acquire(inode->entry.indirect);
+        get(get_addrs(b)[bi - INODE_NUM_DIRECT])
+        usize r = get_addrs(b)[bi - INODE_NUM_DIRECT];
+        cache->release(b);
+        return r;
+    }
+    #undef get
     return 0;
 }
 
@@ -238,8 +258,20 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
     assert(offset <= entry->num_bytes);
     assert(end <= entry->num_bytes);
     assert(offset <= end);
-
-    // TODO
+    for (usize o = offset; o < end; o++, dest++)
+    {
+        bool x;
+        usize bn = inode_map(NULL, inode, o, &x);
+        assert(x == false);
+        if (bn == 0)
+            *dest = 0;
+        else
+        {
+            Block* b = cache->acquire(bn);
+            *dest = ((u8*)b)[o % BLOCK_SIZE];
+            cache->release(b);
+        }
+    }
 }
 
 // see `inode.h`.
@@ -249,8 +281,17 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
     assert(offset <= entry->num_bytes);
     assert(end <= INODE_MAX_BYTES);
     assert(offset <= end);
-
-    // TODO
+    for (usize o = offset; o < end; o++, src++)
+    {
+        bool x;
+        usize bn = inode_map(ctx, inode, o, &x);
+        assert(bn > 0);
+        Block* b = cache->acquire(bn);
+        ((u8*)b)[o % BLOCK_SIZE] = *src;
+        cache->release(b);
+    }
+    entry->num_bytes = MAX(entry->num_bytes, end);
+    inode_sync(ctx, inode, true);
 }
 
 // see `inode.h`.
