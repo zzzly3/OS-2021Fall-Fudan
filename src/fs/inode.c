@@ -330,6 +330,7 @@ static usize inode_insert(OpContext *ctx, Inode *inode, const char *name, usize 
     strncpy(de.name, name, FILE_NAME_MAX_LENGTH);
     usize i;
     inode_lookup(inode, NULL, &i);
+    printf("i to %d\n", i);
     inode_write(ctx, inode, (u8*)&de, i, sizeof(DirEntry));
     return 0;
 }

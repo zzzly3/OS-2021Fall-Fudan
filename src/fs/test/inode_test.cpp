@@ -78,10 +78,11 @@ int test_touch() {
     inodes.lock(p);
 
     for (usize i = 2; i < mock.num_inodes; i++) {
+printf("#%d\n", i);
         mock.begin_op(ctx);
         usize ino = inodes.alloc(ctx, INODE_REGULAR);
         inodes.insert(ctx, p, std::to_string(i).data(), ino);
-
+printf("ins!\n");
         auto *q = inodes.get(ino);
         inodes.lock(q);
         assert_eq(q->entry.type, INODE_REGULAR);
