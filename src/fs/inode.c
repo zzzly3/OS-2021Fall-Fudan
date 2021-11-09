@@ -305,10 +305,13 @@ static usize inode_lookup(Inode *inode, const char *name, usize *index) {
     {
         // printf("l %d\n", o);
         inode_read(inode, (u8*)&de, o, sizeof(DirEntry));
-        if (name == NULL && de.inode_no == 0)
+        if (name == NULL)
         {
-            *index = o;
-            return 0;
+            if (de.inode_no == 0)
+            {
+                *index = o;
+                return 0;
+            }
         }
         else if (strncmp(de.name, name, FILE_NAME_MAX_LENGTH) == 0)
         {
