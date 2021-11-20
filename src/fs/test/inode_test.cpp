@@ -22,6 +22,7 @@ namespace adhoc {
 static OpContext _ctx, *ctx = &_ctx;
 
 int test_alloc() {
+
     mock.begin_op(ctx);
     usize ino = inodes.alloc(ctx, INODE_REGULAR);
 

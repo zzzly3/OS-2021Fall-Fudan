@@ -29,14 +29,16 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} \
 add_subdirectory(aarch64)
 add_subdirectory(asm)
 add_subdirectory(common)
+add_subdirectory(ob)
+add_subdirectory(mod)
 add_subdirectory(core)
 add_subdirectory(driver)
 add_subdirectory(user)
 add_subdirectory(fs)
 
 set(kernel_name kernel8)
-add_executable(${kernel_name}.elf main.c start.S)
-target_link_libraries(${kernel_name}.elf fs core asm driver aarch64 common user)
+add_executable(${kernel_name}.elf lagacy.c main.c start.S)
+target_link_libraries(${kernel_name}.elf fs ob mod core mod core ob driver asm aarch64 common user)
 
 set(kernel_prefix "${CMAKE_CURRENT_BINARY_DIR}/${kernel_name}")
 set(kernel_elf "${kernel_prefix}.elf")

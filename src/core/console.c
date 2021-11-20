@@ -1,17 +1,14 @@
 #include <aarch64/intrinsic.h>
 #include <common/format.h>
+#define USE_LAGACY
+#include <core/console.h>
 #include <common/spinlock.h>
 #include <core/console.h>
-
-typedef struct {
-    SpinLock lock;
-    CharDevice device;
-} ConsoleContext;
 
 static ConsoleContext ctx;
 
 void init_console() {
-    init_spinlock(&ctx.lock, "console");
+    //init_spinlock(&ctx.lock, "console");
     init_uart_char_device(&ctx.device);
 }
 

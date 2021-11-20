@@ -1,3 +1,4 @@
+#if 0
 #include <aarch64/intrinsic.h>
 #include <common/string.h>
 #include <core/arena.h>
@@ -72,3 +73,24 @@ NORETURN void main() {
 
     no_return();
 }
+
+#else
+#include <def.h>
+#include <core/console.h>
+
+void sys_switch_test();
+void sys_transfer_test();
+void spawn_init_process();
+
+NO_RETURN main()
+{
+    system_init();
+    printf("CPU %d init.\n", cpuid());
+    spawn_init_process();
+    if (cpuid() == 0)
+        KeCreateDpc(sys_switch_test, 0);
+        // KeCreateDpc(sys_transfer_test, 0);
+    KeSystemWorkerEntry();
+}
+
+#endif

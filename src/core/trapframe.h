@@ -12,8 +12,8 @@
  * in your trapframe.
  */
 typedef struct {
-    /* TODO: Lab3 Interrupt */
-
+	/* TODO: Lab3 Interrupt */
+    char reserved[128]; // See TRAP_FRAME
 } Trapframe;
 
 #endif
