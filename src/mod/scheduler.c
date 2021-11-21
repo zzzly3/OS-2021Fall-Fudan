@@ -328,8 +328,10 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
+	PKPROCESS gw = PgGetProcessGroupWorker(cur);
 	ASSERT((NextTask->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
-	ASSERT(NextTask->Status == PROCESS_STATUS_RUNABLE, BUG_SCHEDULER);
+	ASSERT((NextTask->Status == PROCESS_STATUS_RUNABLE) ||
+		(NextTask == gw && NextTask->Status == PROCESS_STATUS_RUNNING), BUG_SCHEDULER);
 	NextTask->Status = PROCESS_STATUS_RUNNING;
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)NextTask->Context.UserStack);

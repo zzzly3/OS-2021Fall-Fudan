@@ -211,7 +211,7 @@ void sys_transfer_test()
     }
 }
 
-void sys_group_test_proc(ULONG64 arg)
+void sys_group_test_proc(int arg)
 {
     arch_disable_trap();
     PKPROCESS cur = PsGetCurrentProcess();
