@@ -86,7 +86,6 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 	PKPROCESS p = container_of(&ProcessGroup->SchedulerList, KPROCESS, SchedulerList);
 	while (1)
 	{
-		printf("groupppppp\n");
 		PKPROCESS np = container_of(p->SchedulerList.Backward, KPROCESS, SchedulerList);
 		if (p != np)
 		{
