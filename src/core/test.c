@@ -244,7 +244,6 @@ void sys_group_test()
         p[i]->Flags |= PROCESS_FLAG_KERNEL;
         p[i]->Group = g;
         PsCreateProcess(p[i], sys_group_test_proc, i);
-        printf("?%d,r%d\n", i, p[i]->ReferenceCount.count);
         ObDereferenceObject(p[i]);
     }
     ObDereferenceObject(g);

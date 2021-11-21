@@ -31,6 +31,7 @@ PPROCESS_GROUP PgCreateGroup()
 	g->Flags = 0;
 	g->NextProcessId = 1;
 	init_rc(&g->ReferenceCount);
+	increment_rc(&g->ReferenceCount);
 	g->GroupWorker = p;
 	g->SchedulerList.Forward = g->SchedulerList.Backward = &g->SchedulerList;
 	p->Flags |= PROCESS_FLAG_GROUPWORKER | PROCESS_FLAG_KERNEL;
