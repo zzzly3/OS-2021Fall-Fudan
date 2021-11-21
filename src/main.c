@@ -81,6 +81,7 @@ NORETURN void main() {
 void sys_switch_test();
 void sys_transfer_test();
 void spawn_init_process();
+void sys_group_test();
 
 NO_RETURN main()
 {
@@ -88,7 +89,7 @@ NO_RETURN main()
     printf("CPU %d init.\n", cpuid());
     spawn_init_process();
     if (cpuid() == 0)
-        KeCreateDpc(sys_switch_test, 0);
+        KeCreateDpc(sys_group_test, 0);
         // KeCreateDpc(sys_transfer_test, 0);
     KeSystemWorkerEntry();
 }
