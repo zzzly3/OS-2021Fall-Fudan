@@ -1,8 +1,5 @@
 #include <ob/grp.h>
-#include <mod/scheduler.h>
-#include <ob/mem.h>
-#include <common/spinlock.h>
-#include <ob/proc.h>
+#include <def.h>
 
 UNSAFE void PsiTaskSwitch(PKPROCESS);
 void PgiWorkerEntry(PPROCESS_GROUP);
@@ -88,6 +85,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 	PKPROCESS p = container_of(&ProcessGroup->SchedulerList, KPROCESS, SchedulerList);
 	while (1)
 	{
+		printf("groupppppp\n");
 		PKPROCESS np = container_of(p->SchedulerList.Backward, KPROCESS, SchedulerList);
 		if (p != np)
 		{
