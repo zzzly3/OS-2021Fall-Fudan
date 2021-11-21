@@ -60,6 +60,10 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	PKPROCESS cur = PsGetCurrentProcess();
 	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
 	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
+	if (cur->Group == NULL)
+		printf(BLUE("[*]")"Process Group: NULL\n");
+	else
+		printf(BLUE("[*]")"Process Group: %p, GID = %d, GPID = %d, Flags = %x\n", cur->Group, cur->Group->GroupId, cur->GroupProcessId, cur->Group->Flags);
 	printf(BLUE("[*]")"Process Active Count = %d %d %d %d, Waken Count = %d, Transferring = %p,\n", ActiveProcessCount[0], ActiveProcessCount[1], ActiveProcessCount[2], ActiveProcessCount[3], WakenProcessCount, (PVOID)TransferProcess);
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	printf(BLUE("[*]")"Stack:\n");
