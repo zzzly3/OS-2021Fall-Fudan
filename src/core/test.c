@@ -213,6 +213,7 @@ void sys_transfer_test()
 
 void sys_group_test_proc(ULONG64 arg)
 {
+    arch_disable_trap();
     PKPROCESS cur = PsGetCurrentProcess();
     if (arg < 0)
     {
