@@ -31,11 +31,9 @@ PPROCESS_GROUP PgCreateGroup()
 	g->Flags = 0;
 	g->NextProcessId = 1;
 	init_rc(&g->ReferenceCount);
-	ObReferenceObject(g);
 	g->GroupWorker = p;
 	g->SchedulerList.Forward = g->SchedulerList.Backward = &g->SchedulerList;
 	p->Flags |= PROCESS_FLAG_GROUPWORKER | PROCESS_FLAG_KERNEL;
-	ObReferenceObject(p);
 	p->ParentId = 0;
 	p->GroupProcessId = 0;
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = &p->GroupProcessList;
@@ -61,6 +59,7 @@ void PgiDestroyGroup()
 
 void PgiStartNewProcess(PKPROCESS Process)
 {
+	printf("start %p, cur=%p, pg=%p, cg=%p\n", Process, PsGetCurrentProcess(), Process->Group, PsGetCurrentProcess()->Group);
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
 	ASSERT(Process->Group != g, BUG_SCHEDULER);
 	Process->GroupProcessId = g->NextProcessId++;
@@ -81,6 +80,8 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
 	ASSERT(cur->ExecuteLevel == EXECUTE_LEVEL_USR, BUG_WORKER);
+	ASSERT(cur->Group == ProcessGroup, BUG_WORKER);
+	ASSERT(cur->Flags & PROCESS_FLAG_GROUPWORKER, BUG_WORKER);
 	arch_disable_trap();
 	PKPROCESS p = container_of(&ProcessGroup->SchedulerList, KPROCESS, SchedulerList);
 	while (1)
