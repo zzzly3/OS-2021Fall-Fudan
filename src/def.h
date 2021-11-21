@@ -6,6 +6,7 @@
 #include <driver/console.h>
 #include <ob/mem.h>
 #include <ob/proc.h>
+#include <ob/grp.h>
 #include <ob/mutex.h>
 #include <mod/bug.h>
 #include <mod/scheduler.h>

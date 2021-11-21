@@ -1,4 +1,5 @@
 #include <mod/scheduler.h>
+#include <ob/grp.h>
 
 extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
@@ -24,6 +25,7 @@ LIST_ENTRY WakenList;
 
 void swtch (PVOID kstack, PVOID* oldkstack);
 void KiClockTrapEntry();
+void PgiAwakeProcess(PKPROCESS);
 
 void ObInitializeScheduler()
 {
@@ -141,10 +143,17 @@ UNSAFE void PsiAwakeProcess(PKPROCESS Process)
 	if (Process->Flags & PROCESS_FLAG_WAITING)
 	{
 		Process->Flags &= ~PROCESS_FLAG_WAITING;
-		KeAcquireSpinLockFast(&WakenListLock);
-		LibInsertListEntry(WakenList.Forward, &Process->SchedulerList);
-		WakenProcessCount++;
-		KeReleaseSpinLockFast(&WakenListLock);
+		if (Process->Group == NULL)
+		{
+			KeAcquireSpinLockFast(&WakenListLock);
+			LibInsertListEntry(WakenList.Forward, &Process->SchedulerList);
+			WakenProcessCount++;
+			KeReleaseSpinLockFast(&WakenListLock);
+		}
+		else
+		{
+			KeCreateApcEx(Process->Group->GroupWorker, (PAPC_ROUTINE)PgiAwakeProcess, (ULONG64)Process);
+		}
 	}
 }
 
@@ -153,6 +162,11 @@ void PsAlertProcess(PKPROCESS Process)
 	ObLockObject(Process);
 	PsiAwakeProcess(Process);
 	ObUnlockObject(Process);
+}
+
+void PsTerminateProcess(PKPROCESS Process)
+{
+	KeCreateApcEx(Process, (PAPC_ROUTINE)PsiExitProcess, NULL);
 }
 
 void KiClockTrapEntry()
@@ -310,6 +324,22 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 	// ObUnlockObject(proc);
 }
 
+// Lock-free: only the scheduler can call
+UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	ASSERT((NextTask->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
+	ASSERT(NextTask->Status == PROCESS_STATUS_RUNABLE, BUG_SCHEDULER);
+	NextTask->Status = PROCESS_STATUS_RUNNING;
+	cur->Context.UserStack = (PVOID)arch_get_usp();
+	arch_set_usp((ULONG64)NextTask->Context.UserStack);
+	MmSwitchMemorySpaceEx(cur->MemorySpace, NextTask->MemorySpace);
+	arch_set_tid((ULONG64)NextTask);
+	swtch(NextTask->Context.KernelStack.p, &cur->Context.KernelStack.p);
+	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	KeLowerExecuteLevel(oldel);
+}
+
 UNSAFE void KeTaskSwitch()
 {
 	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
@@ -318,71 +348,65 @@ UNSAFE void KeTaskSwitch()
 	// No need to lock the process, since only the scheduler can change its status.
 	PKPROCESS cur = PsGetCurrentProcess();
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
-	// KeAcquireSpinLockFast(&ActiveListLock);
-	if (WorkerSwitchTimer[cid] == 0)
+	PKPROCESS gw = PgGetCurrentGroupWorker();
+	if (gw == NULL)
 	{
-		WorkerSwitchTimer[cid] = WORKER_SWITCH_ROUND;
-		if (cur != KernelProcess[cid] && nxt != KernelProcess[cid])
+		// root scheduler
+		// KeAcquireSpinLockFast(&ActiveListLock);
+		if (WorkerSwitchTimer[cid] == 0)
 		{
-			LibRemoveListEntry(&KernelProcess[cid]->SchedulerList);
-			LibInsertListEntry(&cur->SchedulerList, &KernelProcess[cid]->SchedulerList);
-			nxt = KernelProcess[cid];
+			WorkerSwitchTimer[cid] = WORKER_SWITCH_ROUND;
+			if (cur != KernelProcess[cid] && nxt != KernelProcess[cid])
+			{
+				LibRemoveListEntry(&KernelProcess[cid]->SchedulerList);
+				LibInsertListEntry(&cur->SchedulerList, &KernelProcess[cid]->SchedulerList);
+				nxt = KernelProcess[cid];
+			}
 		}
-	}
-	else if (WorkerSwitchTimer[cid] != -1)
-		WorkerSwitchTimer[cid]--;
-	if (nxt == cur) // No more process
-	{
-		// KeReleaseSpinLockFast(&ActiveListLock);
-		return;
-	}
-	// Do switch
-	ASSERT((nxt->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
-	switch (nxt->Status)
-	{
-		case PROCESS_STATUS_RUNABLE:
-			nxt->Status = PROCESS_STATUS_RUNNING;
-			break;
-		default:
-			KeBugFault(BUG_SCHEDULER);
-			break;
-	}
-	switch (cur->Status)
-	{
-		case PROCESS_STATUS_RUNNING:
-			cur->Status = PROCESS_STATUS_RUNABLE;
-			break;
-		case PROCESS_STATUS_ZOMBIE:
-			LibRemoveListEntry(&cur->SchedulerList);
-			ActiveProcessCount[cid]--;
-			break;
-		case PROCESS_STATUS_WAIT:
-			ObLockObjectFast(cur);
-			if (cur->WaitMutex == NULL || cur->ApcList != NULL)
-			{
-				// Awake immediately
+		else if (WorkerSwitchTimer[cid] != -1)
+			WorkerSwitchTimer[cid]--;
+		if (nxt == cur) // No more process
+		{
+			// KeReleaseSpinLockFast(&ActiveListLock);
+			return;
+		}
+		// Do switch
+		switch (cur->Status)
+		{
+			case PROCESS_STATUS_RUNNING:
 				cur->Status = PROCESS_STATUS_RUNABLE;
-			}
-			else
-			{
+				break;
+			case PROCESS_STATUS_ZOMBIE:
 				LibRemoveListEntry(&cur->SchedulerList);
-				cur->Flags |= PROCESS_FLAG_WAITING;
 				ActiveProcessCount[cid]--;
-			}
-			ObUnlockObjectFast(cur);
-			break;
-		default:
-			KeBugFault(BUG_SCHEDULER);
-			break;
+				break;
+			case PROCESS_STATUS_WAIT:
+				ObLockObjectFast(cur);
+				if (cur->WaitMutex == NULL || cur->ApcList != NULL)
+				{
+					// Awake immediately
+					cur->Status = PROCESS_STATUS_RUNABLE;
+				}
+				else
+				{
+					LibRemoveListEntry(&cur->SchedulerList);
+					cur->Flags |= PROCESS_FLAG_WAITING;
+					ActiveProcessCount[cid]--;
+				}
+				ObUnlockObjectFast(cur);
+				break;
+			default:
+				KeBugFault(BUG_SCHEDULER);
+				break;
+		}
+		// KeReleaseSpinLockFast(&ActiveListLock);
 	}
-	// KeReleaseSpinLockFast(&ActiveListLock);
-	cur->Context.UserStack = (PVOID)arch_get_usp();
-	arch_set_usp((ULONG64)nxt->Context.UserStack);
-	MmSwitchMemorySpaceEx(cur->MemorySpace, nxt->MemorySpace);
-	arch_set_tid((ULONG64)nxt);
-	swtch(nxt->Context.KernelStack.p, &cur->Context.KernelStack.p);
-	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	KeLowerExecuteLevel(oldel);
+	else
+	{
+		// group scheduler
+		nxt = gw;
+	}
+	PsiTaskSwitch(nxt);
 }
 
 // RT_ONLY void PsiCheckInactiveList()

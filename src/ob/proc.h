@@ -5,6 +5,7 @@
 #include <common/rc.h>
 #include <ob/mem.h>
 #include <ob/mutex.h>
+#include <ob/grp.h>
 #include <mod/scheduler.h>
 #include <mod/bug.h>
 
@@ -13,26 +14,31 @@
 #define PROCESS_STATUS_RUNABLE 2
 #define PROCESS_STATUS_ZOMBIE 3
 #define PROCESS_STATUS_WAIT 4
+#define PROCESS_STATUS_MOVE 5 // Reserved for cross-group move
 #define PROCESS_FLAG_KERNEL 1
-#define PROCESS_FLAG_REALTIME 2
+#define PROCESS_FLAG_REALTIME 2 // Reserved for real-time process
 #define PROCESS_FLAG_APCSTATE 4
 #define PROCESS_FLAG_WAITING 8
+#define PROCESS_FLAG_GROUPWORKER 16
 
 typedef struct _KPROCESS
 {
-	EXECUTE_LEVEL ExecuteLevel;
-	USHORT Status;
-	USHORT Flags;
+	PRIVATE EXECUTE_LEVEL ExecuteLevel;
+	PRIVATE USHORT Status;
+	PRIVATE USHORT Flags;
 	SPINLOCK Lock;
 	REF_COUNT ReferenceCount;
 	int ProcessId;
 	int ParentId;
+	int GroupProcessId;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
 	LIST_ENTRY WaitList;
+	LIST_ENTRY GroupProcessList;
+	struct _PROCESS_GROUP* Group;
 	PMEMORY_SPACE MemorySpace;
-	struct _APC_ENTRY* ApcList;
-	struct _MUTEX* WaitMutex;
+	PUBLIC struct _APC_ENTRY* ApcList;
+	PUBLIC struct _MUTEX* WaitMutex;
 	struct
 	{
 		PVOID UserStack;
@@ -70,5 +76,6 @@ KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 #define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
 void KeExitProcess();
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
+PKPROCESS PgGetCurrentGroupWorker();
 
 #endif

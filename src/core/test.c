@@ -210,3 +210,40 @@ void sys_transfer_test()
         KeCreateProcess(NULL, sys_transfer_test_proc, i, &pid[i]);
     }
 }
+
+void sys_group_test_proc(ULONG64 arg)
+{
+    PKPROCESS cur = PsGetCurrentProcess();
+    if (arg < 0)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            printf("Outter process: pid=%d gpid=%d group=%p\n", cur->ProcessId, cur->GroupProcessId, cur->Group);
+            KeTaskSwitch();
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            printf("Inner process %d: pid=%d gpid=%d group=%p\n", arg, cur->ProcessId, cur->GroupProcessId, cur->Group);
+            KeTaskSwitch();
+        }
+    }
+}
+void sys_group_test()
+{
+    sys_test_info("Process group test");
+    PPROCESS_GROUP g = PgCreateGroup();
+    PKPROCESS p[4];
+    for (int i = 0; i < 4; i++)
+    {
+        p[i] = PsCreateProcessEx();
+        ASSERT(p[i], BUG_STOP);
+        p[i]->Flags |= PROCESS_FLAG_KERNEL;
+        p[i]->Group = g;
+        PsCreateProcess(p[i], sys_group_test_proc, i);
+    }
+    int pid;
+    KeCreateProcess(NULL, sys_group_test_proc, -1, &pid);
+}

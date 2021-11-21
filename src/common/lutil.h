@@ -66,6 +66,8 @@ typedef UCHAR EXECUTE_LEVEL;
 #define LEQAPC_ONLY // EL <= APC
 #define LEQRT_ONLY
 #define UNSAFE
+#define PRIVATE
+#define PUBLIC
 
 typedef struct _LIST_ENTRY
 {

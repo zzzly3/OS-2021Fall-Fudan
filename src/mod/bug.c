@@ -19,7 +19,8 @@ static const struct
 	{BUG_UNSAFETRAP, "Trap enabled during unsafe operations."},
 	{BUG_SCHEDULER, "Invalid scheduler status."},
 	{BUG_BADREF, "Invalid reference count."},
-	{BUG_FSFAULT, "Filesystem internal fault."}
+	{BUG_FSFAULT, "Filesystem internal fault."},
+	{BUG_WORKER, "System worker process exception."}
 };
 static const CPCHAR ELName[] = {"USR", "RES_1", "APC", "RES_3", "RT", "RES_5", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};

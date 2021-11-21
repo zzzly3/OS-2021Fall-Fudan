@@ -10,6 +10,7 @@ void PsUserProcessEntry();
 void PsKernelProcessEntry();
 RT_ONLY void PsiStartNewProcess(PKPROCESS);
 void PsiExitProcess();
+void PgiStartNewProcess(PKPROCESS);
 
 #define next_process(proc) container_of((proc)->ProcessList.Backward, KPROCESS, ProcessList)
  
@@ -20,6 +21,7 @@ BOOL ObInitializeProcessManager()
 	{
 		MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
 		KeInitializeSpinLock(&ProcessListLock);
+		ObInitializeGroupManager();
 	}
 	KernelProcess[cid] = PsCreateProcessEx();
 	if (KernelProcess[cid] == NULL)
@@ -53,6 +55,8 @@ PKPROCESS PsCreateProcessEx()
 	p->ExecuteLevel = EXECUTE_LEVEL_USR;
 	p->ApcList = NULL;
 	p->WaitMutex = NULL;
+	p->Group = NULL;
+	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
 	KeInitializeSpinLock(&p->Lock);
 	init_rc(&p->ReferenceCount);
 	PVOID g = MmAllocatePhysicalPage();
@@ -89,7 +93,16 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
-	PsiStartNewProcess(Process);
+	if (Process->Group)
+	{
+		// start with group scheduler
+		KeCreateApcEx(Process->Group->GroupWorker, (PAPC_ROUTINE)PgiStartNewProcess, (ULONG64)Process);
+	}
+	else
+	{
+		// start with root scheduler
+		PsiStartNewProcess(Process);
+	}
 }
 
 KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
@@ -125,7 +138,8 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	{
 		if (p->ProcessId == ProcessId)
 		{
-			if (p->Status != PROCESS_STATUS_INITIALIZE)
+			if (p->Status != PROCESS_STATUS_INITIALIZE &&
+				p->Status != PROCESS_STATUS_ZOMBIE)
 			{
 				if (ObReferenceObject(p))
 				{
@@ -142,4 +156,14 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	KeReleaseSpinLockFast(&ProcessListLock);
 	KeLowerExecuteLevel(oldel);
 	return ret;
+}
+
+PKPROCESS PgGetCurrentGroupWorker()
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	if ((cur->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && cur->Group != NULL)
+	{
+		return cur->Group->GroupWorker;
+	}
+	return NULL;
 }
