@@ -60,9 +60,8 @@ void PgiDestroyGroup()
 
 void PgiStartNewProcess(PKPROCESS Process)
 {
-	printf("start %p, cur=%p, pg=%p, cg=%p\n", Process, PsGetCurrentProcess(), Process->Group, PsGetCurrentProcess()->Group);
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
-	ASSERT(Process->Group != g, BUG_SCHEDULER);
+	ASSERT(Process->Group == g, BUG_SCHEDULER);
 	Process->GroupProcessId = g->NextProcessId++;
 	LibInsertListEntry(&g->GroupWorker->GroupProcessList, &Process->GroupProcessList);
 	LibInsertListEntry(&g->SchedulerList, &Process->SchedulerList);
@@ -72,7 +71,7 @@ void PgiStartNewProcess(PKPROCESS Process)
 void PgiAwakeProcess(PKPROCESS Process)
 {
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
-	ASSERT(Process->Group != g, BUG_SCHEDULER);
+	ASSERT(Process->Group == g, BUG_SCHEDULER);
 	LibInsertListEntry(&g->SchedulerList, &Process->SchedulerList);
 	Process->Status = PROCESS_STATUS_RUNABLE;
 }
