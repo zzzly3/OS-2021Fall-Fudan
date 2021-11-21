@@ -76,6 +76,7 @@ KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 #define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
 void KeExitProcess();
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
-PKPROCESS PgGetCurrentGroupWorker();
+PKPROCESS PgGetProcessGroupWorker(PKPROCESS);
+#define PgGetCurrentGroupWorker() PgGetProcessGroupWorker(PsGetCurrentProcess())
 
 #endif

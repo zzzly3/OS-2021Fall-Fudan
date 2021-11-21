@@ -59,6 +59,7 @@ PKPROCESS PsCreateProcessEx()
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
 	KeInitializeSpinLock(&p->Lock);
 	init_rc(&p->ReferenceCount);
+	increment_rc(&p->ReferenceCount);
 	PVOID g = MmAllocatePhysicalPage();
 	if (g == NULL)
 	{
@@ -93,10 +94,11 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
-	if (Process->Group)
+	PKPROCESS gk = PgGetProcessGroupWorker(Process);
+	if (gk)
 	{
 		// start with group scheduler
-		KeCreateApcEx(Process->Group->GroupWorker, (PAPC_ROUTINE)PgiStartNewProcess, (ULONG64)Process);
+		KeCreateApcEx(gk, (PAPC_ROUTINE)PgiStartNewProcess, (ULONG64)Process);
 	}
 	else
 	{
@@ -119,6 +121,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
 	KeLowerExecuteLevel(oldel);
+	ObDereferenceObject(p);
 	return STATUS_SUCCESS;
 }
 
@@ -158,12 +161,11 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	return ret;
 }
 
-PKPROCESS PgGetCurrentGroupWorker()
+PKPROCESS PgGetProcessGroupWorker(PKPROCESS Process)
 {
-	PKPROCESS cur = PsGetCurrentProcess();
-	if ((cur->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && cur->Group != NULL)
+	if ((Process->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && Process->Group != NULL)
 	{
-		return cur->Group->GroupWorker;
+		return Process->Group->GroupWorker;
 	}
 	return NULL;
 }

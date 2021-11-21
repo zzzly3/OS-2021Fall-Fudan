@@ -59,7 +59,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
     printf(BLUE("[*]")"sp = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.\n", p, t, arch_get_elr(), arch_get_esr());
 	PKPROCESS cur = PsGetCurrentProcess();
 	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
-	printf("Process Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked");
+	printf("Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s, Reference = %d.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked", cur->ReferenceCount.count);
 	if (cur->Group == NULL)
 		printf(BLUE("[*]")"Process Group: NULL\n");
 	else

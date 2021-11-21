@@ -244,7 +244,9 @@ void sys_group_test()
         p[i]->Flags |= PROCESS_FLAG_KERNEL;
         p[i]->Group = g;
         PsCreateProcess(p[i], sys_group_test_proc, i);
+        ObDereferenceObject(p[i]);
     }
+    ObDereferenceObject(g);
     int pid;
     KeCreateProcess(NULL, sys_group_test_proc, -1, &pid);
 }
