@@ -15,6 +15,7 @@ void KeSystemWorkerEntry()
 	PKPROCESS cur = PsGetCurrentProcess();
 	while (1)
 	{
+		printf("worker %d\n", cpuid());
 		// Awake waiting process
 		KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
 		// PsiCheckInactiveList();
