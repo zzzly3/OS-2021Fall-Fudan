@@ -3,6 +3,7 @@
 
 #include <ob/proc.h>
 #include <common/rc.h>
+#include <mod/scheduler.h>
 
 #define GROUP_FLAG_ZOMBIE 1
 
