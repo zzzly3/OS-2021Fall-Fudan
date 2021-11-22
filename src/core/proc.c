@@ -124,6 +124,7 @@ void wakeup(void *chan) {
  */
 void add_loop_test(int times) {
     BOOL trpen = arch_disable_trap();
+    EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
     extern char loop_start[], loop_end[];
     PMEMORY_SPACE m = MmCreateMemorySpace();
     if (m == NULL)
@@ -148,6 +149,7 @@ void add_loop_test(int times) {
         strncpy(p->DebugName, "loop", 16);
         PsCreateProcess(p, base, 0); 
     }
+    KeLowerExecuteLevel(oldel);
     if (trpen) arch_enable_trap();
     return;
 fail:
