@@ -356,9 +356,8 @@ UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
 	// printf("*%d->%d\n", cur->ProcessId, NextTask->ProcessId);
 	PKPROCESS gw = PgGetProcessGroupWorker(cur);
 	ASSERT((NextTask->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
-	ASSERT((NextTask->Status == PROCESS_STATUS_RUNABLE) ||
-		(NextTask == gw && NextTask->Status == PROCESS_STATUS_RUNNING), BUG_SCHEDULER);
-	NextTask->Status = PROCESS_STATUS_RUNNING;
+	// NextTask->Status = PROCESS_STATUS_RUNNING;
+	ASSERT(NextTask->Status == PROCESS_STATUS_RUNNING, BUG_SCHEDULER);
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)NextTask->Context.UserStack);
 	MmSwitchMemorySpaceEx(cur->MemorySpace, NextTask->MemorySpace);
@@ -380,7 +379,6 @@ UNSAFE void KeTaskSwitch()
 	if (gw == NULL)
 	{
 		// root scheduler
-		// KeAcquireSpinLockFast(&ActiveListLock);
 		if (WorkerSwitchTimer[cid] == 0)
 		{
 			WorkerSwitchTimer[cid] = WORKER_SWITCH_ROUND;
@@ -395,7 +393,6 @@ UNSAFE void KeTaskSwitch()
 			WorkerSwitchTimer[cid]--;
 		if (nxt == cur) // No more process
 		{
-			// KeReleaseSpinLockFast(&ActiveListLock);
 			return;
 		}
 		// Do switch
@@ -427,7 +424,8 @@ UNSAFE void KeTaskSwitch()
 				KeBugFault(BUG_SCHEDULER);
 				break;
 		}
-		// KeReleaseSpinLockFast(&ActiveListLock);
+		ASSERT(nxt->Status == PROCESS_STATUS_RUNABLE, BUG_SCHEDULER);
+		nxt->Status = PROCESS_STATUS_RUNNING;
 	}
 	else
 	{

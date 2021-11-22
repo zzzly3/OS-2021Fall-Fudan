@@ -131,6 +131,11 @@ void KeExitProcess()
 	PsiExitProcess();
 }
 
+void PsiFreeProcess(PKPROCESS Process)
+{
+	MmFreeObject(&ProcessPool, Process);
+}
+
 UNSAFE void PsFreeProcess(PKPROCESS Process)
 {
 	ASSERT(ObTestReferenceZero(Process), BUG_BADREF);

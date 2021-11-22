@@ -8,11 +8,14 @@
 
 typedef struct _PROCESS_GROUP
 {
+	SPINLOCK Lock;
+	REF_COUNT ReferenceCount; // NOTE: References are read-only
 	int GroupId;
 	int Flags;
+	int WorkerCount;
 	int NextProcessId;
-	REF_COUNT ReferenceCount; // NOTE: References are read-only
-	struct _KPROCESS* GroupWorker; // WARNING: NEVER block the worker!!!
+	struct _KPROCESS* NextRun;
+	struct _KPROCESS* GroupWorker[CPU_NUM]; // WARNING: NEVER block the worker!!!
 	LIST_ENTRY GroupList;
 	LIST_ENTRY SchedulerList;
 } PROCESS_GROUP, *PPROCESS_GROUP;
