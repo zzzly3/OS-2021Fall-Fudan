@@ -77,5 +77,7 @@ KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 void KeExitProcess();
 UNSAFE void PsFreeProcess(PKPROCESS);
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
+#define PsGetProcessId(Process) ((Process)->Group ? (Process)->GroupProcessId : (Process)->ProcessId)
+#define PsGetCurrentProcessId() PsGetProcessId(PsGetCurrentProcess())
 
 #endif
