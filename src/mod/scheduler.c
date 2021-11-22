@@ -90,7 +90,7 @@ RT_ONLY void PsiTransferProcess()
 	int maxn = 0, minn = ~(1 << 31), cid = cpuid(), mn = ActiveProcessCount[cid];
 	for (int i = 0; i < CPU_NUM; i++)
 		maxn = max(maxn, ActiveProcessCount[i]), minn = min(minn, ActiveProcessCount[i]);
-	if (maxn > minn && mn == maxn && mn > 2 && TransferProcess == NULL)
+	if (maxn > minn + 1 && mn == maxn && mn > 2 && TransferProcess == NULL)
 	{
 		// Push out
 		KeAcquireSpinLockFast(&TransferListLock);

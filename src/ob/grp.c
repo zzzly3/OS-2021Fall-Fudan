@@ -120,7 +120,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 			goto get_next;
 		if (p->Status == PROCESS_STATUS_RUNABLE)
 		{
-			printf("Group worker %d %p\n", cpuid(), cur);
+			// printf("Group worker %d %p\n", cpuid(), cur);
 			// If destroying the group...
 			if (ProcessGroup->Flags & GROUP_FLAG_ZOMBIE)
 			{

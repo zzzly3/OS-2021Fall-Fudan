@@ -8,11 +8,6 @@
 #include <ob/proc.h>
 #include <ob/mem.h>
 
-#define TIME_SLICE_MS 20
-#define WORKER_SWITCH_ROUND 5
-#define CPU_NUM 4
-#define START_CPU 0
-
 struct _KPROCESS;
 typedef void (*PDPC_ROUTINE)(ULONG64);
 typedef void (*PAPC_ROUTINE)(ULONG64);
