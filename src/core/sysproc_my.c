@@ -18,7 +18,7 @@ NO_RETURN void sys_myexit() {
             printf("pid %d, pid in root %d, cnt %d\n", getpid(), getrootpid(), x);
             yield(); */
 void sys_myprint(int x) {
-    printf("pid %d, pid in root %d, cnt %d\n", PsGetCurrentProcessId(), PsGetCurrentProcess()->ProcessId, x);
+    printf("cpu %d, pid %d, pid in root %d, cnt %d\n", cpuid(), PsGetCurrentProcessId(), PsGetCurrentProcess()->ProcessId, x);
     arch_disable_trap();
     KeTaskSwitch();
     arch_enable_trap();
