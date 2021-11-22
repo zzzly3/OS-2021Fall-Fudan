@@ -13,6 +13,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	{
 		case SYS_myexecve: sys_myexecve((char*)arg1); break; // UNSAFE!!!
 		case SYS_myexit: sys_myexit(); break;
+		case SYS_myprint: sys_myprint(arg1); break;
 	}
 	// Fault if EL mismatching
 	KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);

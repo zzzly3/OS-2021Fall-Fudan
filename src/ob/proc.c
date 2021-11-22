@@ -78,7 +78,6 @@ PKPROCESS PsCreateProcessEx()
 // Create & run the process described by the object
 RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
-	printf("create proc %p in %p\n", Process, Process->Group);
 	ASSERT(PsGetCurrentProcess()->ExecuteLevel == EXECUTE_LEVEL_RT, BUG_BADLEVEL);
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
