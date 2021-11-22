@@ -235,7 +235,7 @@ void sys_group_test_proc(int arg)
 void sys_group_test()
 {
     sys_test_info("Process group test");
-    PPROCESS_GROUP g1 = PgCreateGroup(), g2 = PgCreateGroup();
+    PPROCESS_GROUP g1 = PgCreateGroup(1), g2 = PgCreateGroup(2);
     PKPROCESS p[8];
     for (int i = 0; i < 8; i++)
     {

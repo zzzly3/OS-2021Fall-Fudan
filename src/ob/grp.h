@@ -21,7 +21,7 @@ typedef struct _PROCESS_GROUP
 } PROCESS_GROUP, *PPROCESS_GROUP;
 
 void ObInitializeGroupManager();
-PPROCESS_GROUP PgCreateGroup();
+PPROCESS_GROUP PgCreateGroup(int);
 struct _KPROCESS* PgGetProcessGroupWorker(struct _KPROCESS*);
 #define PgGetCurrentGroupWorker() PgGetProcessGroupWorker(PsGetCurrentProcess())
 #define PgGetProcessGroupId(Process) ((Process)->Group ? (Process)->Group->GroupId : 0)
