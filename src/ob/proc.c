@@ -56,6 +56,7 @@ PKPROCESS PsCreateProcessEx()
 	p->ApcList = NULL;
 	p->WaitMutex = NULL;
 	p->Group = NULL;
+	p->GroupWorker = NULL;
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
 	KeInitializeSpinLock(&p->Lock);
 	init_rc(&p->ReferenceCount);

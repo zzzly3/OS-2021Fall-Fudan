@@ -127,6 +127,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 			}
 			// switch to p
 			p->Status = PROCESS_STATUS_RUNNING;
+			p->GroupWorker = cur;
 			ObUnlockObjectFast(ProcessGroup);
 			PsiTaskSwitch(p);
 			// update p
@@ -176,6 +177,8 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 
 PKPROCESS PgGetProcessGroupWorker(PKPROCESS Process)
 {
+	if (Process->GroupWorker != NULL)
+		return Process->GroupWorker;
 	if ((Process->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && Process->Group != NULL)
 	{
 		return Process->Group->GroupWorker[0];

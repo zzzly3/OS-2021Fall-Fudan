@@ -36,6 +36,7 @@ typedef struct _KPROCESS
 	LIST_ENTRY WaitList;
 	LIST_ENTRY GroupProcessList;
 	struct _PROCESS_GROUP* Group;
+	struct _KPROCESS* GroupWorker;
 	PMEMORY_SPACE MemorySpace;
 	PUBLIC struct _APC_ENTRY* ApcList;
 	PUBLIC struct _MUTEX* WaitMutex;
