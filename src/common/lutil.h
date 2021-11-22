@@ -2,6 +2,15 @@
 #ifndef __LUTIL__
 #define __LUTIL__
 
+
+/// System parameters
+#define OBJECT_MAX_REFERENCE 32767
+#define TIME_SLICE_MS 20
+#define WORKER_SWITCH_ROUND 5
+#define CPU_NUM 4
+#define START_CPU 0
+
+
 #define whlie while
 
 typedef unsigned char BOOL;
@@ -10,8 +19,6 @@ typedef unsigned char BOOL;
 
 #define max(x,y) ((x) > (y) ? (x) : (y))
 #define min(x,y) ((x) < (y) ? (x) : (y))
-
-#define OBJECT_MAX_REFERENCE 32767
 
 #define offsetof(TYPE,MEMBER)   ((size_t) &((TYPE *)0)->MEMBER)
 #define container_of(PTR,TYPE,MEMBER)    ({  \
