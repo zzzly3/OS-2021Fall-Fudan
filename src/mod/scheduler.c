@@ -1,5 +1,5 @@
 #include <mod/scheduler.h>
-#include <ob/grp.h>
+#include <def.h>
 
 extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
@@ -342,6 +342,7 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
+	printf("*%d->%d\n", cur->ProcessId, NextTask->ProcessId);
 	PKPROCESS gw = PgGetProcessGroupWorker(cur);
 	ASSERT((NextTask->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
 	ASSERT((NextTask->Status == PROCESS_STATUS_RUNABLE) ||
