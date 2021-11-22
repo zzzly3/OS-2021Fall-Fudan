@@ -98,6 +98,7 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	if (gk)
 	{
 		// start with group scheduler
+		printf("create %p use %p\n", Process, gk);
 		KeCreateApcEx(gk, (PAPC_ROUTINE)PgiStartNewProcess, (ULONG64)Process);
 	}
 	else

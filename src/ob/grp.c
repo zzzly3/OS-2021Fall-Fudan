@@ -79,7 +79,6 @@ void PgiDestroyGroup()
 
 void PgiStartNewProcess(PKPROCESS Process)
 {
-	printf("start %p\n", Process);
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
 	ASSERT(Process->Group == g, BUG_SCHEDULER);
 	Process->GroupProcessId = g->NextProcessId++;
