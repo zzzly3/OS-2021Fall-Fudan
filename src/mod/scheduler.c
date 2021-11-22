@@ -171,11 +171,22 @@ void PsTerminateProcess(PKPROCESS Process)
 
 void KiClockTrapEntry()
 {
+	int cid = cpuid();
 	if (KeBugFaultFlag) for(arch_disable_trap();;);
+	do // NOTE: Debug HELLO
+	{
+		static int dbgcd[CPU_NUM];
+		if (dbgcd[cid] == 1000 / TIME_SLICE_MS)
+		{
+			printf("CPU %d HELLO!\n", cid);
+			dbgcd[cid] = 0;
+		}
+		else
+			dbgcd[cid]++;
+	} while (0);
 	reset_clock(TIME_SLICE_MS);
 	//uart_put_char('t');
 	PKPROCESS cur = PsGetCurrentProcess();
-	int cid = cpuid();
 	if (cur->ExecuteLevel >= EXECUTE_LEVEL_RT)
 	{
 		//printf("cpu %d watch %d\n", cid, DpcWatchTimer[cid]);
@@ -342,7 +353,7 @@ void KeLowerExecuteLevel(EXECUTE_LEVEL OriginalExecuteLevel)
 UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
-	printf("*%d->%d\n", cur->ProcessId, NextTask->ProcessId);
+	// printf("*%d->%d\n", cur->ProcessId, NextTask->ProcessId);
 	PKPROCESS gw = PgGetProcessGroupWorker(cur);
 	ASSERT((NextTask->Flags & PROCESS_FLAG_WAITING) == 0, BUG_SCHEDULER);
 	ASSERT((NextTask->Status == PROCESS_STATUS_RUNABLE) ||

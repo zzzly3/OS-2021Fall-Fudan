@@ -148,3 +148,12 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 		KeTaskSwitch(); // also KeClearApcList()
 	}
 }
+
+PKPROCESS PgGetProcessGroupWorker(PKPROCESS Process)
+{
+	if ((Process->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && Process->Group != NULL)
+	{
+		return Process->Group->GroupWorker;
+	}
+	return NULL;
+}

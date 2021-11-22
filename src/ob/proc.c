@@ -177,12 +177,3 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	KeLowerExecuteLevel(oldel);
 	return ret;
 }
-
-PKPROCESS PgGetProcessGroupWorker(PKPROCESS Process)
-{
-	if ((Process->Flags & PROCESS_FLAG_GROUPWORKER) == 0 && Process->Group != NULL)
-	{
-		return Process->Group->GroupWorker;
-	}
-	return NULL;
-}

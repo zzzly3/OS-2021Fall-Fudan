@@ -77,6 +77,7 @@ NORETURN void main() {
 #else
 #include <def.h>
 #include <core/console.h>
+#include <core/container.h>
 
 void sys_switch_test();
 void sys_transfer_test();
@@ -86,11 +87,15 @@ void sys_group_test();
 NO_RETURN main()
 {
     system_init();
-    printf("CPU %d init.\n", cpuid());
-    spawn_init_process();
-    if (cpuid() == 0)
-        KeCreateDpc(sys_group_test, 0);
-        // KeCreateDpc(sys_transfer_test, 0);
+    printf("CPU %d HELLO!\n", cpuid());
+    if (cpuid() == START_CPU)
+    {
+        spawn_init_process();
+        container_test_init();
+    }
+    // spawn_init_process();
+    // if (cpuid() == 0)
+    //     KeCreateDpc(sys_group_test, 0);
     KeSystemWorkerEntry();
 }
 

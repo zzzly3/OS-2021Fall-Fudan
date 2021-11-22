@@ -100,8 +100,7 @@ NO_RETURN void exit() {
  * Switch to the scheduler of this proc.
  */
 void yield() {
-    /* TODO: lab6 container */
-
+    KeTaskSwitch();
 }
 
 /*
@@ -109,14 +108,14 @@ void yield() {
  * Reacquires lock when awakened.
  */
 void sleep(void *chan, SpinLock *lock) {
-    /* TODO: lab6 container */
-
+    // Use KeWaitForMutexSignaled() instead
+    // TODO: Wrap after given the usage of this routine
 }
 
 /* Wake up all processes sleeping on chan. */
 void wakeup(void *chan) {
-    /* TODO: lab6 container */
-
+    // Use KeSetMutexSignaled() instead
+    // TODO: Wrap after given the usage of this routine
 }
 
 /* 
@@ -124,8 +123,33 @@ void wakeup(void *chan) {
  * execute code in src/user/loop.S
  */
 void add_loop_test(int times) {
-    for (int i = 0; i < times; i++) {
-        /* TODO: lab6 container */
-
+    BOOL trpen = arch_disable_trap();
+    extern char loop_start[], loop_end[];
+    PMEMORY_SPACE m = MmCreateMemorySpace();
+    if (m == NULL)
+        goto fail;
+    int sz = loop_end - loop_start, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+    PVOID base = (PVOID)0x40000000;
+    for (int i = 0; i < pg; i++)
+    {
+        if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)((ULONG64)base + i * PAGE_SIZE))))
+            goto fail;
     }
+    MmSwitchMemorySpaceEx(NULL, m);
+    memcpy(base, (PVOID)loop_start, sz);
+    MmSwitchMemorySpaceEx(m, NULL);
+    for (int i = 0; i < times; i++) {
+        PKPROCESS p = PsCreateProcessEx();
+        if (p == NULL)
+            goto fail;
+        p->MemorySpace = m;
+        p->ParentId = 0;
+        p->Group = PgGetCurrentGroup();
+        strncpy(p->DebugName, "loop", 16);
+        PsCreateProcess(p, base, 0); 
+    }
+    if (trpen) arch_enable_trap();
+    return;
+fail:
+    PANIC("spawn_loop_process FAULT");
 }
