@@ -50,7 +50,7 @@ static inline void container_test_init()
 {
     add_loop_test(1);
     PPROCESS_GROUP g = PgCreateGroup(4);
-    KeCreateApcEx(g->GroupWorker, (PAPC_ROUTINE)add_loop_test, 8);
+    KeCreateApcEx(g->GroupWorker[0], (PAPC_ROUTINE)add_loop_test, 8);
 }
 
 #endif

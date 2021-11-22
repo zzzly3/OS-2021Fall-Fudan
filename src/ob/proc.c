@@ -95,10 +95,10 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
 	PKPROCESS gk = PgGetProcessGroupWorker(Process);
+	//printf("create %p use %p\n", Process, gk);
 	if (gk)
 	{
 		// start with group scheduler
-		printf("create %p use %p\n", Process, gk);
 		KeCreateApcEx(gk, (PAPC_ROUTINE)PgiStartNewProcess, (ULONG64)Process);
 	}
 	else
