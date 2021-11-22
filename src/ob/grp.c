@@ -79,6 +79,7 @@ void PgiDestroyGroup()
 
 void PgiStartNewProcess(PKPROCESS Process)
 {
+	printf("start %p\n", Process);
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
 	ASSERT(Process->Group == g, BUG_SCHEDULER);
 	Process->GroupProcessId = g->NextProcessId++;
@@ -108,7 +109,6 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 	arch_disable_trap();
 	while (1)
 	{
-		printf("workerrr %p\n", ProcessGroup);
 		ObLockObjectFast(ProcessGroup);
 		PKPROCESS p;
 		int skip = 0;
