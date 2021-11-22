@@ -219,7 +219,7 @@ void sys_group_test_proc(int arg)
     {
         for (int i = 0; i < 4; i++)
         {
-            printf("Outter process: pid=%d gpid=%d group=%p\n", cur->ProcessId, cur->GroupProcessId, cur->Group);
+            printf("Outter process: cpu=%d pid=%d gid=%d gpid=%d\n", cpuid(), cur->ProcessId, cur->GroupProcessId, PgGetProcessGroupId(cur));
             KeTaskSwitch();
         }
     }
@@ -227,7 +227,7 @@ void sys_group_test_proc(int arg)
     {
         for (int i = 0; i < 4; i++)
         {
-            printf("Inner process %d: pid=%d gpid=%d group=%p\n", arg, cur->ProcessId, cur->GroupProcessId, cur->Group);
+            printf("Inner process %d: cpu=%d pid=%d gid=%d gpid=%d\n", arg, cpuid(), cur->ProcessId, cur->GroupProcessId, PgGetProcessGroupId(cur));
             KeTaskSwitch();
         }
     }

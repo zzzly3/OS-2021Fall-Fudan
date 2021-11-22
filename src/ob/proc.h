@@ -79,5 +79,7 @@ UNSAFE void PsFreeProcess(PKPROCESS);
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
 PKPROCESS PgGetProcessGroupWorker(PKPROCESS);
 #define PgGetCurrentGroupWorker() PgGetProcessGroupWorker(PsGetCurrentProcess())
+#define PgGetProcessGroupId(Process) ((Process)->Group ? (Process)->Group->GroupId : 0)
+#define PgGetCurrentGroupId() PgGetProcessGroupId(PsGetCurrentProcess())
 
 #endif
