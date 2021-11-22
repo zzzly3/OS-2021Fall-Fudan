@@ -19,13 +19,18 @@ void ObInitializeGroupManager()
 
 PPROCESS_GROUP PgCreateGroup()
 {
+	BOOL te = arch_disable_trap();
 	PPROCESS_GROUP g = (PPROCESS_GROUP)MmAllocateObject(&GroupPool);
 	if (g == NULL)
+	{
+		if (te) arch_enable_trap();
 		return NULL;
+	}
 	PKPROCESS p = PsCreateProcessEx();
 	if (p == NULL)
 	{
 		MmFreeObject(&GroupPool, g);
+		if (te) arch_enable_trap();
 		return NULL;
 	}
 	g->Flags = 0;
@@ -48,8 +53,11 @@ PPROCESS_GROUP PgCreateGroup()
 	KeReleaseSpinLockFast(&GroupListLock);
 	PsCreateProcess(p, (PVOID)PgiWorkerEntry, (ULONG64)g);
 	KeLowerExecuteLevel(oldel);
+	if (te) arch_enable_trap();
 	return g;
 }
+
+// TODO: PgDestroyGroup()
 
 void PgiDestroyGroup()
 {
@@ -134,7 +142,8 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 		else
 		{
 			// TODO: Clean-up after destroyed
-			// First we should determine the procedure of destroying a group...
+			// Conditions: References zeroed and processes exited
+
 		}
 		KeTaskSwitch(); // also KeClearApcList()
 	}

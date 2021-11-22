@@ -131,6 +131,23 @@ void KeExitProcess()
 	PsiExitProcess();
 }
 
+UNSAFE void PsFreeProcess(PKPROCESS Process)
+{
+	ASSERT(ObTestReferenceZero(Process), BUG_BADREF);
+	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
+	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
+	// remove
+	KeAcquireSpinLockFast(&ProcessListLock);
+	LibRemoveListEntry(&Process->ProcessList);
+	KeReleaseSpinLockFast(&ProcessListLock);
+	// Free resources
+	KeCancelApcs(Process);
+	MmDestroyMemorySpace(Process->MemorySpace);
+	// TODO: PID reusing?
+	// Free process object
+	MmFreeObject(&ProcessPool, Process);
+}
+
 KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 {
 	KSTATUS ret = STATUS_OBJECT_NOT_FOUND;

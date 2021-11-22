@@ -1,5 +1,6 @@
 #include <ob/mem.h>
 #include <driver/uart.h>
+#include <mod/bug.h>
 //#include <core/virtual_memory.h>
 
 extern PMemory pmem;
@@ -29,6 +30,7 @@ void HalInitializeMemoryManager()
 // The physical pages are given in kernel address.
 UNSAFE PVOID MmAllocatePhysicalPage()
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	KeAcquireSpinLockFast(&PhysicalPageListLock);
 	PVOID p = kalloc();
 	if (p)
@@ -44,6 +46,7 @@ UNSAFE PVOID MmAllocatePhysicalPage()
 
 UNSAFE BOOL MmReferencePhysicalPage(PVOID PageAddress)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	BOOL ret;
 	int ppn = P2N(K2P(PageAddress));
 	KeAcquireSpinLockFast(&PhysicalPageListLock);
@@ -55,6 +58,7 @@ UNSAFE BOOL MmReferencePhysicalPage(PVOID PageAddress)
 
 UNSAFE void MmFreePhysicalPage(PVOID PageAddress)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	KeAcquireSpinLockFast(&PhysicalPageListLock);
 	if (--PhysicalPageInfoTable[P2N(K2P(PageAddress))].ReferenceCount == 0)
 	{
@@ -94,6 +98,7 @@ UNSAFE void MmInitializeObjectPool(POBJECT_POOL ObjectPool, USHORT Size)
 
 UNSAFE PVOID MmAllocateObject(POBJECT_POOL ObjectPool)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	ObLockObjectFast(ObjectPool);
 	if (ObjectPool->Head == NULL)
 		ObjectPool->Head = MmiBuildObjectPool(ObjectPool->Size);
@@ -110,6 +115,7 @@ UNSAFE PVOID MmAllocateObject(POBJECT_POOL ObjectPool)
 
 UNSAFE void MmFreeObject(POBJECT_POOL ObjectPool, PVOID Object)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	ObLockObjectFast(ObjectPool);
 	*(ULONG64*)Object = (ULONG64)ObjectPool->Head;
 	ObjectPool->Head = Object;
@@ -181,6 +187,7 @@ PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress)
 
 UNSAFE PMEMORY_SPACE MmCreateMemorySpace()
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	PMEMORY_SPACE p = (PMEMORY_SPACE)MmAllocateObject(&MemorySpacePool);
 	if (p == NULL)
 		return NULL;
@@ -194,6 +201,7 @@ UNSAFE PMEMORY_SPACE MmCreateMemorySpace()
 
 UNSAFE KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULONG64 PageDescriptor)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	ObLockObjectFast(MemorySpace);
 	PPAGE_TABLE pt = MemorySpace->PageTable;
 	int id[] = {VA_PART0(VirtualAddress), VA_PART1(VirtualAddress), VA_PART2(VirtualAddress), VA_PART3(VirtualAddress)};
@@ -226,6 +234,7 @@ UNSAFE KSTATUS MmMapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, ULON
 
 UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	PVOID p = MmAllocatePhysicalPage();
 	if (p == NULL)
 		return STATUS_NO_ENOUGH_MEMORY;
@@ -238,6 +247,7 @@ UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddres
 // Given in kernel address
 UNSAFE PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	ObLockObjectFast(MemorySpace);
 	PPAGE_ENTRY pe = MmiGetPageEntry(MemorySpace->PageTable, VirtualAddress);
 	if (pe == NULL)
@@ -252,6 +262,7 @@ UNSAFE PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddr
 
 UNSAFE KSTATUS MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	ObLockObjectFast(MemorySpace);
 	PPAGE_TABLE pt[5] = {MemorySpace->PageTable};
 	int id[] = {VA_PART0(VirtualAddress), VA_PART1(VirtualAddress), VA_PART2(VirtualAddress), VA_PART3(VirtualAddress)};
@@ -288,7 +299,8 @@ UNSAFE KSTATUS MmUnmapPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 
 UNSAFE void MmDestroyMemorySpace(PMEMORY_SPACE MemorySpace)
 {
-	// TODO: add reference check
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
+	ASSERT(MemorySpace->ActiveCount == 0, BUG_BADREF);
 	ObLockObjectFast(MemorySpace);
 	MmiFreeTable(MemorySpace->PageTable, 0);
 	// No need to unlock since destroyed.
@@ -297,6 +309,7 @@ UNSAFE void MmDestroyMemorySpace(PMEMORY_SPACE MemorySpace)
 
 UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE newMemorySpace)
 {
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	if (newMemorySpace != NULL)
 	{
 		ObLockObjectFast(newMemorySpace);

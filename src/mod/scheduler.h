@@ -34,6 +34,7 @@ EXECUTE_LEVEL KeRaiseExecuteLevel(EXECUTE_LEVEL);
 void KeLowerExecuteLevel(EXECUTE_LEVEL);
 UNSAFE void KeTaskSwitch();
 UNSAFE APC_ONLY void KeClearApcList();
+UNSAFE void KeCancelApcs(struct _KPROCESS*);
 UNSAFE RT_ONLY void KeClearDpcList();
 PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE, ULONG64);
 #define KeCreateApc(Routinue, Argument) KeCreateApcEx(PsGetCurrentProcess(), Routinue, Argument)

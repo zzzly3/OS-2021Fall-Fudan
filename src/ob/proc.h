@@ -29,7 +29,7 @@ typedef struct _KPROCESS
 	SPINLOCK Lock;
 	REF_COUNT ReferenceCount;
 	int ProcessId;
-	int ParentId;
+	int ParentId; // Means group parent id
 	int GroupProcessId;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
@@ -75,6 +75,7 @@ RT_ONLY void PsCreateProcess(PKPROCESS, PVOID, ULONG64);
 KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 #define PsGetCurrentProcess() ((PKPROCESS)arch_get_tid()) 
 void KeExitProcess();
+UNSAFE void PsFreeProcess(PKPROCESS);
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
 PKPROCESS PgGetProcessGroupWorker(PKPROCESS);
 #define PgGetCurrentGroupWorker() PgGetProcessGroupWorker(PsGetCurrentProcess())

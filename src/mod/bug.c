@@ -63,7 +63,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	if (cur->Group == NULL)
 		printf(BLUE("[*]")"Current Process Group: NULL\n");
 	else
-		printf(BLUE("[*]")"Current Process Group: %p, GID = %d, GPID = %d, Flags = %x\n", cur->Group, cur->Group->GroupId, cur->GroupProcessId, cur->Group->Flags);
+		printf(BLUE("[*]")"Current Process Group: %p, GID = %d, GPID = %d, Flags = 0x%x\n", cur->Group, cur->Group->GroupId, cur->GroupProcessId, cur->Group->Flags);
 	printf(BLUE("[*]")"Process Active Count = %d %d %d %d, Waken Count = %d, Transferring = %p,\n", ActiveProcessCount[0], ActiveProcessCount[1], ActiveProcessCount[2], ActiveProcessCount[3], WakenProcessCount, (PVOID)TransferProcess);
 	printf(BLUE("[*]")"Allocated Physical Pages = %d.\n", MmGetAllocatedPagesCount());
 	printf(BLUE("[*]")"Stack:\n");

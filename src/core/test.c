@@ -235,18 +235,19 @@ void sys_group_test_proc(int arg)
 void sys_group_test()
 {
     sys_test_info("Process group test");
-    PPROCESS_GROUP g = PgCreateGroup();
+    PPROCESS_GROUP g1 = PgCreateGroup(), g2 = PgCreateGroup();
     PKPROCESS p[4];
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 8; i++)
     {
         p[i] = PsCreateProcessEx();
         ASSERT(p[i], BUG_STOP);
         p[i]->Flags |= PROCESS_FLAG_KERNEL;
-        p[i]->Group = g;
+        p[i]->Group = (i & 1) ? g1 : g2;
         PsCreateProcess(p[i], sys_group_test_proc, i);
         ObDereferenceObject(p[i]);
     }
-    ObDereferenceObject(g);
+    ObDereferenceObject(g1);
+    ObDereferenceObject(g2);
     int pid;
     KeCreateProcess(NULL, sys_group_test_proc, -1, &pid);
 }

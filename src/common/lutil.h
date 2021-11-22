@@ -144,5 +144,6 @@ static inline int itos(long long n, char* s, int base)
 #define ObUnlockObject(obj) KeReleaseSpinLock(&(obj)->Lock)
 #define ObReferenceObject(obj) increment_rc(&(obj)->ReferenceCount)
 #define ObDereferenceObject(obj) ((BOOL)decrement_rc(&(obj)->ReferenceCount))
+#define ObTestReferenceZero(obj) ((obj)->ReferenceCount.count == 0)
 
 #endif

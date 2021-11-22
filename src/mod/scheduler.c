@@ -225,6 +225,20 @@ PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argume
 	return p;
 }
 
+UNSAFE void KeCancelApcs(PKPROCESS Process)
+{
+	ObLockObjectFast(Process);
+	PAPC_ENTRY p = Process->ApcList;
+	while (p)
+	{
+		PAPC_ENTRY np = p->NextEntry;
+		// TODO: Cancel callback?
+		MmFreeObject(&ApcObjectPool, p);
+		p = np;
+	}
+	ObUnlockObjectFast(Process);
+}
+
 UNSAFE RT_ONLY void KeClearDpcList()
 {
 	int cid = cpuid();
