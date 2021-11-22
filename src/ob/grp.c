@@ -108,6 +108,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 	arch_disable_trap();
 	while (1)
 	{
+		printf("workerrr %p\n", ProcessGroup);
 		ObLockObjectFast(ProcessGroup);
 		PKPROCESS p;
 		int skip = 0;
