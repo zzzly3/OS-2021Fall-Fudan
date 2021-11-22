@@ -19,5 +19,7 @@ NO_RETURN void sys_myexit() {
             yield(); */
 void sys_myprint(int x) {
     printf("pid %d, pid in root %d, cnt %d\n", PsGetCurrentProcess()->GroupProcessId, PsGetCurrentProcess()->ProcessId, x);
+    arch_disable_trap();
     KeTaskSwitch();
+    arch_enable_trap();
 }
