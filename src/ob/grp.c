@@ -83,16 +83,20 @@ void PgiStartNewProcess(PKPROCESS Process)
 	ASSERT(Process->Group == g, BUG_SCHEDULER);
 	Process->GroupProcessId = g->NextProcessId++;
 	LibInsertListEntry(&g->GroupWorker[0]->GroupProcessList, &Process->GroupProcessList);
+	ObLockObject(g);
 	LibInsertListEntry(&g->SchedulerList, &Process->SchedulerList);
 	Process->Status = PROCESS_STATUS_RUNABLE;
+	ObUnlockObject(g);
 }
 
 void PgiAwakeProcess(PKPROCESS Process)
 {
 	PPROCESS_GROUP g = PsGetCurrentProcess()->Group;
 	ASSERT(Process->Group == g, BUG_SCHEDULER);
+	ObLockObject(g);
 	LibInsertListEntry(&g->SchedulerList, &Process->SchedulerList);
 	Process->Status = PROCESS_STATUS_RUNABLE;
+	ObUnlockObject(g);
 }
 
 void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)

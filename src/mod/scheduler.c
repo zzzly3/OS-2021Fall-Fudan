@@ -143,7 +143,8 @@ UNSAFE void PsiAwakeProcess(PKPROCESS Process)
 	if (Process->Flags & PROCESS_FLAG_WAITING)
 	{
 		Process->Flags &= ~PROCESS_FLAG_WAITING;
-		if (Process->Group == NULL)
+		PKPROCESS gk = PgGetProcessGroupWorker(Process);
+		if (gk == NULL)
 		{
 			KeAcquireSpinLockFast(&WakenListLock);
 			LibInsertListEntry(WakenList.Forward, &Process->SchedulerList);
@@ -152,7 +153,7 @@ UNSAFE void PsiAwakeProcess(PKPROCESS Process)
 		}
 		else
 		{
-			KeCreateApcEx(Process->Group->GroupWorker, (PAPC_ROUTINE)PgiAwakeProcess, (ULONG64)Process);
+			KeCreateApcEx(gk, (PAPC_ROUTINE)PgiAwakeProcess, (ULONG64)Process);
 		}
 	}
 }
