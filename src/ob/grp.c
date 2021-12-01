@@ -163,7 +163,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 		}
 		else
 		{
-			ASSERT(p->Status == PROCESS_STATUS_RUNNING, BUG_WORKER);
+			//ASSERT(p->Status == PROCESS_STATUS_RUNNING, BUG_WORKER);
 			if (skip < CPU_NUM)
 			{
 				skip++;
