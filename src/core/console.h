@@ -1,19 +1,37 @@
 #pragma once
 
-#include <common/variadic.h>
-#include <core/char_device.h>
+#ifndef _CORE_CONSOLE_H_
+#define _CORE_CONSOLE_H_
 
 #define NEWLINE '\n'
 
-void init_console();
+#ifdef USE_LAGACY
 
-void puts(const char *str);
-void vprintf(const char *fmt, va_list arg);
-void printf(const char *fmt, ...);
+    #include <common/spinlock.h>
+    #include <common/variadic.h>
+    #include <core/char_device.h>
 
-NORETURN void _panic(const char *file, usize line, const char *fmt, ...);
+    typedef struct {
+        SpinLock lock;
+        CharDevice device;
+    } ConsoleContext;
 
-#define PANIC(...) _panic(__FILE__, __LINE__, __VA_ARGS__)
+    void init_console();
+
+    void puts(const char *str);
+    void vprintf(const char *fmt, va_list arg);
+    void printf(const char *fmt, ...);
+
+    NORETURN void _panic(const char *file, usize line, const char *fmt, ...);
+
+    #define PANIC(...) _panic(__FILE__, __LINE__, __VA_ARGS__)
+
+#else
+
+    #include <def.h>
+    #define PANIC(...) printf(__VA_ARGS__),KeBugFault(BUG_PANIC)
+
+#endif
 
 #define assert(predicate)                                                                          \
     do {                                                                                           \
@@ -24,5 +42,7 @@ NORETURN void _panic(const char *file, usize line, const char *fmt, ...);
 #define asserts(predicate, ...)                                                                    \
     do {                                                                                           \
         if (!(predicate))                                                                          \
-            PANIC("assertion failed: \"%s\". %s", #predicate, __VA_ARGS__);                        \
+            PANIC("assertion failed: \"%s\". %s", #predicate, __VA_ARGS__);                          \
     } while (false)
+
+#endif

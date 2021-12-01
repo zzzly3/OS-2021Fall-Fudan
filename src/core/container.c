@@ -5,7 +5,7 @@
 #include <core/sched.h>
 #include <core/virtual_memory.h>
 
-struct container *root_container = 0;
+//struct container *root_container = 0;
 static Arena arena;
 bool do_cont_test = false;
 
@@ -59,7 +59,8 @@ void *alloc_resource(struct container *this, struct proc *p, resource_t resource
  */
 struct container *spawn_container(struct container *this, struct sched_op *op) {
     /* TODO: lab6 container */
-
+    PPROCESS_GROUP g = PgCreateGroup();
+    return (struct container*)g;
 }
 
 /*
