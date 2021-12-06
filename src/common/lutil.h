@@ -57,6 +57,7 @@ typedef enum
 	STATUS_SUCCESS,
 	STATUS_COMPLETED,
 	STATUS_PENDING,
+	STATUS_SUBMITTED,
 	STATUS_REDIRECTED
 } KSTATUS;
 #define KSUCCESS(stat) ((stat)>=STATUS_SUCCESS)
@@ -82,6 +83,7 @@ typedef struct _LIST_ENTRY
 	struct _LIST_ENTRY* Backward;
 } LIST_ENTRY, *PLIST_ENTRY;
 
+#define LibTestListEmpty(root) ((root)->Backward == (root))
 #define LibInsertListEntry(last_entry, new_entry) { PLIST_ENTRY __last = last_entry; \
 	((new_entry)->Backward = __last->Backward)->Forward = (new_entry); \
 	((new_entry)->Forward = __last)->Backward = (new_entry); }

@@ -16,6 +16,7 @@
 #define BUG_BADREF 0x7
 #define BUG_FSFAULT 0x8
 #define BUG_WORKER 0x9
+#define BUG_BADIO 0xa
 
 void KeBugFaultEx(CPCHAR, ULONG64, ULONG64);
 #define KeBugFault(id) KeBugFaultEx(__FILE__, __LINE__, id)

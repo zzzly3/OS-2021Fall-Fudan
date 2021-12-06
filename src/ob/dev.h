@@ -5,6 +5,8 @@
 #include <common/string.h>
 #include <common/lutil.h>
 #include <common/rc.h>
+#include <ob/mutex.h>
+#include <ob/proc.h>
 #include <driver/uart.h>
 #include <driver/interrupt.h>
 
@@ -22,12 +24,13 @@ struct _DEVICE_OBJECT;
 #define IOREQ_TYPE_CANCEL 8
 #define IOREQ_FLAG_NONBLOCK 1
 #define IOREQ_FLAG_ASYNC 2
-typedef BOOL(*PIOREQ_CALLBACK)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
+typedef void(*PIOREQ_CALLBACK)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _IOREQ_OBJECT
 {
 	USHORT Type;
 	USHORT Size;
 	USHORT Flags;
+	//struct _DEVICE_OBJECT* Device;
 	KSTATUS Status;
 	ULONG RequestCode;
 	PVOID Buffer;
@@ -36,6 +39,8 @@ typedef struct _IOREQ_OBJECT
 		ULONG Id;
 		PVOID Pointer;
 	} ObjectAttribute;
+	struct _MUTEX Event;
+	LIST_ENTRY RequestList;
 	PIOREQ_CALLBACK UpdateCallback;
 } IOREQ_OBJECT, *PIOREQ_OBJECT;
 
@@ -46,10 +51,10 @@ typedef struct _MANAGER_OBJECT
 	PMANAGER_DISPATCH IOHandler;
 } MANAGER_OBJECT, *PMANAGER_OBJECT;
 
-#define DEVICE_FLAG_NOLOCK 1
+#define DEVICE_FLAG_NOQUEUE 1
 #define DEVICE_FLAG_READONLY 2
 #define DEVICE_FLAG_DYNAMIC 4
-typedef BOOL(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
+typedef void(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _DEVICE_OBJECT
 {
 	USHORT Flags;
@@ -57,20 +62,21 @@ typedef struct _DEVICE_OBJECT
 	PKSTRING DeviceName;
 	PDEVICE_DISPATCH IOHandler;
 	PVOID DeviceStorage; // Implementation-dependent
-	SPINLOCK Lock; // TODO: Replaced with scheduler-related lock
-	SPINLOCK IOLock;
+	struct _MUTEX Lock; // Proposed. Like Linux's flock().
+	SPINLOCK IORequestLock;
+	LIST_ENTRY IORequest;
 	LIST_ENTRY DeviceList;
 } DEVICE_OBJECT, *PDEVICE_OBJECT;
 
-BOOL IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT);
+void IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT, KSTATUS);
 void IoInitializeRequest(PIOREQ_OBJECT);
 KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
 void IoInitializeDevice(PDEVICE_OBJECT);
 RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
 KSTATUS HalInitializeDeviceManager();
-//BOOL IoTryToLockDevice(PDEVICE_OBJECT);
+#define IoTryToLockDevice(Device) KeTestMutexSignaled(&Device->Lock, FALSE)
+#define IoUnlockDevice(Device) KeSetMutexSignaled(&Device->Lock)
 //KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
-//#define IoUnlockDevice ObUnlockObject
 //PDEVICE_OBJECT IouLookupDevice(PKSTRING);
 
 #endif

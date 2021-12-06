@@ -58,3 +58,18 @@ void wait_spinlock(SpinLock *lock) {
 bool holding_spinlock(SpinLock *lock) {
     return lock->locked ;//&& lock->cpu == thiscpu();
 }
+
+bool KeTryToAcquireSpinLock(PSPINLOCK Lock)
+{
+    BOOL __t = arch_disable_trap();
+    if (try_acquire_spinlock(Lock))
+    {
+        Lock->enable_trap = __t;
+        return true;
+    }
+    else
+    {
+        if (__t) arch_enable_trap();
+        return false;
+    }
+}

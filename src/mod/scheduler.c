@@ -98,9 +98,13 @@ RT_ONLY void PsiTransferProcess()
 		{
 			// Choose the last one
 			PKPROCESS p = container_of(KernelProcess[cid]->SchedulerList.Forward, KPROCESS, SchedulerList);
-			LibRemoveListEntry(&p->SchedulerList);
-			ActiveProcessCount[cid]--;
-			TransferProcess = p;
+			// TODO: Upgrade the policy
+			if (!(p->Flags & PROCESS_FLAG_BINDCPU))
+			{
+				LibRemoveListEntry(&p->SchedulerList);
+				ActiveProcessCount[cid]--;
+				TransferProcess = p;
+			}
 		}
 		KeReleaseSpinLockFast(&TransferListLock);
 	}
@@ -200,7 +204,7 @@ void KiClockTrapEntry()
 	return;
 }
 
-PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE Routine, ULONG64 Argument)
+BOOL KeCreateDpc(PDPC_ROUTINE Routine, ULONG64 Argument)
 {
 	BOOL trapen = arch_disable_trap();
 	PDPC_ENTRY p = (PDPC_ENTRY)MmAllocateObject(&DpcObjectPool);
@@ -215,10 +219,10 @@ PDPC_ENTRY KeCreateDpc(PDPC_ROUTINE Routine, ULONG64 Argument)
 	}
 	if (trapen)
 		arch_enable_trap();
-	return p;
+	return p ? TRUE : FALSE;
 }
 
-PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argument)
+BOOL KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argument)
 {
 	BOOL trapen = arch_disable_trap();
 	PAPC_ENTRY p = (PAPC_ENTRY)MmAllocateObject(&ApcObjectPool);
@@ -234,7 +238,14 @@ PAPC_ENTRY KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argume
 	}
 	if (trapen)
 		arch_enable_trap();
-	return p;
+	return p ? TRUE : FALSE;
+}
+
+BOOL KeQueueWorkerApc(PAPC_ROUTINE Routine, ULONG64 Argument)
+{
+	static int which;
+	which = (which + 1) % CPU_NUM;
+	return KeCreateApcEx(KernelProcess[which], Routine, Argument);
 }
 
 UNSAFE void KeCancelApcs(PKPROCESS Process)

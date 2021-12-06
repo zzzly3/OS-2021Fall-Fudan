@@ -25,6 +25,7 @@ typedef SpinLock SPINLOCK, *PSPINLOCK;
 #define KeReleaseSpinLockFast release_spinlock
 #define KeWaitForSpinLockFast wait_spinlock
 #define KeTestSpinLock(lock) (lock->locked)
+bool KeTryToAcquireSpinLock(PSPINLOCK);
 #define KeAcquireSpinLock(lock) ({ \
     bool __t = arch_disable_trap(); \
     acquire_spinlock(lock); \

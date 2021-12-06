@@ -6,13 +6,14 @@ static SPINLOCK ConsoleIOLock;
 
 const PDEVICE_OBJECT HalConsoleDevice = &ConsoleDevice;
 
-static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
+static void ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 {
 	// TODO: Upgrade the lock to a scheduler-related one
 	PSPINLOCK lock = (PSPINLOCK)(dev->DeviceStorage);
 	if (req->Flags & IOREQ_FLAG_NONBLOCK)
 	{
-		return STATUS_UNSUPPORTED;
+		IoUpdateRequest(dev, req, STATUS_UNSUPPORTED);
+		return;
 	}
 	else
 	{
@@ -20,12 +21,13 @@ static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 	}
 	// TODO: Upgrade the READ to an interruption-driven one
 	char* buf = (char*)(req->Buffer);
+	KSTATUS ret = STATUS_SUCCESS;
 	switch (req->Type)
 	{
 	case IOREQ_TYPE_READ:
 		if (req->Flags & IOREQ_FLAG_NONBLOCK)
 		{
-			req->Status = STATUS_UNSUPPORTED;
+			ret = STATUS_UNSUPPORTED;
 		}
 		else
 		{
@@ -37,7 +39,7 @@ static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 				else
 					i--;
 			}
-			req->Status = STATUS_COMPLETED;
+			ret = STATUS_COMPLETED;
 		}
 		break;
 	case IOREQ_TYPE_WRITE:
@@ -45,21 +47,21 @@ static BOOL ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 		{
 			uart_put_char(buf[i]);
 		}
-		req->Status = STATUS_COMPLETED;
+		ret = STATUS_COMPLETED;
 		break;
 	default:
-		req->Status = STATUS_UNSUPPORTED;
+		ret = STATUS_UNSUPPORTED;
 		break;
 	}
 	KeReleaseSpinLock(lock);
-	return IoUpdateRequest(dev, req);
+	return IoUpdateRequest(dev, req, ret);
 }
 
 KSTATUS HalInitializeConsole()
 {
 	IoInitializeDevice(&ConsoleDevice);
 	LibInitializeKString(&ConsoleDeviceName, "console", 8);
-	ConsoleDevice.Flags = DEVICE_FLAG_NOLOCK;
+	ConsoleDevice.Flags = DEVICE_FLAG_NOQUEUE;
 	ConsoleDevice.DeviceName = &ConsoleDeviceName;
 	ConsoleDevice.IOHandler = ConsoleHandler;
 	ConsoleDevice.DeviceStorage = (PVOID)&ConsoleIOLock;

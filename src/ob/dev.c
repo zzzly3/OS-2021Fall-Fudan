@@ -1,4 +1,6 @@
 #include <ob/dev.h>
+#include <mod/scheduler.h>
+#include <mod/bug.h>
 
 DEVICE_OBJECT RootDeviceX;
 static SPINLOCK DeviceListLock;
@@ -6,22 +8,47 @@ static SPINLOCK DeviceListLock;
 #define next_device(dev) container_of((dev)->DeviceList.Backward, DEVICE_OBJECT, DeviceList)
 #define last_device(dev) container_of((dev)->DeviceList.Forward, DEVICE_OBJECT, DeviceList)
 
-BOOL IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
+void IoiDispatchRequests(PDEVICE_OBJECT DeviceObject);
+
+// PENDING -> [SUBMITTED ->] <RESULT>
+void IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq, KSTATUS Status)
 {
-	if (IOReq->Flags & IOREQ_FLAG_ASYNC)
-		return IOReq->UpdateCallback(DeviceObject, IOReq);
-	else
-		return TRUE;
+	ASSERT(Status != STATUS_PENDING, BUG_BADIO);
+	ASSERT(IOReq->Status != Status, BUG_BADIO);
+	if (!(DeviceObject->Flags & DEVICE_FLAG_NOQUEUE) &&
+		!(IOReq->Flags & IOREQ_FLAG_NONBLOCK) &&
+		IOReq->Status == STATUS_PENDING)
+	{
+		// Do next while using queue
+		KeAcquireSpinLock(&DeviceObject->IORequestLock);
+		LibRemoveListEntry(&IOReq->RequestList);
+		if (!LibTestListEmpty(&DeviceObject->IORequest))
+		{
+			// Do next request
+			ASSERT(
+				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject),
+				BUG_BADIO);
+		}
+		KeReleaseSpinLock(&DeviceObject->IORequestLock);
+	}
+	IOReq->Status = Status;
+	if (IOReq->UpdateCallback)
+		IOReq->UpdateCallback(DeviceObject, IOReq);
+	if (Status != STATUS_SUBMITTED)
+		KeSetMutexSignaled(&IOReq->Event);
 }
 
 void IoInitializeRequest(PIOREQ_OBJECT IOReq)
 {
 	memset(IOReq, 0, sizeof(IOREQ_OBJECT));
+	KeInitializeMutex(&IOReq->Event);
+	KeTestMutexSignaled(&IOReq->Event, FALSE);
 	IOReq->Status = STATUS_PENDING;
 }
 
 KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
+	ASSERT(IOReq->Status == STATUS_PENDING, BUG_BADIO);
 	if (DeviceObject->IOHandler == NULL)
 		return STATUS_UNSUPPORTED;
 	if ((DeviceObject->Flags & DEVICE_FLAG_READONLY) && 
@@ -30,67 +57,71 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	if (!(DeviceObject->Flags & DEVICE_FLAG_DYNAMIC) && 
 			(IOReq->Type == IOREQ_TYPE_INSTALL || IOReq->Type == IOREQ_TYPE_UNINSTALL))
 		return STATUS_UNSUPPORTED;
-	if (IOReq->Flags & IOREQ_FLAG_ASYNC)
+	// Queue-free device
+	if (DeviceObject->Flags & DEVICE_FLAG_NOQUEUE)
 	{
-		// TODO: Async
-		return STATUS_UNSUPPORTED;
+		DeviceObject->IOHandler(DeviceObject, IOReq);
+		return IOReq->Status;
+	}
+	if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
+	{
+		// Non-block request
+		if (!KeTryToAcquireSpinLock(&DeviceObject->IORequestLock))
+			return STATUS_DEVICE_BUSY;
+		KSTATUS ret = STATUS_DEVICE_BUSY;
+		if (LibTestListEmpty(&DeviceObject->IORequest))
+		{
+			DeviceObject->IOHandler(DeviceObject, IOReq);
+			ret = IOReq->Status;
+		}
+		KeReleaseSpinLock(&DeviceObject->IORequestLock);
+		return ret;
 	}
 	else
 	{
-		// TODO: Scheduler-related logic?
-		BOOL ret = FALSE;
-		if (DeviceObject->Flags & DEVICE_FLAG_NOLOCK)
+		// Queued request
+		EXECUTE_LEVEL el = KeGetCurrentExecuteLevel();
+		ASSERT((IOReq->Flags & IOREQ_FLAG_ASYNC) || el <= EXECUTE_LEVEL_APC, BUG_BADLEVEL);
+		KeAcquireSpinLock(&DeviceObject->IORequestLock);
+		LibInsertListEntry(DeviceObject->IORequest.Forward, &IOReq->RequestList);
+		if (DeviceObject->IORequest.Forward == DeviceObject->IORequest.Backward)
 		{
-			ret = DeviceObject->IOHandler(DeviceObject, IOReq);
+			// Start do requests
+			ASSERT(
+				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject), 
+				BUG_BADIO);
+		}
+		KeReleaseSpinLock(&DeviceObject->IORequestLock);
+		if (IOReq->Flags & IOREQ_FLAG_ASYNC)
+		{
+			// Async request
+			return STATUS_PENDING;
 		}
 		else
 		{
-			if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
-			{
-				return STATUS_UNSUPPORTED;
-			}
-			else
-			{
-				KeAcquireSpinLock(&DeviceObject->IOLock);
-			}
-			ret = DeviceObject->IOHandler(DeviceObject, IOReq);
-			KeReleaseSpinLock(&DeviceObject->IOLock);
+			// Sync request
+			KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+			KSTATUS ret = KeWaitForMutexSignaled(&IOReq->Event, FALSE);
+			if (KSUCCESS(ret))
+				ret = IOReq->Status;
+			KeLowerExecuteLevel(el);
+			return ret;
 		}
-		if (ret)
-			return IOReq->Status;
-		else
-			return STATUS_FAILURE;
 	}
-	return STATUS_FAILURE;
 }
-
-// BOOL IoTryToLockDevice(PDEVICE_OBJECT DeviceObject)
-// {
-// 	if (!ObTryToLockObjectFast(DeviceObject))
-// 		return FALSE;
-// 	if (DeviceObject->ReferenceCount <= 1)
-// 	{
-// 		//TODO: eq 0 SHOULD trigger BUGCHECK! (ACCESS_WITHOUT_REFERENCE)
-// 		return TRUE;
-// 	}
-// 	else
-// 	{
-// 		ObUnlockObject(DeviceObject);
-// 		return FALSE;
-// 	}
-// }
 
 void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 {
 	memset(DeviceObject, 0, sizeof(DEVICE_OBJECT));
-	KeInitializeSpinLock(&DeviceObject->Lock);
-	KeInitializeSpinLock(&DeviceObject->IOLock);
+	KeInitializeMutex(&DeviceObject->Lock);
+	KeInitializeSpinLock(&DeviceObject->IORequestLock);
+	DeviceObject->IORequest.Forward = DeviceObject->IORequest.Backward = &DeviceObject->IORequest;
 	init_rc(&DeviceObject->ReferenceCount);
 }
 
 RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 {
-	ObLockObjectFast(DeviceObject);
+	IoTryToLockDevice(DeviceObject);
 	KeAcquireSpinLockFast(&DeviceListLock);
 	LibInsertListEntry(&RootDeviceX.DeviceList, &DeviceObject->DeviceList);
 	KeReleaseSpinLockFast(&DeviceListLock);
@@ -106,12 +137,12 @@ RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 			LibRemoveListEntry(&DeviceObject->DeviceList);
 			KeReleaseSpinLockFast(&DeviceListLock);
 		}
-		ObUnlockObjectFast(DeviceObject);
+		IoUnlockDevice(DeviceObject);
 		return ret;
 	}
 	else
 	{
-		ObUnlockObjectFast(DeviceObject);
+		IoUnlockDevice(DeviceObject);
 		return STATUS_SUCCESS;
 	}
 }
@@ -158,11 +189,17 @@ PDEVICE_OBJECT IoiLookupDevice(PKSTRING DeviceName)
 	return NULL;
 }
 
+void IoiDispatchRequests(PDEVICE_OBJECT DeviceObject)
+{
+	PIOREQ_OBJECT req = container_of(DeviceObject->IORequest.Backward, IOREQ_OBJECT, RequestList);
+	DeviceObject->IOHandler(DeviceObject, req);
+}
+
 KSTATUS HalInitializeDeviceManager()
 {
 	KeInitializeSpinLock(&DeviceListLock);
 	IoInitializeDevice(&RootDeviceX);
-	RootDeviceX.Flags |= DEVICE_FLAG_NOLOCK;
+	RootDeviceX.Flags |= DEVICE_FLAG_NOQUEUE;
 	RootDeviceX.DeviceList.Forward = RootDeviceX.DeviceList.Backward = &RootDeviceX.DeviceList;
 	init_interrupt();
 	return STATUS_SUCCESS;

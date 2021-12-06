@@ -27,7 +27,7 @@ BOOL ObInitializeProcessManager()
 	if (KernelProcess[cid] == NULL)
 		return FALSE;
 	KernelProcess[cid]->ExecuteLevel = EXECUTE_LEVEL_RT;
-	KernelProcess[cid]->Flags |= PROCESS_FLAG_KERNEL;
+	KernelProcess[cid]->Flags |= PROCESS_FLAG_KERNEL | PROCESS_FLAG_BINDCPU;
 	KernelProcess[cid]->SchedulerList.Forward = KernelProcess[cid]->SchedulerList.Backward = &KernelProcess[cid]->SchedulerList;
 	KernelProcess[cid]->WaitList.Forward = KernelProcess[cid]->WaitList.Backward = &KernelProcess[cid]->WaitList;
 	KeAcquireSpinLockFast(&ProcessListLock);

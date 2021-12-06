@@ -499,7 +499,7 @@ static int sdBaseClock;
  */
 
 struct buf sdque;
-struct SpinLock sdlock;
+SPINLOCK sdlock;
 
 void sd_init() {
     /*
@@ -508,7 +508,7 @@ void sd_init() {
      */
     /* TODO: Lab7 driver. */
     
-
+    sdInit();
 
     /*
      * Read and parse 1st block (MBR) and collect whatever
