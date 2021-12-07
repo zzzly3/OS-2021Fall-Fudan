@@ -9,6 +9,7 @@ const PDEVICE_OBJECT HalConsoleDevice = &ConsoleDevice;
 static void ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 {
 	// TODO: Upgrade the lock to a scheduler-related one
+	uart_put_char('a');
 	PSPINLOCK lock = (PSPINLOCK)(dev->DeviceStorage);
 	if (req->Flags & IOREQ_FLAG_NONBLOCK)
 	{
