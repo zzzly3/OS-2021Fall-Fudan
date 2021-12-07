@@ -519,10 +519,11 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
     switch (IOReq->Type)
     {
         case IOREQ_TYPE_READ:
-            // puts("read");
+            puts("read");
             sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
             break;
         case IOREQ_TYPE_WRITE:
+            puts("write");
             sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
             break;
         default:
