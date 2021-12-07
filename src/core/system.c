@@ -10,6 +10,7 @@ void create_system_process()
 {
 	static KSTRING system;
 	static int pid;
+	puts("create system process");
 	LibInitializeKString(&system, "system", 16);
 	KeCreateProcess(&system, KeSystemEntry, NULL, &pid);
 	printf("system is %d\n", pid);
