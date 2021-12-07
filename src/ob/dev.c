@@ -65,7 +65,6 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		DeviceObject->IOHandler(DeviceObject, IOReq);
 		return IOReq->Status;
 	}
-	uart_put_char('I');
 	if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
 	{
 		// Non-block request
@@ -90,7 +89,6 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		if (DeviceObject->IORequest.Forward == DeviceObject->IORequest.Backward)
 		{
 			// Start do requests
-			uart_put_char('D');
 			ASSERT(
 				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject), 
 				BUG_BADIO);
@@ -211,7 +209,6 @@ PDEVICE_OBJECT IoiLookupDevice(PKSTRING DeviceName)
 
 void IoiDispatchRequests(PDEVICE_OBJECT DeviceObject)
 {
-	uart_put_char('P');
 	PIOREQ_OBJECT req = container_of(DeviceObject->IORequest.Backward, IOREQ_OBJECT, RequestList);
 	DeviceObject->IOHandler(DeviceObject, req);
 }

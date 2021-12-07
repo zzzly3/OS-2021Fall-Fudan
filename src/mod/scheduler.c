@@ -247,8 +247,8 @@ BOOL KeQueueWorkerApc(PAPC_ROUTINE Routine, ULONG64 Argument)
 	static int which;
 	which = (which + 1) % CPU_NUM;
 	BOOL r = KeCreateApcEx(KernelProcess[which], Routine, Argument);
-	printf("work %p queued to %d %d\n", Routine, which, r);
-	printf("%p\n", KernelProcess[which]->ApcList);
+	// printf("work %p queued to %d %d\n", Routine, which, r);
+	// printf("%p\n", KernelProcess[which]->ApcList);
 	return r;
 }
 

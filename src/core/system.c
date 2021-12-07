@@ -3,7 +3,8 @@
 void KeSystemEntry()
 {
 	puts("System process created.");
-	sd_init();
+	delay_us(500 * 1000);
+	driver_init();
 }
 
 void create_system_process()
@@ -12,5 +13,5 @@ void create_system_process()
 	static int pid;
 	LibInitializeKString(&system, "system", 16);
 	KeCreateProcess(&system, KeSystemEntry, NULL, &pid);
-	printf("system is %d\n", pid);
+	// printf("system is %d\n", pid);
 }
