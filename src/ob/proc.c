@@ -121,7 +121,9 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	uart_put_char('a');
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
+	uart_put_char('b');
 	KeLowerExecuteLevel(oldel);
 	ObDereferenceObject(p);
 	return STATUS_SUCCESS;
