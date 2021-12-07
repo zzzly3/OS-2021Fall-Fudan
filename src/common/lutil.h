@@ -120,7 +120,7 @@ static inline BOOL LibCompareKString(PKSTRING kstr1, PKSTRING kstr2)
 static inline void LibKStringToCString(PKSTRING kstr, PCHAR cstr, int len)
 {
 	int i = 0;
-	for (int i = 0; i < len && i <= kstr->len; i++)
+	for (i = 0; i < len && i <= kstr->len; i++)
 	{
 		cstr[i] = kstr->str[i];
 	}
