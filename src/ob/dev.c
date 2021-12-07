@@ -215,11 +215,16 @@ void IoiDispatchRequests(PDEVICE_OBJECT DeviceObject)
 
 KSTATUS HalInitializeDeviceManager()
 {
+	uart_put_char('a');
 	KeInitializeSpinLock(&DeviceListLock);
 	IoInitializeDevice(&RootDeviceX);
+	uart_put_char('b');
 	RootDeviceX.Flags |= DEVICE_FLAG_NOQUEUE;
 	RootDeviceX.DeviceList.Forward = RootDeviceX.DeviceList.Backward = &RootDeviceX.DeviceList;
+	uart_put_char('c');
 	MmInitializeObjectPool(&IORequestPool, sizeof(IOREQ_OBJECT));
+	uart_put_char('d');
 	init_interrupt();
+	uart_put_char('e');
 	return STATUS_SUCCESS;
 }

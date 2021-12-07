@@ -22,7 +22,6 @@ static inline void system_init()
 {
 	// Global operations
 	// TODO: Replace with lock
-	uart_put_char('h');
 	if (cpuid() == START_CPU)
 	{
 		extern char edata[], end[];
@@ -36,6 +35,7 @@ static inline void system_init()
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
 	arch_enable_trap();
+	uart_put_char('h');
 }
 
 static inline void driver_init()
