@@ -50,6 +50,7 @@ void IoInitializeRequest(PIOREQ_OBJECT IOReq)
 
 KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
+	uart_put_char('I');
 	ASSERT(IOReq->Status == STATUS_PENDING, BUG_BADIO);
 	if (DeviceObject->IOHandler == NULL)
 		return STATUS_UNSUPPORTED;
@@ -89,6 +90,7 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		if (DeviceObject->IORequest.Forward == DeviceObject->IORequest.Backward)
 		{
 			// Start do requests
+			uart_put_char('D');
 			ASSERT(
 				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject), 
 				BUG_BADIO);
