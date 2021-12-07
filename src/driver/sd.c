@@ -580,6 +580,7 @@ static void sd_delayus(u32 c) {
 
 /* Start the request for b. Caller must hold sdlock. */
 static void sd_start(int bno, int write, u32* intbuf) {
+    printf("sd_start %d %d %p\n", bno, write, intbuf);
     // Address is different depending on the card type.
     // HC pass address as block #.
     // SC pass address straight through.
@@ -649,6 +650,7 @@ void sd_intr() {
         {
             if (ival & INT_READ_RDY)
             {
+                puts("read ready");
                 assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
                 assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
                 SDDevice.DeviceStorage = NULL;
