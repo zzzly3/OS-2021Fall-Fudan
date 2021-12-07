@@ -389,6 +389,8 @@ UNSAFE void KeTaskSwitch()
 	PKPROCESS cur = PsGetCurrentProcess();
 	PKPROCESS nxt = container_of(cur->SchedulerList.Backward, KPROCESS, SchedulerList);
 	PKPROCESS gw = PgGetCurrentGroupWorker();
+	// System worker (root) cannot exit or block!
+	ASSERT(!(cur == KernelProcess[cid] && cur->Status != PROCESS_STATUS_RUNNING), BUG_SCHEDULER);
 	if (gw == NULL)
 	{
 		// root scheduler

@@ -97,9 +97,6 @@ NO_RETURN main()
     // spawn_init_process();
     // if (cpuid() == 0)
     //     KeCreateDpc(sys_group_test, 0);
-    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
-    if (cpuid() == START_CPU)
-        driver_init();
     KeSystemWorkerEntry();
 }
 

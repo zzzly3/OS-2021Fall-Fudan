@@ -12,6 +12,7 @@
 #include <mod/scheduler.h>
 #include <mod/worker.h>
 
+void create_system_process();
 // static void hello()
 // {
 // 	uart_put_char('h');
@@ -35,6 +36,8 @@ static inline void system_init()
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
 	arch_enable_trap();
+	if (cpuid() == START_CPU)
+		create_system_process();
 	// uart_put_char('h');
 }
 
