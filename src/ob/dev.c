@@ -51,7 +51,6 @@ void IoInitializeRequest(PIOREQ_OBJECT IOReq)
 KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
 	ASSERT(IOReq->Status == STATUS_PENDING, BUG_BADIO);
-	uart_put_char('a');
 	if (DeviceObject->IOHandler == NULL)
 		return STATUS_UNSUPPORTED;
 	if ((DeviceObject->Flags & DEVICE_FLAG_READONLY) && 

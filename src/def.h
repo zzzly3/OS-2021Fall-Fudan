@@ -22,6 +22,7 @@ static inline void system_init()
 {
 	// Global operations
 	// TODO: Replace with lock
+	uart_put_char('h');
 	if (cpuid() == START_CPU)
 	{
 		extern char edata[], end[];
