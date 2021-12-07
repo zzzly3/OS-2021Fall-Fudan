@@ -542,7 +542,7 @@ void sd_read_ready(PIOREQ_OBJECT IOReq)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
     }
-    // puts("read ok");
+    puts("read ok");
     assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
     SDDevice.DeviceStorage = NULL;
     IoUpdateRequest(&SDDevice, IOReq, STATUS_COMPLETED);
@@ -667,6 +667,7 @@ void sd_intr() {
         {
             if (ival & INT_DATA_DONE)
             {
+                puts("write ok");
                 IoUpdateRequest(&SDDevice, req, STATUS_COMPLETED);
                 SDDevice.DeviceStorage = NULL;
             }
