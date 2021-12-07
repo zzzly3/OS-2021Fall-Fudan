@@ -112,20 +112,17 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
 {
 	PKPROCESS p = PsCreateProcessEx();
-	printf("%p\n", p);
-	p->Context.KernelStack.d->lr = 0;
+	printf("%p\n", p->Context.KernelStack.p);
 	if (p == NULL)
 		return STATUS_NO_ENOUGH_MEMORY;
 	p->Flags |= PROCESS_FLAG_KERNEL;
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
-	printf("%p\n", p);
-	p->Context.KernelStack.d->lr = 0;
+	printf("%p\n", p->Context.KernelStack.p);
 	p->ParentId = KernelProcess[cpuid()]->ProcessId;
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	printf("%p\n", p);
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
 	KeLowerExecuteLevel(oldel);
 	ObDereferenceObject(p);
