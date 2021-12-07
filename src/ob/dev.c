@@ -50,7 +50,6 @@ void IoInitializeRequest(PIOREQ_OBJECT IOReq)
 
 KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
-	uart_put_char('I');
 	ASSERT(IOReq->Status == STATUS_PENDING, BUG_BADIO);
 	if (DeviceObject->IOHandler == NULL)
 		return STATUS_UNSUPPORTED;
@@ -66,6 +65,7 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		DeviceObject->IOHandler(DeviceObject, IOReq);
 		return IOReq->Status;
 	}
+	uart_put_char('I');
 	if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
 	{
 		// Non-block request

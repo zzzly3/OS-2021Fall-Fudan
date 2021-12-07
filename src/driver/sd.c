@@ -536,10 +536,12 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 void sd_read_ready(PIOREQ_OBJECT IOReq)
 {
     BOOL te = arch_disable_trap();
+    puts("do read");
     for (int i = 0; i < IOReq->Size / 4; i++)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
     }
+    puts("read ok");
     assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
     SDDevice.DeviceStorage = NULL;
     IoUpdateRequest(&SDDevice, IOReq, STATUS_COMPLETED);
