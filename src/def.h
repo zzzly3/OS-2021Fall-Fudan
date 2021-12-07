@@ -33,7 +33,7 @@ static inline void system_init()
 		HalInitializeConsole();
 	}
 	else // Wait the start cpu to complete initializing.
-		delay_us(200*1000);
+		delay_us(500*1000);
 	uart_put_char('0' + cpuid());
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
