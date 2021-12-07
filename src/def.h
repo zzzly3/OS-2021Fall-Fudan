@@ -41,7 +41,11 @@ static inline void system_init()
 static inline void driver_init()
 {
 	// Initialize drivers & devices
+	puts("Basic core loaded.");
+	puts("Loading drivers...");
+	putstr("sd_card...");
 	sd_init();
+	puts("done.");
 }
 
 #define putchar HalWriteConsoleChar

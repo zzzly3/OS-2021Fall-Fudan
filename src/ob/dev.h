@@ -79,8 +79,12 @@ KSTATUS HalInitializeDeviceManager();
 //KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
 //PDEVICE_OBJECT IouLookupDevice(PKSTRING);
 extern OBJECT_POOL IORequestPool;
-#define IoAllocateRequest() ({PIOREQ_OBJECT __p = (PIOREQ_OBJECT)MmAllocateObject(&IORequestPool); \
-	if (__p) IoInitializeRequest(__p); __p;})
-#define IoFreeRequest(Request) MmFreeObject(&IORequestPool, (PVOID)Request)
+#define IoAllocateRequest() ({BOOL __t = arch_disable_trap(); \
+	PIOREQ_OBJECT __p = (PIOREQ_OBJECT)MmAllocateObject(&IORequestPool); \
+	if (__p) IoInitializeRequest(__p); \
+	if (__t) arch_enable_trap(); __p;})
+#define IoFreeRequest(Request) ({BOOL __t = arch_disable_trap(); \
+	MmFreeObject(&IORequestPool, (PVOID)Request); \
+	if (__t) arch_enable_trap();})
 
 #endif
