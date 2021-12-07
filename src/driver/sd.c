@@ -535,11 +535,15 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 
 void sd_read_ready(PIOREQ_OBJECT IOReq)
 {
+    BOOL te = arch_disable_trap();
     for (int i = 0; i < IOReq->Size / 4; i++)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
     }
+    assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
+    SDDevice.DeviceStorage = NULL;
     IoUpdateRequest(&SDDevice, IOReq, STATUS_COMPLETED);
+    if (te) arch_enable_trap();
 }
 
 USR_ONLY void sd_init() {
@@ -655,13 +659,7 @@ void sd_intr() {
         {
             if (ival & INT_READ_RDY)
             {
-                puts("read ready1");
-                assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
-                puts("read ready2");
                 assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
-                puts("read ready3");
-                SDDevice.DeviceStorage = NULL;
-                puts("read ready4");
             }
         }
         else if (req->Type == IOREQ_TYPE_WRITE)
