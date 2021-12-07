@@ -95,6 +95,7 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
+	uart_put_char('a');
 	PKPROCESS gk = PgGetProcessGroupWorker(Process);
 	//printf("create %p use %p\n", Process, gk);
 	if (gk)
@@ -107,6 +108,7 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 		// start with root scheduler
 		PsiStartNewProcess(Process);
 	}
+	uart_put_char('b');
 }
 
 KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
@@ -121,9 +123,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	uart_put_char('a');
 	PsCreateProcess(p, ProcessEntry, EntryArgument);
-	uart_put_char('b');
 	KeLowerExecuteLevel(oldel);
 	ObDereferenceObject(p);
 	return STATUS_SUCCESS;
