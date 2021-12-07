@@ -305,6 +305,7 @@ UNSAFE APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 	arch_enable_trap();
 	for (PAPC_ENTRY p = apc; p != NULL; p = p->NextEntry)
 	{
+		printf("cpu %d in apc\n", cpuid());
 		p->ApcRoutine(p->ApcArgument);
 	}
 	arch_disable_trap();
