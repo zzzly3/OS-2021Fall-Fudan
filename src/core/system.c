@@ -3,8 +3,9 @@
 void KeSystemEntry()
 {
 	puts("System process created.");
-	delay_us(500 * 1000);
+	delay_us(500 * 1000); // Wait all cores to complete initializing
 	driver_init();
+	sd_test();
 }
 
 void create_system_process()

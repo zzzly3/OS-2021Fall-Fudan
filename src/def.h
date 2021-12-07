@@ -4,6 +4,7 @@
 #include <aarch64/intrinsic.h>
 #include <common/variadic.h>
 #include <driver/console.h>
+#include <driver/sd.h>
 #include <ob/mem.h>
 #include <ob/proc.h>
 #include <ob/grp.h>
