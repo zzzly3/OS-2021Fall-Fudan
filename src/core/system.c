@@ -3,7 +3,7 @@
 void KeSystemEntry()
 {
 	puts("System process created.");
-	//sd_init();
+	sd_init();
 }
 
 void create_system_process()

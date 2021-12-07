@@ -23,7 +23,6 @@ static inline void system_init()
 {
 	// Global operations
 	// TODO: Replace with lock
-	uart_put_char('0' + cpuid());
 	if (cpuid() == START_CPU)
 	{
 		extern char edata[], end[];
@@ -34,12 +33,9 @@ static inline void system_init()
 	}
 	else // Wait the start cpu to complete initializing.
 		delay_us(500*1000);
-	uart_put_char('0' + cpuid());
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
-	uart_put_char('0' + cpuid());
 	arch_enable_trap();
-	uart_put_char('0' + cpuid());
 	if (cpuid() == START_CPU)
 		create_system_process();
 	// uart_put_char('h');
