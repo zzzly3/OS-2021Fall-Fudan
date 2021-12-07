@@ -15,6 +15,8 @@ void KeSystemWorkerEntry()
 	PKPROCESS cur = PsGetCurrentProcess();
 	while (1)
 	{
+		printf("worker%d: %p\n", cpuid(), cur->ApcList);
+		delay_us(500*1000);
 		// printf("worker %d %d\n", cpuid(), ActiveProcessCount[cpuid()]);
 		// Awake waiting process
 		KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);

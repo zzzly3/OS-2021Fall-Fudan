@@ -246,8 +246,10 @@ BOOL KeQueueWorkerApc(PAPC_ROUTINE Routine, ULONG64 Argument)
 {
 	static int which;
 	which = (which + 1) % CPU_NUM;
-	printf("work queued to %d\n", which);
-	return KeCreateApcEx(KernelProcess[which], Routine, Argument);
+	BOOL r = KeCreateApcEx(KernelProcess[which], Routine, Argument);
+	printf("work %p queued to %d %d\n", Routine, which, r);
+	printf("%p\n", KernelProcess[which]->ApcList);
+	return r;
 }
 
 UNSAFE void KeCancelApcs(PKPROCESS Process)
@@ -305,7 +307,6 @@ UNSAFE APC_ONLY void KeClearApcList() // WARNING: MUST be called in APC level
 	arch_enable_trap();
 	for (PAPC_ENTRY p = apc; p != NULL; p = p->NextEntry)
 	{
-		printf("cpu %d in apc\n", cpuid());
 		p->ApcRoutine(p->ApcArgument);
 	}
 	arch_disable_trap();
