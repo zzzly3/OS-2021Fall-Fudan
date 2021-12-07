@@ -246,6 +246,7 @@ BOOL KeQueueWorkerApc(PAPC_ROUTINE Routine, ULONG64 Argument)
 {
 	static int which;
 	which = (which + 1) % CPU_NUM;
+	printf("work queued to %d\n", which);
 	return KeCreateApcEx(KernelProcess[which], Routine, Argument);
 }
 
