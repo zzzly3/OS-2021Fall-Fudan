@@ -26,8 +26,8 @@ static inline void system_init()
 	{
 		extern char edata[], end[];
 	    memset(edata, 0, end - edata);
+	    HalInitializeMemoryManager();
 		HalInitializeDeviceManager();
-		HalInitializeMemoryManager();
 		HalInitializeConsole();
 	}
 	else // Wait the start cpu to complete initializing.
@@ -35,7 +35,7 @@ static inline void system_init()
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
 	arch_enable_trap();
-	uart_put_char('h');
+	// uart_put_char('h');
 }
 
 static inline void driver_init()
