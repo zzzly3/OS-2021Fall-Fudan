@@ -534,6 +534,7 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 
 void sd_read_ready(PIOREQ_OBJECT IOReq)
 {
+    printf("read ready\n");
     for (int i = 0; i < IOReq->Size / 4; i++)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
@@ -650,7 +651,7 @@ void sd_intr() {
         {
             if (ival & INT_READ_RDY)
             {
-                puts("read ready");
+                //puts("read ready");
                 assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
                 assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
                 SDDevice.DeviceStorage = NULL;
