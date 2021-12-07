@@ -113,6 +113,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 {
 	PKPROCESS p = PsCreateProcessEx();
 	printf("%p\n", p);
+	p->Context.KernelStack.d->lr = 0;
 	if (p == NULL)
 		return STATUS_NO_ENOUGH_MEMORY;
 	p->Flags |= PROCESS_FLAG_KERNEL;
