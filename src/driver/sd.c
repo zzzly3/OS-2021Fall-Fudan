@@ -651,10 +651,10 @@ void sd_intr() {
         {
             if (ival & INT_READ_RDY)
             {
-                //puts("read ready");
                 assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
                 assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
                 SDDevice.DeviceStorage = NULL;
+                puts("read ready");
             }
         }
         else if (req->Type == IOREQ_TYPE_WRITE)
@@ -667,6 +667,7 @@ void sd_intr() {
         }
     }
     *EMMC_INTERRUPT = ival;
+
 }
 
 /*
