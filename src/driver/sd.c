@@ -651,9 +651,6 @@ void sd_intr() {
     int ival = (int)*EMMC_INTERRUPT;
     if (ival & INT_ERROR_MASK)
         PANIC("SD card error! EMMC_INTERRUPT=0x%x", ival);
-    printf("%x\n", ival);
-    *EMMC_INTERRUPT = ival;
-    return;
     PIOREQ_OBJECT req = (PIOREQ_OBJECT)SDDevice.DeviceStorage;
     if (req != NULL)
     {
