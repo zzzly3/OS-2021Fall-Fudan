@@ -37,6 +37,12 @@ static inline void system_init()
 	arch_enable_trap();
 }
 
+static inline void driver_init()
+{
+	// Initialize drivers & devices
+	sd_init();
+}
+
 #define putchar HalWriteConsoleChar
 void puts(const char*);
 void putstr(const char*);

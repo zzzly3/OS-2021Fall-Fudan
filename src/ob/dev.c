@@ -1,9 +1,11 @@
 #include <ob/dev.h>
+#include <ob/mem.h>
 #include <mod/scheduler.h>
 #include <mod/bug.h>
 
 DEVICE_OBJECT RootDeviceX;
 static SPINLOCK DeviceListLock;
+OBJECT_POOL IORequestPool;
 
 #define next_device(dev) container_of((dev)->DeviceList.Backward, DEVICE_OBJECT, DeviceList)
 #define last_device(dev) container_of((dev)->DeviceList.Forward, DEVICE_OBJECT, DeviceList)
@@ -100,11 +102,26 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		else
 		{
 			// Sync request
-			KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
-			KSTATUS ret = KeWaitForMutexSignaled(&IOReq->Event, FALSE);
-			if (KSUCCESS(ret))
+			// If alerted,
+			// for EL == APC, return STATUS_ALERTED;
+			// otherwise, retry
+			KSTATUS ret;
+			if (el == EXECUTE_LEVEL_APC)
+			{
+				ret = KeWaitForMutexSignaled(&IOReq->Event, FALSE);
+				if (KSUCCESS(ret))
+					ret = IOReq->Status;
+			}
+			else
+			{
+				do
+				{
+					KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+					ret = KeWaitForMutexSignaled(&IOReq->Event, FALSE);
+					KeLowerExecuteLevel(el);
+				} while (!KSUCCESS(ret));
 				ret = IOReq->Status;
-			KeLowerExecuteLevel(el);
+			}
 			return ret;
 		}
 	}
@@ -130,6 +147,7 @@ RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 		IOREQ_OBJECT install_req;
 		IoInitializeRequest(&install_req);
 		install_req.Type = IOREQ_TYPE_INSTALL;
+		install_req.Flags |= IOREQ_FLAG_NONBLOCK;
 		KSTATUS ret = IoCallDevice(DeviceObject, &install_req);
 		if (!KSUCCESS(ret))
 		{
@@ -201,6 +219,7 @@ KSTATUS HalInitializeDeviceManager()
 	IoInitializeDevice(&RootDeviceX);
 	RootDeviceX.Flags |= DEVICE_FLAG_NOQUEUE;
 	RootDeviceX.DeviceList.Forward = RootDeviceX.DeviceList.Backward = &RootDeviceX.DeviceList;
+	MmInitializeObjectPool(&IORequestPool, sizeof(IOREQ_OBJECT));
 	init_interrupt();
 	return STATUS_SUCCESS;
 }

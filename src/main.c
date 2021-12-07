@@ -78,6 +78,7 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 #include <core/container.h>
+#include <driver/sd.h>
 
 void sys_switch_test();
 void sys_transfer_test();
@@ -88,14 +89,17 @@ NO_RETURN main()
 {
     system_init();
     printf("CPU %d HELLO!\n", cpuid());
-    if (cpuid() == START_CPU)
-    {
-        spawn_init_process();
-        container_test_init();
-    }
+    // if (cpuid() == START_CPU)
+    // {
+    //     spawn_init_process();
+    //     container_test_init();
+    // }
     // spawn_init_process();
     // if (cpuid() == 0)
     //     KeCreateDpc(sys_group_test, 0);
+    KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+    if (cpuid() == START_CPU)
+        driver_init();
     KeSystemWorkerEntry();
 }
 

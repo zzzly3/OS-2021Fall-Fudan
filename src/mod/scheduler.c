@@ -178,7 +178,8 @@ void KiClockTrapEntry()
 {
 	int cid = cpuid();
 	if (KeBugFaultFlag) for(arch_disable_trap();;);
-	do // NOTE: Debug HELLO
+	// FIXME: Remove this Debug HELLO out
+	do
 	{
 		static int dbgcd[CPU_NUM];
 		if (dbgcd[cid] == 1000 / TIME_SLICE_MS)

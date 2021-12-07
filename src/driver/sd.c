@@ -28,8 +28,11 @@
 #include <driver/interrupt.h>
 #include <driver/uart.h>
 
+#include <ob/dev.h>
+
 // Private functions.
-static void sd_start(struct buf *b);
+// static void sd_start(struct buf *b);
+static void sd_start(int bno, int write, u32* intbuf);
 static void sd_delayus(u32 cnt);
 static int sdInit();
 static void sdParseCID();
@@ -498,17 +501,63 @@ static int sdBaseClock;
  * See https://en.wikipedia.org/wiki/Master_boot_record
  */
 
+/*
 struct buf sdque;
 SPINLOCK sdlock;
+*/
+static DEVICE_OBJECT SDDevice;
+static KSTRING SDDeviceName;
 
-void sd_init() {
+void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
+{
+    if (DeviceObject != &SDDevice)
+    {
+        IoUpdateRequest(DeviceObject, IOReq, STATUS_OBJECT_NOT_FOUND);
+        return;
+    }
+    BOOL te = arch_disable_trap();
+    switch (IOReq->Type)
+    {
+        case IOREQ_TYPE_READ:
+            sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
+            break;
+        case IOREQ_TYPE_WRITE:
+            sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
+            break;
+        default:
+            IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
+            return;
+    }
+    DeviceObject->DeviceStorage = (PVOID)IOReq;
+    if (te) arch_enable_trap();
+}
+
+void sd_read_ready(PIOREQ_OBJECT IOReq)
+{
+    for (int i = 0; i < IOReq->Size / 4; i++)
+    {
+        ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
+    }
+    IoUpdateRequest(&SDDevice, IOReq, STATUS_COMPLETED);
+}
+
+USR_ONLY void sd_init() {
     /*
      * Initialize the lock and request queue if any.
      * Remember to call sd_init() at somewhere.
      */
-    /* TODO: Lab7 driver. */
     
+    BOOL te = arch_disable_trap();
     sdInit();
+    LibInitializeKString(&SDDeviceName, "sd_card", 16);
+    IoInitializeDevice(&SDDevice);
+    // SDDevice.Flags |= DEVICE_FLAG_DYNAMIC;
+    SDDevice.DeviceName = &SDDeviceName;
+    SDDevice.IOHandler = sd_request_handler;
+    SDDevice.DeviceStorage = NULL;
+    asserts(KSUCCESS(IoRegisterDevice(&SDDevice)), "unable to create sd_card device");
+    set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
+    if (te) arch_enable_trap();
 
     /*
      * Read and parse 1st block (MBR) and collect whatever
@@ -519,7 +568,9 @@ void sd_init() {
      */
 
     /* TODO: Lab7 driver. */
-
+    static struct buf b;
+    sdrw(&b);
+    printf("check %x%x\n", b.data[510], b.data[511]);
 }
 
 static void sd_delayus(u32 c) {
@@ -528,12 +579,12 @@ static void sd_delayus(u32 c) {
 }
 
 /* Start the request for b. Caller must hold sdlock. */
-static void sd_start(struct buf *b) {
+static void sd_start(int bno, int write, u32* intbuf) {
     // Address is different depending on the card type.
     // HC pass address as block #.
     // SC pass address straight through.
-    int bno = sdCard.type == SD_TYPE_2_HC ? (int)b->blockno : (int)b->blockno << 9;
-    int write = b->flags & B_DIRTY;
+    bno = sdCard.type == SD_TYPE_2_HC ? bno : bno << 9;
+    // int write = b->flags & B_DIRTY;
 
     // printf("- sd start: cpu %d, flag 0x%x, bno %d, write=%d\n", cpuid(), b->flags, bno, write);
 
@@ -553,8 +604,8 @@ static void sd_start(struct buf *b) {
     }
 
     int done = 0;
-    u32 *intbuf = (u32 *)b->data;
-    asserts((((i64)b->data) & 0x03) == 0, "Only support word-aligned buffers. ");
+    // u32 *intbuf = (u32 *)b->data;
+    asserts((((i64)intbuf) & 0x03) == 0, "Only support word-aligned buffers. ");
 
     if (write) {
         // Wait for ready interrupt for the next block.
@@ -588,7 +639,31 @@ void sd_intr() {
      * sdWaitForInterrupt() to complete this function.
      */
     
-    /* TODO: Lab7 driver. */
+    int ival = (int)*EMMC_INTERRUPT;
+    if (ival & INT_ERROR_MASK)
+        PANIC("SD card error! EMMC_INTERRUPT=0x%x", ival);
+    PIOREQ_OBJECT req = (PIOREQ_OBJECT)SDDevice.DeviceStorage;
+    if (req != NULL)
+    {
+        if (req->Type == IOREQ_TYPE_READ)
+        {
+            if (ival & INT_READ_RDY)
+            {
+                assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
+                assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
+                SDDevice.DeviceStorage = NULL;
+            }
+        }
+        else if (req->Type == IOREQ_TYPE_WRITE)
+        {
+            if (ival & INT_DATA_DONE)
+            {
+                IoUpdateRequest(&SDDevice, req, STATUS_COMPLETED);
+                SDDevice.DeviceStorage = NULL;
+            }
+        }
+    }
+    *EMMC_INTERRUPT = ival;
 }
 
 /*
@@ -603,7 +678,17 @@ void sdrw(struct buf *b) {
      * then sleep, use loop to check whether buf flag is modified, if modified, then break 
      */
 
-    /* TODO: Lab7 driver. */
+    // NOTE: MUST be invoked at EL <= APC
+    if ((b->flags & B_VALID) && !(b->flags & B_DIRTY))
+        return;
+    PIOREQ_OBJECT req = IoAllocateRequest();
+    req->Type = (b->flags & B_DIRTY) ? IOREQ_TYPE_WRITE : IOREQ_TYPE_READ;
+    req->Size = BSIZE;
+    req->Buffer = (PVOID)&b->data;
+    req->ObjectAttribute.Id = b->blockno;
+    KSTATUS ret = IoCallDevice(&SDDevice, req);
+    IoFreeRequest(req);
+    asserts(KSUCCESS(ret), "sdrw failed with code 0x%x\n", ret);
 }
 
 /* SD card test and benchmark. */
@@ -709,7 +794,8 @@ static int sdWaitForInterrupt(unsigned int mask) {
     while (!(*EMMC_INTERRUPT & (u32)waitMask) && count--)
         sd_delayus(1);
     ival = (int)(*EMMC_INTERRUPT);
-    // printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
+    // FIXME: Comment this message out
+    printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
 
     // Check for success.
     if (count <= 0 || (ival & INT_CMD_TIMEOUT) || (ival & INT_DATA_TIMEOUT)) {

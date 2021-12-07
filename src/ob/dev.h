@@ -78,5 +78,9 @@ KSTATUS HalInitializeDeviceManager();
 #define IoUnlockDevice(Device) KeSetMutexSignaled(&Device->Lock)
 //KSTATUS IoUnloadDevice(PDEVICE_OBJECT);
 //PDEVICE_OBJECT IouLookupDevice(PKSTRING);
+extern OBJECT_POOL IORequestPool;
+#define IoAllocateRequest() ({PIOREQ_OBJECT __p = (PIOREQ_OBJECT)MmAllocateObject(&IORequestPool); \
+	if (__p) IoInitializeRequest(__p); __p;})
+#define IoFreeRequest(Request) MmFreeObject(&IORequestPool, (PVOID)Request)
 
 #endif
