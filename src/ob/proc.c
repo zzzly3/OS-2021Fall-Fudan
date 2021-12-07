@@ -79,8 +79,8 @@ PKPROCESS PsCreateProcessEx()
 // Create & run the process described by the object
 RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
-	uart_put_char('a');
 	ASSERT(PsGetCurrentProcess()->ExecuteLevel == EXECUTE_LEVEL_RT, BUG_BADLEVEL);
+	printf("%x\n", Process);
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
 		Process->Context.KernelStack.d->lr = (ULONG64)PsKernelProcessEntry;
@@ -93,11 +93,10 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
 	}
-	uart_put_char('d');
+	uart_put_char('V');
 	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
-	uart_put_char('c');
 	PKPROCESS gk = PgGetProcessGroupWorker(Process);
 	//printf("create %p use %p\n", Process, gk);
 	if (gk)
@@ -110,7 +109,6 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 		// start with root scheduler
 		PsiStartNewProcess(Process);
 	}
-	uart_put_char('b');
 }
 
 KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
