@@ -662,6 +662,7 @@ void sd_intr() {
             if (ival & INT_READ_RDY)
             {
                 assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
+                puts("read ready");
             }
         }
         else if (req->Type == IOREQ_TYPE_WRITE)

@@ -211,6 +211,7 @@ PDEVICE_OBJECT IoiLookupDevice(PKSTRING DeviceName)
 
 void IoiDispatchRequests(PDEVICE_OBJECT DeviceObject)
 {
+	uart_put_char('P');
 	PIOREQ_OBJECT req = container_of(DeviceObject->IORequest.Backward, IOREQ_OBJECT, RequestList);
 	DeviceObject->IOHandler(DeviceObject, req);
 }
