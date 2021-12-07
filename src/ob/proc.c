@@ -120,6 +120,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
 	printf("%p\n", p);
+	p->Context.KernelStack.d->lr = 0;
 	p->ParentId = KernelProcess[cpuid()]->ProcessId;
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
