@@ -568,6 +568,7 @@ USR_ONLY void sd_init() {
      */
 
     /* TODO: Lab7 driver. */
+    puts("sd init");
     static struct buf b;
     sdrw(&b);
     printf("check %x%x\n", b.data[510], b.data[511]);
