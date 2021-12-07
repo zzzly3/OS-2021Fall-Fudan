@@ -80,14 +80,13 @@ PKPROCESS PsCreateProcessEx()
 RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 EntryArgument)
 {
 	ASSERT(PsGetCurrentProcess()->ExecuteLevel == EXECUTE_LEVEL_RT, BUG_BADLEVEL);
-	printf("%p\n", Process);
 	if (Process->Flags & PROCESS_FLAG_KERNEL) // kernel process
 	{
 		uart_put_char('a');
 		Process->Context.KernelStack.d->lr = (ULONG64)PsKernelProcessEntry;
+		uart_put_char('b');
 		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
 		Process->Context.KernelStack.d->x1 = EntryArgument;
-		uart_put_char('b');
 	}
 	else
 	{
