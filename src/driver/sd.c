@@ -549,7 +549,7 @@ USR_ONLY void sd_init() {
      * Initialize the lock and request queue if any.
      * Remember to call sd_init() at somewhere.
      */
-    
+    static struct buf b;
     BOOL te = arch_disable_trap();
     sdInit();
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
@@ -560,6 +560,14 @@ USR_ONLY void sd_init() {
     SDDevice.DeviceStorage = NULL;
     asserts(KSUCCESS(IoRegisterDevice(&SDDevice)), "unable to create sd_card device");
     set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
+
+    // NOTE: A response time test!
+    sd_start(0, 1, b.data);
+    sdWaitForInterrupt(INT_DATA_DONE);
+    sd_start(0, 0, b.data);
+    sdWaitForInterrupt(INT_READ_RDY);
+    KeBugFault(BUG_STOP);
+
     if (te) arch_enable_trap();
 
     /*
@@ -572,7 +580,7 @@ USR_ONLY void sd_init() {
 
     /* TODO: Lab7 driver. */
     // puts("read first");
-    static struct buf b;
+    
     sdrw(&b);
     printf("check %x%x\n", b.data[510], b.data[511]);
 }
@@ -689,6 +697,8 @@ void sdrw(struct buf *b) {
     KSTATUS ret = IoCallDevice(&SDDevice, req);
     IoFreeRequest(req);
     asserts(KSUCCESS(ret), "sdrw failed with code 0x%x\n", ret);
+    b->flags &= ~B_DIRTY;
+    b->flags |= B_VALID;
 }
 
 /* SD card test and benchmark. */
@@ -795,7 +805,7 @@ static int sdWaitForInterrupt(unsigned int mask) {
         sd_delayus(1);
     ival = (int)(*EMMC_INTERRUPT);
     // FIXME: Comment this message out
-    // printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
+    printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
 
     // Check for success.
     if (count <= 0 || (ival & INT_CMD_TIMEOUT) || (ival & INT_DATA_TIMEOUT)) {
