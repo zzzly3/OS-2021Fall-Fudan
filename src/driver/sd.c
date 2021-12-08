@@ -538,6 +538,11 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
         IoUpdateRequest(DeviceObject, IOReq, STATUS_OBJECT_NOT_FOUND);
         return;
     }
+    if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
+    {
+        IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
+        return;
+    }
     BOOL te = arch_disable_trap();
     switch (IOReq->Type)
     {
