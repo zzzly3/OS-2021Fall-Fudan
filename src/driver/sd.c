@@ -568,6 +568,11 @@ USR_ONLY void sd_init() {
     puts("read");
     sd_start(0, 0, b.data);
     sdWaitForInterrupt(INT_READ_RDY);
+    for (int i = 0; i < 512 / 4; i++)
+    {
+        ((int*)b.data)[i] = *EMMC_DATA;
+    }
+    sdWaitForInterrupt(INT_DATA_DONE);
     KeBugFault(BUG_STOP);
 
     if (te) arch_enable_trap();
