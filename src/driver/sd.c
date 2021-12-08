@@ -508,6 +508,8 @@ SPINLOCK sdlock;
 static DEVICE_OBJECT SDDevice;
 static KSTRING SDDeviceName;
 
+int MBR_PE2_LBA, MBR_PE2_SZ;
+
 bool sd_test_interrupt(unsigned int mask)
 {
     if (*EMMC_INTERRUPT & mask)
@@ -619,7 +621,10 @@ USR_ONLY void sd_init() {
     // puts("read first");
     
     sdrw(&b);
-    printf("check %x%x\n", b.data[510], b.data[511]);
+    MBR_PE2_LBA = *(int*)&b.data[0x1ce + 0x8];
+    MBR_PE2_SZ = *(int*)&b.data[0x1ce + 0xc];
+    printf("check %x%x, MBR_PE2_LBA=0x%x, MBR_PE2_SZ=0x%x\n", b.data[510], b.data[511], MBR_PE2_LBA, MBR_PE2_SZ);
+
 }
 
 static void sd_delayus(u32 c) {
