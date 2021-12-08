@@ -54,6 +54,7 @@ typedef struct _MANAGER_OBJECT
 #define DEVICE_FLAG_NOQUEUE 1
 #define DEVICE_FLAG_READONLY 2
 #define DEVICE_FLAG_DYNAMIC 4
+#define DEVICE_FLAG_BINDCPU0 8
 typedef void(*PDEVICE_DISPATCH)(struct _DEVICE_OBJECT*, struct _IOREQ_OBJECT*);
 typedef struct _DEVICE_OBJECT
 {

@@ -559,7 +559,7 @@ USR_ONLY void sd_init() {
     sdInit();
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
     IoInitializeDevice(&SDDevice);
-    // SDDevice.Flags |= DEVICE_FLAG_DYNAMIC;
+    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0;
     SDDevice.DeviceName = &SDDeviceName;
     SDDevice.IOHandler = sd_request_handler;
     SDDevice.DeviceStorage = NULL;

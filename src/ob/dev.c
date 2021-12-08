@@ -28,7 +28,7 @@ void IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq, KSTATUS S
 		{
 			// Do next request
 			ASSERT(
-				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject),
+				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, !!(DeviceObject->Flags & DEVICE_FLAG_BINDCPU0)),
 				BUG_BADIO);
 		}
 		KeReleaseSpinLock(&DeviceObject->IORequestLock);
@@ -52,6 +52,8 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
 	ASSERT(IOReq->Status == STATUS_PENDING, BUG_BADIO);
 	if (DeviceObject->IOHandler == NULL)
+		return STATUS_UNSUPPORTED;
+	if ((DeviceObject->Flags & DEVICE_FLAG_BINDCPU0) && (IOReq->Flags & IOREQ_FLAG_NONBLOCK))
 		return STATUS_UNSUPPORTED;
 	if ((DeviceObject->Flags & DEVICE_FLAG_READONLY) && 
 			(IOReq->Type == IOREQ_TYPE_WRITE || IOReq->Type == IOREQ_TYPE_CREATE))
@@ -90,7 +92,7 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 		{
 			// Start do requests
 			ASSERT(
-				KeQueueWorkerApc((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject), 
+				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, !!(DeviceObject->Flags & DEVICE_FLAG_BINDCPU0)), 
 				BUG_BADIO);
 		}
 		KeReleaseSpinLock(&DeviceObject->IORequestLock);
@@ -138,6 +140,8 @@ void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 
 RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
 {
+	if ((DeviceObject->Flags & DEVICE_FLAG_NOQUEUE) && (DeviceObject->Flags & DEVICE_FLAG_BINDCPU0))
+		return STATUS_UNSUPPORTED;
 	IoTryToLockDevice(DeviceObject);
 	KeAcquireSpinLockFast(&DeviceListLock);
 	LibInsertListEntry(&RootDeviceX.DeviceList, &DeviceObject->DeviceList);

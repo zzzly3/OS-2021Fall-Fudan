@@ -35,7 +35,7 @@ UNSAFE RT_ONLY void KeClearDpcList();
 BOOL KeCreateDpc(PDPC_ROUTINE, ULONG64);
 #define KeCreateApc(Routinue, Argument) KeCreateApcEx(PsGetCurrentProcess(), Routinue, Argument)
 BOOL KeCreateApcEx(struct _KPROCESS*, PAPC_ROUTINE, ULONG64);
-BOOL KeQueueWorkerApc(PAPC_ROUTINE, ULONG64);
+BOOL KeQueueWorkerApcEx(PAPC_ROUTINE, ULONG64, BOOL);
 void PsAlertProcess(struct _KPROCESS*);
 void PsTerminateProcess(struct _KPROCESS*);
 

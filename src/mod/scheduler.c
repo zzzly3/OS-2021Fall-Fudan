@@ -242,11 +242,12 @@ BOOL KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argument)
 	return p ? TRUE : FALSE;
 }
 
-BOOL KeQueueWorkerApc(PAPC_ROUTINE Routine, ULONG64 Argument)
+BOOL KeQueueWorkerApcEx(PAPC_ROUTINE Routine, ULONG64 Argument, BOOL BindCPU0)
 {
 	static int which;
-	which = (which + 1) % CPU_NUM;
-	BOOL r = KeCreateApcEx(KernelProcess[which], Routine, Argument);
+	if (CPU_NUM > 1 && ++which == CPU_NUM)
+		which = 1;
+	BOOL r = KeCreateApcEx(KernelProcess[BindCPU0 ? 0 : which], Routine, Argument);
 	// printf("work %p queued to %d %d\n", Routine, which, r);
 	// printf("%p\n", KernelProcess[which]->ApcList);
 	return r;
