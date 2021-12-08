@@ -508,6 +508,27 @@ SPINLOCK sdlock;
 static DEVICE_OBJECT SDDevice;
 static KSTRING SDDeviceName;
 
+bool sd_test_interrupt(unsigned int mask)
+{
+    if (*EMMC_INTERRUPT & mask)
+    {
+        *EMMC_INTERRUPT = mask;
+        return true;
+    }
+    else
+        return false;
+}
+
+void sd_read_ready(PIOREQ_OBJECT IOReq)
+{
+    // puts("do read");
+    for (int i = 0; i < IOReq->Size / 4; i++)
+    {
+        ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
+    }
+    // puts("read ok");
+}
+
 void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
     if (DeviceObject != &SDDevice)
@@ -521,27 +542,26 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
         case IOREQ_TYPE_READ:
             // puts("read");
             sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
+            if (sd_test_interrupt(INT_READ_RDY))
+            {
+                sd_read_ready(IOReq);
+                if (sd_test_interrupt(INT_DATA_DONE))
+                    goto end;
+            }
             break;
         case IOREQ_TYPE_WRITE:
             // puts("write");
             sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
+            if (sd_test_interrupt(INT_DATA_DONE))
+                goto end;
             break;
         default:
             IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
-            return;
+            goto end;
     }
     DeviceObject->DeviceStorage = (PVOID)IOReq;
+end:
     if (te) arch_enable_trap();
-}
-
-void sd_read_ready(PIOREQ_OBJECT IOReq)
-{
-    // puts("do read");
-    for (int i = 0; i < IOReq->Size / 4; i++)
-    {
-        ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
-    }
-    // puts("read ok");
 }
 
 USR_ONLY void sd_init() {
@@ -562,18 +582,18 @@ USR_ONLY void sd_init() {
     set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
 
     // NOTE: A response time test!
-    puts("write");
-    sd_start(0, 1, b.data);
-    sdWaitForInterrupt(INT_DATA_DONE);
-    puts("read");
-    sd_start(0, 0, b.data);
-    sdWaitForInterrupt(INT_READ_RDY);
-    for (int i = 0; i < 512 / 4; i++)
-    {
-        ((int*)b.data)[i] = *EMMC_DATA;
-    }
-    sdWaitForInterrupt(INT_DATA_DONE);
-    KeBugFault(BUG_STOP);
+    // puts("write");
+    // sd_start(0, 1, b.data);
+    // sdWaitForInterrupt(INT_DATA_DONE);
+    // puts("read");
+    // sd_start(0, 0, b.data);
+    // sdWaitForInterrupt(INT_READ_RDY);
+    // for (int i = 0; i < 512 / 4; i++)
+    // {
+    //     ((int*)b.data)[i] = *EMMC_DATA;
+    // }
+    // sdWaitForInterrupt(INT_DATA_DONE);
+    // KeBugFault(BUG_STOP);
 
     if (te) arch_enable_trap();
 
@@ -812,7 +832,7 @@ static int sdWaitForInterrupt(unsigned int mask) {
         sd_delayus(1);
     ival = (int)(*EMMC_INTERRUPT);
     // FIXME: Comment this message out
-    printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
+    // printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
 
     // Check for success.
     if (count <= 0 || (ival & INT_CMD_TIMEOUT) || (ival & INT_DATA_TIMEOUT)) {
