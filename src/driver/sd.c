@@ -546,14 +546,20 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
             {
                 sd_read_ready(IOReq);
                 if (sd_test_interrupt(INT_DATA_DONE))
+                {
+                    IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
                     goto end;
+                }
             }
             break;
         case IOREQ_TYPE_WRITE:
             // puts("write");
             sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
             if (sd_test_interrupt(INT_DATA_DONE))
+            {
+                IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
                 goto end;
+            }
             break;
         default:
             IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
