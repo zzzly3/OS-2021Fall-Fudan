@@ -73,7 +73,7 @@ void IoUpdateRequest(PDEVICE_OBJECT, PIOREQ_OBJECT, KSTATUS);
 void IoInitializeRequest(PIOREQ_OBJECT);
 KSTATUS IoCallDevice(PDEVICE_OBJECT, PIOREQ_OBJECT);
 void IoInitializeDevice(PDEVICE_OBJECT);
-RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT);
+USR_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT); // NOTE: USR_ONLY for dynamic devices
 KSTATUS HalInitializeDeviceManager();
 #define IoTryToLockDevice(Device) KeTestMutexSignaled(&Device->Lock, FALSE)
 #define IoUnlockDevice(Device) KeSetMutexSignaled(&Device->Lock)

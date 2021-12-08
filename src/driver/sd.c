@@ -581,9 +581,11 @@ USR_ONLY void sd_init() {
      * Remember to call sd_init() at somewhere.
      */
     static struct buf b;
+    // sdInit();
+    // set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
     IoInitializeDevice(&SDDevice);
-    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0 | DEVICE_FLAG_DYNAMIC;
+    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0;
     SDDevice.DeviceName = &SDDeviceName;
     SDDevice.IOHandler = sd_request_handler;
     SDDevice.DeviceStorage = NULL;

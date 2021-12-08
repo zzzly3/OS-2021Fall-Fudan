@@ -138,26 +138,27 @@ void IoInitializeDevice(PDEVICE_OBJECT DeviceObject)
 	init_rc(&DeviceObject->ReferenceCount);
 }
 
-RT_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject)
+USR_ONLY KSTATUS IoRegisterDevice(PDEVICE_OBJECT DeviceObject) // NOTE: USR_ONLY for dynamic devices
 {
 	if ((DeviceObject->Flags & DEVICE_FLAG_NOQUEUE) && (DeviceObject->Flags & DEVICE_FLAG_BINDCPU0))
 		return STATUS_UNSUPPORTED;
 	IoTryToLockDevice(DeviceObject);
-	KeAcquireSpinLockFast(&DeviceListLock);
+	KeAcquireSpinLock(&DeviceListLock);
 	LibInsertListEntry(&RootDeviceX.DeviceList, &DeviceObject->DeviceList);
-	KeReleaseSpinLockFast(&DeviceListLock);
+	KeReleaseSpinLock(&DeviceListLock);
 	if (DeviceObject->Flags & DEVICE_FLAG_DYNAMIC)
 	{
+		ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
 		IOREQ_OBJECT install_req;
 		IoInitializeRequest(&install_req);
 		install_req.Type = IOREQ_TYPE_INSTALL;
-		install_req.Flags |= IOREQ_FLAG_NONBLOCK;
+		// install_req.Flags |= IOREQ_FLAG_NONBLOCK;
 		KSTATUS ret = IoCallDevice(DeviceObject, &install_req);
 		if (!KSUCCESS(ret))
 		{
-			KeAcquireSpinLockFast(&DeviceListLock);
+			KeAcquireSpinLock(&DeviceListLock);
 			LibRemoveListEntry(&DeviceObject->DeviceList);
-			KeReleaseSpinLockFast(&DeviceListLock);
+			KeReleaseSpinLock(&DeviceListLock);
 		}
 		IoUnlockDevice(DeviceObject);
 		return ret;
