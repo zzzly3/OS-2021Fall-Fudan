@@ -540,6 +540,7 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
     switch (IOReq->Type)
     {
         case IOREQ_TYPE_INSTALL:
+            puts("install!");
             sdInit();
             set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
             IoUpdateRequest(DeviceObject, IOReq, STATUS_SUCCESS);
@@ -580,6 +581,7 @@ USR_ONLY void sd_init() {
      * Initialize the lock and request queue if any.
      * Remember to call sd_init() at somewhere.
      */
+    ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
     static struct buf b;
     // sdInit();
     // set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
