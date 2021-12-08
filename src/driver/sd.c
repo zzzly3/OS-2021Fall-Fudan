@@ -519,11 +519,11 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
     switch (IOReq->Type)
     {
         case IOREQ_TYPE_READ:
-            puts("read");
+            // puts("read");
             sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
             break;
         case IOREQ_TYPE_WRITE:
-            puts("write");
+            // puts("write");
             sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
             break;
         default:
@@ -541,7 +541,7 @@ void sd_read_ready(PIOREQ_OBJECT IOReq)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
     }
-    puts("read ok");
+    // puts("read ok");
 }
 
 USR_ONLY void sd_init() {
@@ -584,7 +584,7 @@ static void sd_delayus(u32 c) {
 
 /* Start the request for b. Caller must hold sdlock. */
 static void sd_start(int bno, int write, u32* intbuf) {
-    printf("sd_start %d %d %p\n", bno, write, intbuf);
+    // printf("sd_start %d %d %p\n", bno, write, intbuf);
     // Address is different depending on the card type.
     // HC pass address as block #.
     // SC pass address straight through.
@@ -647,18 +647,18 @@ void sd_intr() {
     int ival = (int)*EMMC_INTERRUPT;
     if (ival & INT_ERROR_MASK)
         PANIC("SD card error! EMMC_INTERRUPT=0x%x", ival);
-    printf("sd_intr %x\n", ival);
+    // printf("sd_intr %x\n", ival);
     PIOREQ_OBJECT req = (PIOREQ_OBJECT)SDDevice.DeviceStorage;
     if (req != NULL)
     {
         if ((req->Type == IOREQ_TYPE_READ) && (ival & INT_READ_RDY))
         {
             assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
-            puts("read ready");
+            // puts("read ready");
         }
         else if (ival & INT_DATA_DONE)
         {
-            puts("done");
+            // puts("done");
             SDDevice.DeviceStorage = NULL;
             IoUpdateRequest(&SDDevice, req, STATUS_COMPLETED);
         }
@@ -795,7 +795,7 @@ static int sdWaitForInterrupt(unsigned int mask) {
         sd_delayus(1);
     ival = (int)(*EMMC_INTERRUPT);
     // FIXME: Comment this message out
-    printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
+    // printf("- sd intr 0x%x cost %d loops\n", mask, 1000000 - count);
 
     // Check for success.
     if (count <= 0 || (ival & INT_CMD_TIMEOUT) || (ival & INT_DATA_TIMEOUT)) {
