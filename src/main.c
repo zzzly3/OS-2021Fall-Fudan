@@ -78,7 +78,6 @@ NORETURN void main() {
 #include <def.h>
 #include <core/console.h>
 #include <core/container.h>
-#include <driver/sd.h>
 
 void sys_switch_test();
 void sys_transfer_test();
