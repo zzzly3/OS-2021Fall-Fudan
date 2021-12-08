@@ -562,8 +562,10 @@ USR_ONLY void sd_init() {
     set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
 
     // NOTE: A response time test!
+    puts("write");
     sd_start(0, 1, b.data);
     sdWaitForInterrupt(INT_DATA_DONE);
+    puts("read");
     sd_start(0, 0, b.data);
     sdWaitForInterrupt(INT_READ_RDY);
     KeBugFault(BUG_STOP);
