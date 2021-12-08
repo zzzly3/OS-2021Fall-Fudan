@@ -536,17 +536,12 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 
 void sd_read_ready(PIOREQ_OBJECT IOReq)
 {
-    BOOL te = arch_disable_trap();
     // puts("do read");
     for (int i = 0; i < IOReq->Size / 4; i++)
     {
         ((int*)IOReq->Buffer)[i] = *EMMC_DATA;
     }
     puts("read ok");
-    assert(sdWaitForInterrupt(INT_DATA_DONE) == SD_OK);
-    SDDevice.DeviceStorage = NULL;
-    IoUpdateRequest(&SDDevice, IOReq, STATUS_COMPLETED);
-    if (te) arch_enable_trap();
 }
 
 USR_ONLY void sd_init() {
@@ -656,22 +651,16 @@ void sd_intr() {
     PIOREQ_OBJECT req = (PIOREQ_OBJECT)SDDevice.DeviceStorage;
     if (req != NULL)
     {
-        if (req->Type == IOREQ_TYPE_READ)
+        if ((req->Type == IOREQ_TYPE_READ) && (ival & INT_READ_RDY))
         {
-            if (ival & INT_READ_RDY)
-            {
-                assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
-                puts("read ready");
-            }
+            assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
+            puts("read ready");
         }
-        else if (req->Type == IOREQ_TYPE_WRITE)
+        else if (ival & INT_DATA_DONE)
         {
-            if (ival & INT_DATA_DONE)
-            {
-                puts("write ok");
-                IoUpdateRequest(&SDDevice, req, STATUS_COMPLETED);
-                SDDevice.DeviceStorage = NULL;
-            }
+            puts("done");
+            SDDevice.DeviceStorage = NULL;
+            IoUpdateRequest(&SDDevice, req, STATUS_COMPLETED);
         }
     }
     *EMMC_INTERRUPT = ival;
