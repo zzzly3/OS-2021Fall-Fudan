@@ -540,7 +540,7 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
     switch (IOReq->Type)
     {
         case IOREQ_TYPE_INSTALL:
-            puts("install!");
+            // puts("install!");
             sdInit();
             set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
             IoUpdateRequest(DeviceObject, IOReq, STATUS_SUCCESS);
@@ -587,7 +587,7 @@ USR_ONLY void sd_init() {
     // set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
     IoInitializeDevice(&SDDevice);
-    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0;
+    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0 | DEVICE_FLAG_DYNAMIC;
     SDDevice.DeviceName = &SDDeviceName;
     SDDevice.IOHandler = sd_request_handler;
     SDDevice.DeviceStorage = NULL;
