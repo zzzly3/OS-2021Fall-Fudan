@@ -539,6 +539,11 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
     BOOL te = arch_disable_trap();
     switch (IOReq->Type)
     {
+        case IOREQ_TYPE_INSTALL:
+            sdInit();
+            set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
+            IoUpdateRequest(DeviceObject, IOReq, STATUS_SUCCESS);
+            break;
         case IOREQ_TYPE_READ:
             // puts("read");
             sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
@@ -548,9 +553,10 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
                 if (sd_test_interrupt(INT_DATA_DONE))
                 {
                     IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
-                    goto end;
+                    break;
                 }
             }
+            DeviceObject->DeviceStorage = (PVOID)IOReq;
             break;
         case IOREQ_TYPE_WRITE:
             // puts("write");
@@ -558,15 +564,14 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
             if (sd_test_interrupt(INT_DATA_DONE))
             {
                 IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
-                goto end;
+                break;
             }
+            DeviceObject->DeviceStorage = (PVOID)IOReq;
             break;
         default:
             IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
-            goto end;
+            break;
     }
-    DeviceObject->DeviceStorage = (PVOID)IOReq;
-end:
     if (te) arch_enable_trap();
 }
 
@@ -576,16 +581,13 @@ USR_ONLY void sd_init() {
      * Remember to call sd_init() at somewhere.
      */
     static struct buf b;
-    BOOL te = arch_disable_trap();
-    sdInit();
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
     IoInitializeDevice(&SDDevice);
-    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0;
+    SDDevice.Flags |= DEVICE_FLAG_BINDCPU0 | DEVICE_FLAG_DYNAMIC;
     SDDevice.DeviceName = &SDDeviceName;
     SDDevice.IOHandler = sd_request_handler;
     SDDevice.DeviceStorage = NULL;
     asserts(KSUCCESS(IoRegisterDevice(&SDDevice)), "unable to create sd_card device");
-    set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
 
     // NOTE: A response time test!
     // puts("write");
@@ -600,8 +602,6 @@ USR_ONLY void sd_init() {
     // }
     // sdWaitForInterrupt(INT_DATA_DONE);
     // KeBugFault(BUG_STOP);
-
-    if (te) arch_enable_trap();
 
     /*
      * Read and parse 1st block (MBR) and collect whatever

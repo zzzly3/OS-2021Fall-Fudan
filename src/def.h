@@ -37,7 +37,7 @@ static inline void system_init()
 	// Per CPU operations
 	ASSERT(ObInitializeProcessManager(), BUG_STOP);
 	arch_enable_trap();
-	if (cpuid() == CPU_NUM - 1)
+	if (cpuid() == START_CPU)
 		create_system_process();
 	// uart_put_char('h');
 }
