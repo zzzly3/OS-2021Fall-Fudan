@@ -531,6 +531,14 @@ void sd_read_ready(PIOREQ_OBJECT IOReq)
     // puts("read ok");
 }
 
+void sd_write_ready(PIOREQ_OBJECT IOReq)
+{
+    for (int i = 0; i < IOReq->Size / 4; i++)
+    {
+        *EMMC_DATA = ((int*)IOReq->Buffer)[i];
+    }
+}
+
 void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 {
     if (DeviceObject != &SDDevice)
@@ -539,6 +547,11 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
         return;
     }
     if (IOReq->Flags & IOREQ_FLAG_NONBLOCK)
+    {
+        IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
+        return;
+    }
+    if (IOReq->Size & 3)
     {
         IoUpdateRequest(DeviceObject, IOReq, STATUS_UNSUPPORTED);
         return;
@@ -569,10 +582,14 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
         case IOREQ_TYPE_WRITE:
             // puts("write");
             sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
-            if (sd_test_interrupt(INT_DATA_DONE))
+            if (sd_test_interrupt(INT_WRITE_RDY))
             {
-                IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
-                break;
+                sd_write_ready(IOReq);
+                if (sd_test_interrupt(INT_DATA_DONE))
+                {
+                    IoUpdateRequest(DeviceObject, IOReq, STATUS_COMPLETED);
+                    break;
+                }
             }
             DeviceObject->DeviceStorage = (PVOID)IOReq;
             break;
@@ -667,16 +684,16 @@ static void sd_start(int bno, int write, u32* intbuf) {
     // u32 *intbuf = (u32 *)b->data;
     asserts((((i64)intbuf) & 0x03) == 0, "Only support word-aligned buffers. ");
 
-    if (write) {
-        // Wait for ready interrupt for the next block.
-        if ((resp = sdWaitForInterrupt(INT_WRITE_RDY))) {
-            PANIC("* EMMC ERROR: Timeout waiting for ready to write\n");
-            // return sdDebugResponse(resp);
-        }
-        asserts(!*EMMC_INTERRUPT, "%d ", *EMMC_INTERRUPT);
-        while (done < 128)
-            *EMMC_DATA = intbuf[done++];
-    }
+    // if (write) {
+    //     // Wait for ready interrupt for the next block.
+    //     if ((resp = sdWaitForInterrupt(INT_WRITE_RDY))) {
+    //         PANIC("* EMMC ERROR: Timeout waiting for ready to write\n");
+    //         // return sdDebugResponse(resp);
+    //     }
+    //     asserts(!*EMMC_INTERRUPT, "%d ", *EMMC_INTERRUPT);
+    //     while (done < 128)
+    //         *EMMC_DATA = intbuf[done++];
+    // }
 }
 
 /* The interrupt handler. */
@@ -710,6 +727,10 @@ void sd_intr() {
         {
             assert(KeCreateDpc((PDPC_ROUTINE)sd_read_ready, (ULONG64)req));
             // puts("read ready");
+        }
+        else if ((req->Type == IOREQ_TYPE_WRITE) && (ival & INT_WRITE_RDY))
+        {
+            assert(KeCreateDpc((PDPC_ROUTINE)sd_write_ready, (ULONG64)req));
         }
         else if (ival & INT_DATA_DONE)
         {
