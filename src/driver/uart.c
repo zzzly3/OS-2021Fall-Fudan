@@ -56,3 +56,8 @@ void uart_intr() {
         if ((stat & 6) == 4)
             printf("%c", get32(AUX_MU_IO_REG) & 0xFF);
 }
+
+BOOL uart_valid_char(const char c)
+{
+    return c != 0xff;
+}

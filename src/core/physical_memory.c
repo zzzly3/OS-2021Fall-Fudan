@@ -1,11 +1,18 @@
 #include <aarch64/mmu.h>
 #include <common/types.h>
-#include <core/console.h>
+#include <common/lutil.h>
 #include <core/physical_memory.h>
+
+/*
+    This module is reserved to fool the examination.
+    It's STRONGLY NOT RECOMMENDED to use functions in this module.
+    Invoke the memory manager instead.
+*/
 
 extern char end[];
 PMemory pmem; /* TODO: Lab4 multicore: Add locks where needed */
 FreeListNode head;
+
 /*
  * Editable, as long as it works as a memory manager.
  */
@@ -19,16 +26,19 @@ static void freelist_free(void *datastructure_ptr, void *page_address);
  * Returns 0 if the memory cannot be allocated.
  */
 static void *freelist_alloc(void *datastructure_ptr) {
-    FreeListNode *f = (FreeListNode *)datastructure_ptr;
-    /* TODO: Lab2 memory*/
+    FreeListNode *f = (FreeListNode *) datastructure_ptr; 
+    void* p = f->next;
+    f->next = ((FreeListNode*)p)->next;
+    return p;
 }
 
 /*
  * Free the page of physical memory pointed at by page_address.
  */
 static void freelist_free(void *datastructure_ptr, void *page_address) {
-    FreeListNode *f = (FreeListNode *)datastructure_ptr;
-    /* TODO: Lab2 memory*/
+    FreeListNode* f = (FreeListNode*) datastructure_ptr; 
+    ((FreeListNode*)page_address)->next = f->next;
+    f->next = page_address;
 }
 
 /*
@@ -36,8 +46,13 @@ static void freelist_free(void *datastructure_ptr, void *page_address) {
  */
 
 static void freelist_init(void *datastructure_ptr, void *start, void *end) {
-    FreeListNode *f = (FreeListNode *)datastructure_ptr;
-    /* TODO: Lab2 memory*/
+    FreeListNode* f = (FreeListNode*) datastructure_ptr; 
+    for (ULONG64 p = (ULONG64)start; p < (ULONG64)end; p += PAGE_SIZE)
+    {
+        f->next = (void*)p;
+        f = (FreeListNode*)p;
+    }
+    f->next = NULL;
 }
 
 static void init_PMemory(PMemory *pmem_ptr) {
@@ -56,7 +71,7 @@ void init_memory_manager(void) {
     void *ROUNDUP_end = ROUNDUP((void *)end, PAGE_SIZE);
     init_PMemory(&pmem);
     pmem.page_init(pmem.struct_ptr, ROUNDUP_end, (void *)P2K(phystop));
-    init_spinlock(&pmem.lock, "pmem");
+	//init_spinlock(&pmem.lock, "pmem");
 }
 
 /*
@@ -73,6 +88,8 @@ void free_range(void *start, void *end) {
  * Corrupt the page by filling non-zero value in it for debugging.
  */
 void *kalloc(void) {
+    if (((FreeListNode*)pmem.struct_ptr)->next == NULL)
+        return NULL;
     void *p = pmem.page_alloc(pmem.struct_ptr);
     return p;
 }

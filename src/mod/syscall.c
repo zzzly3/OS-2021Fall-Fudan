@@ -1,0 +1,21 @@
+#include <mod/syscall.h>
+
+extern BOOL KeBugFaultFlag;
+
+void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
+{
+	if (KeBugFaultFlag) for(arch_disable_trap();;);
+	arch_enable_trap();
+	ULONG64 callno = TrapFrame->x8;
+	ULONG64 arg1 = TrapFrame->x0;
+	ULONG64 arg2 = TrapFrame->x1;
+	switch (callno)
+	{
+		case SYS_myexecve: sys_myexecve((char*)arg1); break; // UNSAFE!!!
+		case SYS_myexit: sys_myexit(); break;
+		case SYS_myprint: sys_myprint(arg1); break;
+	}
+	// Fault if EL mismatching
+	KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+	KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+}
