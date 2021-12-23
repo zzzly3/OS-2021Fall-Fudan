@@ -165,7 +165,7 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
-    if (block->node.prev == block->node.next) 
+    if (block->node.prev == &block->node) 
     {
         #ifdef UPDATE_API
             BOOL te = arch_disable_trap();
