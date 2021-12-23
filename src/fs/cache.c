@@ -10,6 +10,7 @@
 #include <fs/cache.h>
 #include <ob/mem.h>
 #include <ob/mutex.h>
+#include <aarch64/arm.h>
 
 static const SuperBlock *sblock;
 static const BlockDevice *device;
@@ -104,6 +105,9 @@ static usize get_num_cached_blocks() {
 USR_ONLY
 static Block *cache_acquire(usize block_no) {
     // TODO
+    int flag = 0;
+    if (block_no > 100000000)
+        block_no -= 100000000, flag = 1;
 begin:
     acquire_spinlock(&lock);
     ListNode* p = head.next;
@@ -113,7 +117,7 @@ begin:
         b = container_of(p, Block, node);
         if (b->block_no == block_no)
         {
-            if (b->acquired)
+            if (b->acquired || (!flag && b->pinned))
             {
                 release_spinlock(&lock);
                 goto begin;
@@ -251,7 +255,7 @@ static void cache_end_op(OpContext *ctx) {
     acquire_spinlock(&ctx->lock);
     Block* b[OP_MAX_NUM_BLOCKS];
     for (int i = 0; i < ctx->log.num_blocks; i++)
-        b[i] = cache_acquire(ctx->log.block_no[i]);
+        b[i] = cache_acquire(ctx->log.block_no[i] + 100000000);
     acquire_spinlock(&lock);
     for (int i = 0; i < ctx->log.num_blocks; i++)
         device->write(sblock->log_start + i + 1, b[i]->data);
