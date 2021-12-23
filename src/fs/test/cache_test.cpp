@@ -65,7 +65,7 @@ void test_loop_read() {
     for (usize round = 0; round < num_rounds; round++) {
         std::vector<Block *> p;
         p.resize(sblock.num_blocks);
-printf("%d\n",round);
+printf("%d %d\n",round, sblock.num_blocks);
         for (usize i = 0; i < sblock.num_blocks; i++) {
             p[i] = bcache.acquire(i);
             assert_eq(p[i]->block_no, i);
