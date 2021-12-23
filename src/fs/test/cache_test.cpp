@@ -894,14 +894,14 @@ int main() {
         {"concurrent_acquire", concurrent::test_acquire},
         {"concurrent_sync", concurrent::test_sync},
         {"concurrent_alloc", concurrent::test_alloc},
-
+{"banker", crash::test_banker},
         {"simple_crash", crash::test_simple_crash},
         {"single", [] { crash::test_parallel(1000, 1, 5, 0); }},
         {"parallel_1", [] { crash::test_parallel(1000, 2, 5, 0); }},
         {"parallel_2", [] { crash::test_parallel(1000, 4, 5, 0); }},
         {"parallel_3", [] { crash::test_parallel(500, 4, 10, 1); }},
         {"parallel_4", [] { crash::test_parallel(500, 4, 10, 2 * OP_MAX_NUM_BLOCKS); }},
-        {"banker", crash::test_banker},
+        
     };
     Runner(tests).run();
 

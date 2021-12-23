@@ -169,10 +169,10 @@ begin:
     cache_cnt++;
 acquire:
     b->acquired = true;
-    release_spinlock(&lock);
     #ifndef UPDATE_API
         acquire_sleeplock(&b->lock);
     #endif
+    release_spinlock(&lock);
     return b;
 }
 
@@ -180,10 +180,10 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
+    acquire_spinlock(&lock);
     #ifndef UPDATE_API
         release_sleeplock(&block->lock);
     #endif
-    acquire_spinlock(&lock);
     if (block->node.prev == &block->node) 
     {
         #ifdef UPDATE_API
@@ -211,14 +211,18 @@ static void cache_begin_op(OpContext *ctx) {
     // #else
     //     acquire_sleeplock(&atomic_lock);
     // #endif
+    acquire_spinlock(&lock);
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
+    init_spinlock(&ctx->lock);
+    release_spinlock(&lock);
 }
 
 // see `cache.h`.
 static void cache_sync(OpContext *ctx, Block *block) {
     if (ctx) {
         // TODO
+        acquire_spinlock(&ctx->lock);
         acquire_spinlock(&lock);
         for (int i = 0; i < ctx->log.num_blocks; i++)
         {
@@ -231,6 +235,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
         ctx->log.block_no[ctx->log.num_blocks++] = block->block_no;
     ret:
         release_spinlock(&lock);
+        release_spinlock(&ctx->lock);
     } else
         device_write(block);
 }
@@ -239,6 +244,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
 USR_ONLY
 static void cache_end_op(OpContext *ctx) {
     // TODO
+    acquire_spinlock(&ctx->lock);
     Block* b[OP_MAX_NUM_BLOCKS];
     for (int i = 0; i < ctx->log.num_blocks; i++)
         b[i] = cache_acquire(ctx->log.block_no[i]);
@@ -257,6 +263,7 @@ static void cache_end_op(OpContext *ctx) {
     release_spinlock(&lock);
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
+    release_spinlock(&ctx->lock);
     // #ifdef UPDATE_API
     //     KeSetMutexSignaled(&atomic_lock);
     // #else

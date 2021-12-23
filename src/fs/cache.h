@@ -33,6 +33,7 @@ typedef struct {
 // see `begin_op` and `end_op`.
 typedef struct {
     usize ts;  // the timestamp/identifier allocated by `begin_op`.
+    SpinLock lock;
     LogHeader log;
     // hint: you may want to add something else here.
 } OpContext;
