@@ -120,6 +120,7 @@ begin:
             }
             detach_from_list(p);
             merge_list(&head, p);
+            cache_cnt--;
             goto acquire;
         }
         p = p->next;
