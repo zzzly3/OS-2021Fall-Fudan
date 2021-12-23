@@ -213,7 +213,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
         acquire_spinlock(&lock);
         block->pinned = true;
         release_spinlock(&lock);
-        if (header.num_blocks >= LOG_MAX_SIZE)
+        if (header.num_blocks + 1 >= LOG_MAX_SIZE)
             PANIC("Log limit exceeded (LLE).");
         header.block_no[header.num_blocks++] = block->block_no;
     } else
