@@ -110,6 +110,7 @@ static Block *cache_acquire(usize block_no) {
         b = container_of(p, Block, node);
         while (p != &head)
         {
+            printf("%p %p\n", p, &head);
             if (!b->pinned)
             {
                 detach_from_list(&b->node);
