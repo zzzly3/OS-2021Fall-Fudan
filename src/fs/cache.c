@@ -238,6 +238,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
                 goto cache;
             }
             merge_list(&head, &block->node);
+            cache_cnt++;
         }
         block->pinned = true;
         release_spinlock(&lock);
