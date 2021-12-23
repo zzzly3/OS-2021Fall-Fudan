@@ -53,7 +53,7 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     // TODO
     #ifdef UPDATE_API
         BOOL te = arch_disable_trap();
-        MmInitializeObjectPool(&BlockPool, sizeof(Inode));
+        MmInitializeObjectPool(&BlockPool, sizeof(Block));
         if (te) arch_enable_trap();
     #else
         ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
