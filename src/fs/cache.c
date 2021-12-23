@@ -9,10 +9,15 @@
 static const SuperBlock *sblock;
 static const BlockDevice *device;
 
+static int cache_cnt;
 static SpinLock lock;     // protects block cache.
 static Arena arena;       // memory pool for `Block` struct.
 static ListNode head;     // the list of all allocated in-memory block.
 static LogHeader header;  // in-memory copy of log header block.
+static SleepLock atomic_lock;
+#ifdef UPDATE_API
+    static OBJECT_POOL BlockPool;
+#endif
 
 // hint: you may need some other variables. Just add them here.
 
@@ -42,6 +47,19 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     device = _device;
 
     // TODO
+    #ifdef UPDATE_API
+        BOOL te = arch_disable_trap();
+        MmInitializeObjectPool(&InodePool, sizeof(Inode));
+        if (te) arch_enable_trap();
+    #else
+        ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
+        init_arena(&arena, sizeof(Block), allocator);
+    #endif
+    read_header();
+    init_spinlock(&lock);
+    init_block_device();
+    init_list_node(&head);
+    init_sleeplock(&atomic_lock, "ctx");
 }
 
 // initialize a block struct.
@@ -59,27 +77,81 @@ static void init_block(Block *block) {
 // see `cache.h`.
 static usize get_num_cached_blocks() {
     // TODO
+    return cache_cnt;
 }
 
 // see `cache.h`.
 static Block *cache_acquire(usize block_no) {
     // TODO
+    acquire_spinlock(&lock);
+    ListNode* p = head.next;
+    Block* b = NULL;
+    while (p != &head)
+    {
+        b = container_of(p, Block, node);
+        if (b->block_no == block_no)
+            goto acquire;
+        p = p->next;
+    }
+    if (cache_cnt >= EVICTION_THRESHOLD)
+    {
+        p = head.prev;
+        b = container_of(p, Block, node);
+        while (p != &head)
+        {
+            if (!b->pinned)
+            {
+                detach_from_list(&b->node);
+                free_object(b);
+                cache_cnt--;
+                break;
+            }
+        }
+        p = p->prev;
+    }
+    if (cache_cnt >= EVICTION_THRESHOLD)
+        PANIC("Cache limit exceeded (CLE).");
+    b = alloc_object(&arena);
+    init_block(b);
+    b->block_no = block_no;
+    device_read(b);
+    b->valid = true;
+    merge_list(&head, &b->node);
+acquire:
+    b->acquired = true;
+    acquire_sleeplock(&b->lock);
+    return b;
 }
 
 // see `cache.h`.
 static void cache_release(Block *block) {
     // TODO
+    block->acquired = false;
+    release_sleeplock(&block->lock);
+    release_spinlock(&lock);
 }
 
 // see `cache.h`.
 static void cache_begin_op(OpContext *ctx) {
     // TODO
+    static int funny = 0;
+    acquire_sleeplock(&atomic_lock);
+    ctx->ts = ++funny;
 }
 
 // see `cache.h`.
 static void cache_sync(OpContext *ctx, Block *block) {
     if (ctx) {
         // TODO
+        block->pinned = true;
+        for (int i = 0; i < header.num_blocks; i++)
+        {
+            if (header.block_no[i] == block->block_no)
+                return;
+        }
+        if (header.num_blocks >= LOG_MAX_SIZE)
+            PANIC("Log limit exceeded (LLE).");
+        header.block_no[header.num_blocks++] = block->block_no;
     } else
         device_write(block);
 }
@@ -87,20 +159,58 @@ static void cache_sync(OpContext *ctx, Block *block) {
 // see `cache.h`.
 static void cache_end_op(OpContext *ctx) {
     // TODO
+    for (int i = 0; i < header.num_blocks; i++)
+    {
+        Block* b = cache_acquire(header.block_no[i]);
+        device->write(sblock->log_start + i + 1, b->data);
+        cache_release(b);
+    }
+    write_header();
+    for (int i = 0; i < header.num_blocks; i++)
+    {
+        Block* b = cache_acquire(header.block_no[i]);
+        device_write(b);
+        b->pinned = false;
+        cache_release(b);
+    }
+    header.num_blocks = 0;
+    release_sleeplock(&atomic_lock);
 }
 
 // see `cache.h`.
 // hint: you can use `cache_acquire`/`cache_sync` to read/write blocks.
 static usize cache_alloc(OpContext *ctx) {
     // TODO
-
+    Block* b = cache_acquire(sblock->bitmap_start);
+    int p = 0;
+    for (int i = 0; i < BLOCK_SIZE; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            int mask = 1 << j;
+            if ((b->data[i] & mask) == 0)
+            {
+                b->data[i] |= mask;
+                p = i * 8 + j;
+                goto alloc;
+            }
+        }
+    }
     PANIC("cache_alloc: no free block");
+alloc:
+    cache_sync(ctx, b);
+    cache_release(b);
+    return p;
 }
 
 // see `cache.h`.
 // hint: you can use `cache_acquire`/`cache_sync` to read/write blocks.
 static void cache_free(OpContext *ctx, usize block_no) {
     // TODO
+    Block* b = cache_acquire(sblock->bitmap_start);
+    b->data[block_no / 8] &= ~(1 << (block_no % 8));
+    cache_sync(ctx, b);
+    cache_release(b);
 }
 
 BlockCache bcache = {
