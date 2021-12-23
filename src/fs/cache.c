@@ -70,6 +70,16 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     #else
         init_sleeplock(&atomic_lock, "ctx");
     #endif
+    for (int i = 0; i < header.num_blocks; i++)
+    {
+        Block b;
+        b.block_no = sblock->log_start + i + 1;
+        device_read(&b);
+        b.block_no = header.block_no[i];
+        device_write(&b);
+    }
+    header.num_blocks = 0;
+    write_header();
 }
 
 // initialize a block struct.
