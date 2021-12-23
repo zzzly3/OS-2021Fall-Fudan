@@ -205,17 +205,17 @@ static void cache_begin_op(OpContext *ctx) {
 static void cache_sync(OpContext *ctx, Block *block) {
     if (ctx) {
         // TODO
-        for (int i = 0; i < header.num_blocks; i++)
+        for (int i = 0; i < ctx->log.num_blocks; i++)
         {
-            if (header.block_no[i] == block->block_no)
+            if (ctx->log.block_no[i] == block->block_no)
                 return;
         }
         acquire_spinlock(&lock);
         block->pinned = true;
         release_spinlock(&lock);
-        if (header.num_blocks >= OP_MAX_NUM_BLOCKS)
+        if (ctx->log.num_blocks >= OP_MAX_NUM_BLOCKS)
             PANIC("Log limit exceeded (LLE).");
-        header.block_no[header.num_blocks++] = block->block_no;
+        ctx->log.block_no[ctx->log.num_blocks++] = block->block_no;
     } else
         device_write(block);
 }
@@ -223,12 +223,14 @@ static void cache_sync(OpContext *ctx, Block *block) {
 // see `cache.h`.
 static void cache_end_op(OpContext *ctx) {
     // TODO
-    for (int i = 0; i < header.num_blocks; i++)
+    acquire_spinlock(&lock);
+    for (int i = 0; i < ctx->log.num_blocks; i++)
     {
-        Block* b = cache_acquire(header.block_no[i]);
+        Block* b = cache_acquire(ctx->log.block_no[i]);
         device->write(sblock->log_start + i + 1, b->data);
         cache_release(b);
     }
+    memcpy(&header, &ctx->log, sizeof(LogHeader));
     write_header();
     for (int i = 0; i < header.num_blocks; i++)
     {
@@ -238,6 +240,8 @@ static void cache_end_op(OpContext *ctx) {
         cache_release(b);
     }
     header.num_blocks = 0;
+    write_header();
+    release_spinlock(&lock);
     // #ifdef UPDATE_API
     //     KeSetMutexSignaled(&atomic_lock);
     // #else
