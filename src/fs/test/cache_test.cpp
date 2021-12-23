@@ -65,11 +65,11 @@ void test_loop_read() {
     for (usize round = 0; round < num_rounds; round++) {
         std::vector<Block *> p;
         p.resize(sblock.num_blocks);
-printf("%d %d\n",round, sblock.num_blocks);
+// printf("%d %d\n",round, sblock.num_blocks);
         for (usize i = 0; i < sblock.num_blocks; i++) {
             p[i] = bcache.acquire(i);
             assert_eq(p[i]->block_no, i);
-printf("\t%d\n",i);
+// printf("\t%d\n",i);
             auto *d = mock.inspect(i);
             for (usize j = 0; j < BLOCK_SIZE; j++) {
                 assert_eq(p[i]->data[j], d[j]);

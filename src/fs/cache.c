@@ -123,8 +123,8 @@ static Block *cache_acquire(usize block_no) {
                 cache_cnt--;
                 break;
             }
+            p = p->prev;
         }
-        p = p->prev;
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
         PANIC("Cache limit exceeded (CLE).");
