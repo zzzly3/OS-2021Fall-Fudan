@@ -110,6 +110,7 @@ static Block *cache_acquire(usize block_no) {
         b = container_of(p, Block, node);
         while (p != &head)
         {
+            printf("0");
             if (!b->pinned)
             {
                 printf("1");
@@ -127,6 +128,7 @@ static Block *cache_acquire(usize block_no) {
                 break;
             }
             p = p->prev;
+            printf("1");
         }
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
