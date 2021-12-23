@@ -142,6 +142,7 @@ static Block *cache_acquire(usize block_no) {
     merge_list(&head, &b->node);
 acquire:
     b->acquired = true;
+    release_spinlock(&lock);
     #ifndef UPDATE_API
         acquire_sleeplock(&b->lock);
     #endif
@@ -152,11 +153,12 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
+    acquire_spinlock(&lock);
     block->acquired = false;
+    release_spinlock(&lock);
     #ifndef UPDATE_API
         release_sleeplock(&block->lock);
     #endif
-    release_spinlock(&lock);
 }
 
 // see `cache.h`.
