@@ -279,8 +279,11 @@ static usize cache_alloc(OpContext *ctx) {
             }
         }
     }
+panic:
     PANIC("cache_alloc: no free block");
 alloc:
+    if (p >= sblock->num_blocks)
+        goto panic;
     cache_sync(ctx, b);
     cache_release(b);
     b = cache_acquire(p);
