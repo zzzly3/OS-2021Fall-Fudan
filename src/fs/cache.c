@@ -216,17 +216,17 @@ static void cache_begin_op(OpContext *ctx) {
 static void cache_sync(OpContext *ctx, Block *block) {
     if (ctx) {
         // TODO
+        acquire_spinlock(&lock);
         for (int i = 0; i < ctx->log.num_blocks; i++)
         {
             if (ctx->log.block_no[i] == block->block_no)
                 return;
         }
-        acquire_spinlock(&lock);
         block->pinned = true;
-        release_spinlock(&lock);
         if (ctx->log.num_blocks >= OP_MAX_NUM_BLOCKS)
             PANIC("Log limit exceeded (LLE).");
         ctx->log.block_no[ctx->log.num_blocks++] = block->block_no;
+        release_spinlock(&lock);
     } else
         device_write(block);
 }
