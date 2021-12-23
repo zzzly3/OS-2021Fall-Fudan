@@ -108,6 +108,8 @@ begin:
                 release_spinlock(&lock);
                 goto begin;
             }
+            detach_from_list(p);
+            merge_list(&head, p);
             goto acquire;
         }
         p = p->next;
