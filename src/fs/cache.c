@@ -212,22 +212,11 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    while (current_op != NULL)
-    {
-        u64 freq = get_clock_frequency();
-        u64 end = get_timestamp(), now;
-        end += freq * 100;
-        do {
-            now = get_timestamp();
-        } while (now <= end);
-        break;
-    }
-    // #ifdef UPDATE_API
-    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    // #else
-    //     acquire_sleeplock(&atomic_lock);
-    // #endif
-    current_op = ctx;
+    #ifdef UPDATE_API
+        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    #else
+        acquire_sleeplock(&atomic_lock);
+    #endif
     acquire_spinlock(&lock);
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
@@ -281,12 +270,11 @@ static void cache_end_op(OpContext *ctx) {
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
     release_spinlock(&ctx->lock);
-    current_op = NULL;
-    // #ifdef UPDATE_API
-    //     KeSetMutexSignaled(&atomic_lock);
-    // #else
-    //     release_sleeplock(&atomic_lock);
-    // #endif
+    #ifdef UPDATE_API
+        KeSetMutexSignaled(&atomic_lock);
+    #else
+        release_sleeplock(&atomic_lock);
+    #endif
 }
 
 // see `cache.h`.
