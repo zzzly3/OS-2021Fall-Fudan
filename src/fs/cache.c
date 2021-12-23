@@ -283,6 +283,10 @@ static usize cache_alloc(OpContext *ctx) {
 alloc:
     cache_sync(ctx, b);
     cache_release(b);
+    b = cache_acquire(p);
+    memset(b->data, 0, BLOCK_SIZE);
+    cache_sync(ctx, b);
+    cache_release(b);
     return p;
 }
 
