@@ -150,7 +150,10 @@ begin:
         }
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
-        PANIC("Cache limit exceeded (CLE).");
+    {
+        release_spinlock(&lock);
+        goto begin;
+    }
     #ifdef UPDATE_API
         BOOL te = arch_disable_trap();
         b = (Block*) MmAllocateObject(&BlockPool);
