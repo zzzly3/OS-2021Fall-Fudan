@@ -140,6 +140,7 @@ static Block *cache_acquire(usize block_no) {
     device_read(b);
     b->valid = true;
     merge_list(&head, &b->node);
+    cache_cnt++;
 acquire:
     b->acquired = true;
     release_spinlock(&lock);
