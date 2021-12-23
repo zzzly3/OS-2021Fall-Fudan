@@ -10,7 +10,7 @@
 #include <fs/cache.h>
 #include <ob/mem.h>
 #include <ob/mutex.h>
-#include <aarch64/arm.h>
+#include <aarch64/intrinsic.h>
 
 static const SuperBlock *sblock;
 static const BlockDevice *device;
@@ -20,6 +20,7 @@ static SpinLock lock;     // protects block cache.
 static Arena arena;       // memory pool for `Block` struct.
 static ListNode head;     // the list of all allocated in-memory block.
 static LogHeader header;  // in-memory copy of log header block.
+static OpContext* current_op;
 #ifdef UPDATE_API
     static OBJECT_POOL BlockPool;
     static MUTEX atomic_lock;
@@ -105,9 +106,6 @@ static usize get_num_cached_blocks() {
 USR_ONLY
 static Block *cache_acquire(usize block_no) {
     // TODO
-    int flag = 0;
-    if (block_no > 100000000)
-        block_no -= 100000000, flag = 1;
 begin:
     acquire_spinlock(&lock);
     ListNode* p = head.next;
@@ -117,7 +115,7 @@ begin:
         b = container_of(p, Block, node);
         if (b->block_no == block_no)
         {
-            if (b->acquired || (!flag && b->pinned))
+            if (b->acquired)
             {
                 release_spinlock(&lock);
                 goto begin;
@@ -214,11 +212,21 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    // #ifdef UPDATE_API
-    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    // #else
-    //     acquire_sleeplock(&atomic_lock);
-    // #endif
+    while (current_op != NULL)
+    {
+        u64 freq = get_clock_frequency();
+        u64 end = get_timestamp(), now;
+        end += freq * 100;
+        do {
+            now = get_timestamp();
+        } while (now <= end);
+    }
+    #ifdef UPDATE_API
+        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    #else
+        acquire_sleeplock(&atomic_lock);
+    #endif
+    current_op = ctx;
     acquire_spinlock(&lock);
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
@@ -255,7 +263,7 @@ static void cache_end_op(OpContext *ctx) {
     acquire_spinlock(&ctx->lock);
     Block* b[OP_MAX_NUM_BLOCKS];
     for (int i = 0; i < ctx->log.num_blocks; i++)
-        b[i] = cache_acquire(ctx->log.block_no[i] + 100000000);
+        b[i] = cache_acquire(ctx->log.block_no[i]);
     acquire_spinlock(&lock);
     for (int i = 0; i < ctx->log.num_blocks; i++)
         device->write(sblock->log_start + i + 1, b[i]->data);
@@ -272,11 +280,12 @@ static void cache_end_op(OpContext *ctx) {
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
     release_spinlock(&ctx->lock);
-    // #ifdef UPDATE_API
-    //     KeSetMutexSignaled(&atomic_lock);
-    // #else
-    //     release_sleeplock(&atomic_lock);
-    // #endif
+    ctx = NULL;
+    #ifdef UPDATE_API
+        KeSetMutexSignaled(&atomic_lock);
+    #else
+        release_sleeplock(&atomic_lock);
+    #endif
 }
 
 // see `cache.h`.
