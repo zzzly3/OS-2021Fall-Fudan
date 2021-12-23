@@ -280,7 +280,7 @@ static void cache_end_op(OpContext *ctx) {
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
     release_spinlock(&ctx->lock);
-    ctx = NULL;
+    current_op = NULL;
     #ifdef UPDATE_API
         KeSetMutexSignaled(&atomic_lock);
     #else

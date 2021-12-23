@@ -876,7 +876,7 @@ void test_banker() {
 }  // namespace crash
 
 int main() {
-    std::vector<Testcase> tests = {{"banker", crash::test_banker},
+    std::vector<Testcase> tests = {
         {"init", basic::test_init},
         {"read_write", basic::test_read_write},
         {"loop_read", basic::test_loop_read},
@@ -894,7 +894,7 @@ int main() {
         {"concurrent_acquire", concurrent::test_acquire},
         {"concurrent_sync", concurrent::test_sync},
         {"concurrent_alloc", concurrent::test_alloc},
-
+{"banker", crash::test_banker},
         {"simple_crash", crash::test_simple_crash},
         {"single", [] { crash::test_parallel(1000, 1, 5, 0); }},
         {"parallel_1", [] { crash::test_parallel(1000, 2, 5, 0); }},
