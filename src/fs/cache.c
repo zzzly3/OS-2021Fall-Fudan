@@ -94,6 +94,7 @@ static usize get_num_cached_blocks() {
 USR_ONLY
 static Block *cache_acquire(usize block_no) {
     // TODO
+begin:
     acquire_spinlock(&lock);
     ListNode* p = head.next;
     Block* b = NULL;
@@ -101,7 +102,14 @@ static Block *cache_acquire(usize block_no) {
     {
         b = container_of(p, Block, node);
         if (b->block_no == block_no)
+        {
+            if (b->acquired)
+            {
+                release_spinlock(&lock);
+                goto begin;
+            }
             goto acquire;
+        }
         p = p->next;
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
@@ -110,25 +118,23 @@ static Block *cache_acquire(usize block_no) {
         b = container_of(p, Block, node);
         while (p != &head)
         {
-            printf("0");
             if (!b->pinned)
             {
-                printf("1");
                 detach_from_list(&b->node);
-                printf("2");
-                #ifdef UPDATE_API
-                    BOOL te = arch_disable_trap();
-                    MmFreeObject(&BlockPool, b);
-                    if (te) arch_enable_trap();
-                #else
-                    free_object(b);
-                #endif
-                printf("3");
+                if (!b->acquired)
+                {
+                    #ifdef UPDATE_API
+                        BOOL te = arch_disable_trap();
+                        MmFreeObject(&BlockPool, b);
+                        if (te) arch_enable_trap();
+                    #else
+                        free_object(b);
+                    #endif
+                }
                 cache_cnt--;
                 break;
             }
             p = p->prev;
-            printf("1");
         }
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
@@ -140,14 +146,11 @@ static Block *cache_acquire(usize block_no) {
     #else
         b = (Block*) alloc_object(&arena);
     #endif
-    printf("4");
     init_block(b);
     b->block_no = block_no;
     device_read(b);
-    printf("5");
     b->valid = true;
     merge_list(&head, &b->node);
-    printf("6");
     cache_cnt++;
 acquire:
     b->acquired = true;
@@ -155,7 +158,6 @@ acquire:
     #ifndef UPDATE_API
         acquire_sleeplock(&b->lock);
     #endif
-    printf("7");
     return b;
 }
 
@@ -163,12 +165,25 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
-    acquire_spinlock(&lock);
-    block->acquired = false;
-    release_spinlock(&lock);
-    #ifndef UPDATE_API
-        release_sleeplock(&block->lock);
-    #endif
+    if (block->node.prev == block->node.next) 
+    {
+        #ifdef UPDATE_API
+            BOOL te = arch_disable_trap();
+            MmFreeObject(&BlockPool, block);
+            if (te) arch_enable_trap();
+        #else
+            free_object(block);
+        #endif
+    }
+    else
+    {
+        #ifndef UPDATE_API
+            release_sleeplock(&block->lock);
+        #endif
+        acquire_spinlock(&lock);
+        block->acquired = false;
+        release_spinlock(&lock);
+    }
 }
 
 // see `cache.h`.
