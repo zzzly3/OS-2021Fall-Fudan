@@ -165,6 +165,9 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
+    #ifndef UPDATE_API
+        release_sleeplock(&block->lock);
+    #endif
     if (block->node.prev == &block->node) 
     {
         #ifdef UPDATE_API
@@ -177,9 +180,6 @@ static void cache_release(Block *block) {
     }
     else
     {
-        #ifndef UPDATE_API
-            release_sleeplock(&block->lock);
-        #endif
         acquire_spinlock(&lock);
         block->acquired = false;
         release_spinlock(&lock);
