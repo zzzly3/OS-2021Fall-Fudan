@@ -20,7 +20,7 @@ static SpinLock lock;     // protects block cache.
 static Arena arena;       // memory pool for `Block` struct.
 static ListNode head;     // the list of all allocated in-memory block.
 static LogHeader header;  // in-memory copy of log header block.
-static OpContext* current_op;
+static SleepLock ctx_lock;
 #ifdef UPDATE_API
     static OBJECT_POOL BlockPool;
     static MUTEX atomic_lock;
@@ -72,6 +72,7 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     #else
         init_sleeplock(&atomic_lock, "ctx");
     #endif
+        init_sleeplock(&ctx_lock, "ctx");
     for (int i = 0; i < header.num_blocks; i++)
     {
         Block b;
@@ -212,6 +213,8 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
+    acquire_sleeplock(&ctx_lock);
+    release_sleeplock(&ctx_lock);
     #ifdef UPDATE_API
         KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
     #else
