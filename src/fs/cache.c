@@ -179,12 +179,14 @@ static void cache_begin_op(OpContext *ctx) {
 static void cache_sync(OpContext *ctx, Block *block) {
     if (ctx) {
         // TODO
-        block->pinned = true;
         for (int i = 0; i < header.num_blocks; i++)
         {
             if (header.block_no[i] == block->block_no)
                 return;
         }
+        acquire_spinlock(&lock);
+        block->pinned = true;
+        release_spinlock(&lock);
         if (header.num_blocks >= LOG_MAX_SIZE)
             PANIC("Log limit exceeded (LLE).");
         header.block_no[header.num_blocks++] = block->block_no;
