@@ -221,27 +221,27 @@ static void cache_sync(OpContext *ctx, Block *block) {
 }
 
 // see `cache.h`.
+USR_ONLY
 static void cache_end_op(OpContext *ctx) {
     // TODO
+    Block* b[OP_MAX_NUM_BLOCKS];
+    for (int i = 0; i < ctx->log.num_blocks; i++)
+        b[i] = cache_acquire(ctx->log.block_no[i]);
     acquire_spinlock(&lock);
     for (int i = 0; i < ctx->log.num_blocks; i++)
-    {
-        Block* b = cache_acquire(ctx->log.block_no[i]);
-        device->write(sblock->log_start + i + 1, b->data);
-        cache_release(b);
-    }
+        device->write(sblock->log_start + i + 1, b[i]->data);
     memcpy(&header, &ctx->log, sizeof(LogHeader));
     write_header();
     for (int i = 0; i < header.num_blocks; i++)
     {
-        Block* b = cache_acquire(header.block_no[i]);
-        device_write(b);
-        b->pinned = false;
-        cache_release(b);
+        device_write(b[i]);
+        b[i]->pinned = false;
     }
     header.num_blocks = 0;
     write_header();
     release_spinlock(&lock);
+    for (int i = 0; i < ctx->log.num_blocks; i++)
+        cache_release(b[i]);
     // #ifdef UPDATE_API
     //     KeSetMutexSignaled(&atomic_lock);
     // #else
