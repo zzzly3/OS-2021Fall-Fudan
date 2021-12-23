@@ -5,6 +5,8 @@
 #include <core/physical_memory.h>
 #include <core/proc.h>
 #include <fs/cache.h>
+#include <ob/mem.h>
+#include <ob/mutex.h>
 
 static const SuperBlock *sblock;
 static const BlockDevice *device;
@@ -14,9 +16,11 @@ static SpinLock lock;     // protects block cache.
 static Arena arena;       // memory pool for `Block` struct.
 static ListNode head;     // the list of all allocated in-memory block.
 static LogHeader header;  // in-memory copy of log header block.
-static SleepLock atomic_lock;
 #ifdef UPDATE_API
     static OBJECT_POOL BlockPool;
+    static MUTEX atomic_lock;
+#else
+    static SleepLock atomic_lock;
 #endif
 
 // hint: you may need some other variables. Just add them here.
@@ -49,7 +53,7 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     // TODO
     #ifdef UPDATE_API
         BOOL te = arch_disable_trap();
-        MmInitializeObjectPool(&InodePool, sizeof(Inode));
+        MmInitializeObjectPool(&BlockPool, sizeof(Inode));
         if (te) arch_enable_trap();
     #else
         ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
@@ -59,7 +63,11 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     init_spinlock(&lock);
     init_block_device();
     init_list_node(&head);
-    init_sleeplock(&atomic_lock, "ctx");
+    #ifdef UPDATE_API
+        KeInitializeMutex(&atomic_lock);
+    #else
+        init_sleeplock(&atomic_lock, "ctx");
+    #endif
 }
 
 // initialize a block struct.
@@ -81,6 +89,7 @@ static usize get_num_cached_blocks() {
 }
 
 // see `cache.h`.
+USR_ONLY
 static Block *cache_acquire(usize block_no) {
     // TODO
     acquire_spinlock(&lock);
@@ -102,7 +111,13 @@ static Block *cache_acquire(usize block_no) {
             if (!b->pinned)
             {
                 detach_from_list(&b->node);
-                free_object(b);
+                #ifdef UPDATE_API
+                    BOOL te = arch_disable_trap();
+                    MmFreeObject(&BlockPool, b);
+                    if (te) arch_enable_trap();
+                #else
+                    free_object(b);
+                #endif
                 cache_cnt--;
                 break;
             }
@@ -111,7 +126,13 @@ static Block *cache_acquire(usize block_no) {
     }
     if (cache_cnt >= EVICTION_THRESHOLD)
         PANIC("Cache limit exceeded (CLE).");
-    b = alloc_object(&arena);
+    #ifdef UPDATE_API
+        BOOL te = arch_disable_trap();
+        b = (Block*) MmAllocateObject(&BlockPool);
+        if (te) arch_enable_trap();
+    #else
+        b = (Block*) alloc_object(&arena);
+    #endif
     init_block(b);
     b->block_no = block_no;
     device_read(b);
@@ -119,23 +140,33 @@ static Block *cache_acquire(usize block_no) {
     merge_list(&head, &b->node);
 acquire:
     b->acquired = true;
-    acquire_sleeplock(&b->lock);
+    #ifndef UPDATE_API
+        acquire_sleeplock(&b->lock);
+    #endif
     return b;
 }
 
 // see `cache.h`.
+USR_ONLY
 static void cache_release(Block *block) {
     // TODO
     block->acquired = false;
-    release_sleeplock(&block->lock);
+    #ifndef UPDATE_API
+        release_sleeplock(&block->lock);
+    #endif
     release_spinlock(&lock);
 }
 
 // see `cache.h`.
+USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    acquire_sleeplock(&atomic_lock);
+    #ifdef UPDATE_API
+        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    #else
+        acquire_sleeplock(&atomic_lock);
+    #endif
     ctx->ts = ++funny;
 }
 
@@ -174,7 +205,11 @@ static void cache_end_op(OpContext *ctx) {
         cache_release(b);
     }
     header.num_blocks = 0;
-    release_sleeplock(&atomic_lock);
+    #ifdef UPDATE_API
+        KeSetMutexSignaled(&atomic_lock);
+    #else
+        release_sleeplock(&atomic_lock);
+    #endif
 }
 
 // see `cache.h`.

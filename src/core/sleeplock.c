@@ -2,7 +2,7 @@
 #include <core/sleeplock.h>
 
 void init_sleeplock(SleepLock *lock, const char *name) {
-    init_spinlock(&lock->lock, name);
+    init_spinlock(&lock->lock);
     lock->locked = false;
 }
 

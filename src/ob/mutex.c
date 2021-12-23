@@ -58,6 +58,20 @@ BOOL KeTestMutexSignaled(PMUTEX Mutex, BOOL Reset)
 	return ret;
 }
 
+USR_ONLY KSTATUS KeUserWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset)
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	ASSERT(cur->ExecuteLevel == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
+	KSTATUS ret;
+try:
+	KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
+	ret = KeWaitForMutexSignaled(Mutex, Reset);
+	KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+	if (ret == STATUS_ALERTED)
+		goto try;
+	return ret;
+}
+
 APC_ONLY KSTATUS KeWaitForMutexSignaled(PMUTEX Mutex, BOOL Reset) // NOTE: Reset to 1(signaled)
 {
 	PKPROCESS cur = PsGetCurrentProcess();
