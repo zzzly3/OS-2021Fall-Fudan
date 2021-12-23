@@ -110,10 +110,11 @@ static Block *cache_acquire(usize block_no) {
         b = container_of(p, Block, node);
         while (p != &head)
         {
-            printf("%p %p\n", p, &head);
             if (!b->pinned)
             {
+                printf("1");
                 detach_from_list(&b->node);
+                printf("2");
                 #ifdef UPDATE_API
                     BOOL te = arch_disable_trap();
                     MmFreeObject(&BlockPool, b);
@@ -121,6 +122,7 @@ static Block *cache_acquire(usize block_no) {
                 #else
                     free_object(b);
                 #endif
+                printf("3");
                 cache_cnt--;
                 break;
             }
@@ -136,11 +138,14 @@ static Block *cache_acquire(usize block_no) {
     #else
         b = (Block*) alloc_object(&arena);
     #endif
+    printf("4");
     init_block(b);
     b->block_no = block_no;
     device_read(b);
+    printf("5");
     b->valid = true;
     merge_list(&head, &b->node);
+    printf("6");
     cache_cnt++;
 acquire:
     b->acquired = true;
@@ -148,6 +153,7 @@ acquire:
     #ifndef UPDATE_API
         acquire_sleeplock(&b->lock);
     #endif
+    printf("7");
     return b;
 }
 
