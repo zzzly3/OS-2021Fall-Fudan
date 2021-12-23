@@ -183,6 +183,7 @@ static void cache_release(Block *block) {
     #ifndef UPDATE_API
         release_sleeplock(&block->lock);
     #endif
+    acquire_spinlock(&lock);
     if (block->node.prev == &block->node) 
     {
         #ifdef UPDATE_API
@@ -195,10 +196,9 @@ static void cache_release(Block *block) {
     }
     else
     {
-        acquire_spinlock(&lock);
         block->acquired = false;
-        release_spinlock(&lock);
     }
+    release_spinlock(&lock);
 }
 
 // see `cache.h`.
