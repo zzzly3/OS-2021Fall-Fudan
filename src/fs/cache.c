@@ -220,12 +220,13 @@ static void cache_begin_op(OpContext *ctx) {
         do {
             now = get_timestamp();
         } while (now <= end);
+        break;
     }
-    #ifdef UPDATE_API
-        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    #else
-        acquire_sleeplock(&atomic_lock);
-    #endif
+    // #ifdef UPDATE_API
+    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    // #else
+    //     acquire_sleeplock(&atomic_lock);
+    // #endif
     current_op = ctx;
     acquire_spinlock(&lock);
     ctx->ts = ++funny;
@@ -281,11 +282,11 @@ static void cache_end_op(OpContext *ctx) {
         cache_release(b[i]);
     release_spinlock(&ctx->lock);
     current_op = NULL;
-    #ifdef UPDATE_API
-        KeSetMutexSignaled(&atomic_lock);
-    #else
-        release_sleeplock(&atomic_lock);
-    #endif
+    // #ifdef UPDATE_API
+    //     KeSetMutexSignaled(&atomic_lock);
+    // #else
+    //     release_sleeplock(&atomic_lock);
+    // #endif
 }
 
 // see `cache.h`.
