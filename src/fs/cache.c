@@ -1,3 +1,6 @@
+#ifndef UPDATE_API
+#define USE_LAGACY
+#endif
 #include <common/bitmap.h>
 #include <common/string.h>
 #include <core/arena.h>
