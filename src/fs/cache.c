@@ -124,36 +124,6 @@ begin:
         }
         p = p->next;
     }
-    if (cache_cnt >= EVICTION_THRESHOLD)
-    {
-        p = head.prev;
-        b = container_of(p, Block, node);
-        while (p != &head)
-        {
-            if (!b->pinned)
-            {
-                detach_from_list(&b->node);
-                if (!b->acquired)
-                {
-                    #ifdef UPDATE_API
-                        BOOL te = arch_disable_trap();
-                        MmFreeObject(&BlockPool, b);
-                        if (te) arch_enable_trap();
-                    #else
-                        free_object(b);
-                    #endif
-                }
-                cache_cnt--;
-                break;
-            }
-            p = p->prev;
-        }
-    }
-    if (cache_cnt >= EVICTION_THRESHOLD)
-    {
-        release_spinlock(&lock);
-        goto begin;
-    }
     #ifdef UPDATE_API
         BOOL te = arch_disable_trap();
         b = (Block*) MmAllocateObject(&BlockPool);
@@ -166,7 +136,6 @@ begin:
     device_read(b);
     b->valid = true;
     merge_list(&head, &b->node);
-    cache_cnt++;
 acquire:
     b->acquired = true;
     #ifndef UPDATE_API
@@ -180,23 +149,57 @@ acquire:
 USR_ONLY
 static void cache_release(Block *block) {
     // TODO
-    acquire_spinlock(&lock);
     #ifndef UPDATE_API
         release_sleeplock(&block->lock);
     #endif
-    if (block->node.prev == &block->node) 
+begin:
+    acquire_spinlock(&lock);
+    if (cache_cnt >= EVICTION_THRESHOLD)
     {
-        #ifdef UPDATE_API
-            BOOL te = arch_disable_trap();
-            MmFreeObject(&BlockPool, block);
-            if (te) arch_enable_trap();
-        #else
-            free_object(block);
-        #endif
+        ListNode* p = head.prev;
+        while (p != &head)
+        {
+            Block* b = container_of(p, Block, node);
+            if (!b->pinned && !b->acquired)
+            {
+                detach_from_list(&b->node);
+                #ifdef UPDATE_API
+                    BOOL te = arch_disable_trap();
+                    MmFreeObject(&BlockPool, b);
+                    if (te) arch_enable_trap();
+                #else
+                    free_object(b);
+                #endif
+                cache_cnt--;
+                break;
+            }
+            p = p->prev;
+        }
+    }
+    if (cache_cnt >= EVICTION_THRESHOLD)
+    {
+        if (!block->pinned)
+        {
+            block->acquired = false;
+            detach_from_list(&block->node);
+            #ifdef UPDATE_API
+                BOOL te = arch_disable_trap();
+                MmFreeObject(&BlockPool, block);
+                if (te) arch_enable_trap();
+            #else
+                free_object(block);
+            #endif
+        }
+        else
+        {
+            release_spinlock(&lock);
+            goto begin;
+        }
     }
     else
     {
         block->acquired = false;
+        cache_cnt++;
     }
     release_spinlock(&lock);
 }
@@ -206,11 +209,11 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    #ifdef UPDATE_API
-        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    #else
-        acquire_sleeplock(&atomic_lock);
-    #endif
+    // #ifdef UPDATE_API
+    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    // #else
+    //     acquire_sleeplock(&atomic_lock);
+    // #endif
     acquire_spinlock(&lock);
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
@@ -228,18 +231,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
             if (ctx->log.block_no[i] == block->block_no)
                 goto ret;
         }
-    cache:
         acquire_spinlock(&lock);
-        if (block->node.prev == &block->node)
-        {
-            if (cache_cnt >= EVICTION_THRESHOLD)
-            {
-                release_spinlock(&lock);
-                goto cache;
-            }
-            merge_list(&head, &block->node);
-            cache_cnt++;
-        }
         block->pinned = true;
         release_spinlock(&lock);
         if (ctx->log.num_blocks >= OP_MAX_NUM_BLOCKS)
@@ -275,11 +267,11 @@ static void cache_end_op(OpContext *ctx) {
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
     release_spinlock(&ctx->lock);
-    #ifdef UPDATE_API
-        KeSetMutexSignaled(&atomic_lock);
-    #else
-        release_sleeplock(&atomic_lock);
-    #endif
+    // #ifdef UPDATE_API
+    //     KeSetMutexSignaled(&atomic_lock);
+    // #else
+    //     release_sleeplock(&atomic_lock);
+    // #endif
 }
 
 // see `cache.h`.
