@@ -199,6 +199,7 @@ static void cache_begin_op(OpContext *ctx) {
     //     acquire_sleeplock(&atomic_lock);
     // #endif
     ctx->ts = ++funny;
+    ctx->log.num_blocks = 0;
 }
 
 // see `cache.h`.
