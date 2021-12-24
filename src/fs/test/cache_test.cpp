@@ -325,11 +325,11 @@ void test_global_absorption() {
             bcache.sync(&ctx[i], b);
             bcache.release(b);
         }
-        workers.emplace_back([&, i] { printf("w%d\n",i);bcache.end_op(&ctx[i]); });
+        workers.emplace_back([&, i] { bcache.end_op(&ctx[i]); });
     }
 
     workers.emplace_back([&] { bcache.end_op(&out); });
-printf("join\n");
+
     for (auto &worker : workers) {
         worker.join();
     }
@@ -876,7 +876,7 @@ void test_banker() {
 }  // namespace crash
 
 int main() {
-    std::vector<Testcase> tests = {        {"global_absorption", basic::test_global_absorption},
+    std::vector<Testcase> tests = {        {"banker", crash::test_banker},
         {"init", basic::test_init},
         {"read_write", basic::test_read_write},
         {"loop_read", basic::test_loop_read},
@@ -886,7 +886,7 @@ int main() {
         {"overflow", basic::test_overflow},
         {"resident", basic::test_resident},
         {"local_absorption", basic::test_local_absorption},
-
+        {"global_absorption", basic::test_global_absorption},
         {"replay", basic::test_replay},
         {"alloc", basic::test_alloc},
         {"alloc_free", basic::test_alloc_free},
@@ -901,7 +901,7 @@ int main() {
         {"parallel_2", [] { crash::test_parallel(1000, 4, 5, 0); }},
         {"parallel_3", [] { crash::test_parallel(500, 4, 10, 1); }},
         {"parallel_4", [] { crash::test_parallel(500, 4, 10, 2 * OP_MAX_NUM_BLOCKS); }},
-        {"banker", crash::test_banker},
+
         
     };
     Runner(tests).run();

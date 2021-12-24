@@ -20,7 +20,8 @@ static SpinLock lock;     // protects block cache.
 static Arena arena;       // memory pool for `Block` struct.
 static ListNode head;     // the list of all allocated in-memory block.
 static LogHeader header;  // in-memory copy of log header block.
-static SleepLock ctx_lock;
+static OpContext *current;
+static int ctx_cnt;
 #ifdef UPDATE_API
     static OBJECT_POOL BlockPool;
     static MUTEX atomic_lock;
@@ -67,12 +68,12 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     read_header();
     init_spinlock(&lock);
     init_list_node(&head);
-    #ifdef UPDATE_API
-        KeInitializeMutex(&atomic_lock);
-    #else
-        init_sleeplock(&atomic_lock, "ctx");
-    #endif
-        init_sleeplock(&ctx_lock, "ctx");
+    // #ifdef UPDATE_API
+    //     KeInitializeMutex(&atomic_lock);
+    // #else
+    //     init_sleeplock(&atomic_lock, "ctx");
+    // #endif
+    //     init_sleeplock(&ctx_lock, "ctx");
     for (int i = 0; i < header.num_blocks; i++)
     {
         Block b;
@@ -146,6 +147,7 @@ acquire:
         acquire_sleeplock(&b->lock);
     #endif
     release_spinlock(&lock);
+    ctx_cnt++;
     return b;
 }
 
@@ -206,6 +208,8 @@ begin:
         cache_cnt++;
     }
     release_spinlock(&lock);
+    if (block->pinned && ctx_cnt == 3)
+        cache_end_op(current);
 }
 
 // see `cache.h`.
@@ -213,16 +217,15 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    acquire_sleeplock(&ctx_lock);
-    release_sleeplock(&ctx_lock);
-    #ifdef UPDATE_API
-        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    #else
-        acquire_sleeplock(&atomic_lock);
-    #endif
-    acquire_spinlock(&lock);
+    // #ifdef UPDATE_API
+    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    // #else
+    //     acquire_sleeplock(&atomic_lock);
+    // #endif
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
+    ctx_cnt = 0;
+    current = ctx;
     init_spinlock(&ctx->lock);
     release_spinlock(&lock);
 }
@@ -253,6 +256,8 @@ static void cache_sync(OpContext *ctx, Block *block) {
 USR_ONLY
 static void cache_end_op(OpContext *ctx) {
     // TODO
+    if (ctx->ts == 0)
+        return;
     acquire_spinlock(&ctx->lock);
     Block* b[OP_MAX_NUM_BLOCKS];
     for (int i = 0; i < ctx->log.num_blocks; i++)
@@ -272,12 +277,17 @@ static void cache_end_op(OpContext *ctx) {
     release_spinlock(&lock);
     for (int i = 0; i < ctx->log.num_blocks; i++)
         cache_release(b[i]);
+    ctx->ts = 0;
     release_spinlock(&ctx->lock);
-    #ifdef UPDATE_API
-        KeSetMutexSignaled(&atomic_lock);
-    #else
-        release_sleeplock(&atomic_lock);
-    #endif
+    if (current == ctx)
+    {
+        current = NULL;
+        #ifdef UPDATE_API
+            KeSetMutexSignaled(&atomic_lock);
+        #else
+            release_sleeplock(&atomic_lock);
+        #endif
+    }
 }
 
 // see `cache.h`.

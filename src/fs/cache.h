@@ -23,6 +23,7 @@ typedef struct {
     ListNode node;
     bool acquired;  // is the block already acquired by some thread?
     bool pinned;    // if a block is pinned, it should not be evicted from the cache.
+    usize acquire;
 
     SleepLock lock;  // this lock protects `valid` and `data`.
     bool valid;      // is the content of block loaded from disk?
@@ -105,3 +106,5 @@ typedef struct BlockCache {
 extern BlockCache bcache;
 
 void init_bcache(const SuperBlock *sblock, const BlockDevice *device);
+static void cache_begin_op(OpContext *ctx);
+static void cache_end_op(OpContext *ctx);
