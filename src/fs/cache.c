@@ -208,8 +208,6 @@ begin:
         cache_cnt++;
     }
     release_spinlock(&lock);
-    if (block->pinned && ctx_cnt == 3)
-        cache_end_op(current);
 }
 
 // see `cache.h`.
@@ -217,11 +215,18 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
+    for (int i = 0; i < 100000000; i++)
+        if (current == NULL || ctx_cnt != 3)
+            goto a;
+    cache_end_op(current);
     #ifdef UPDATE_API
         KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
     #else
         acquire_sleeplock(&atomic_lock);
     #endif
+    goto b;
+    a:acquire_sleeplock(&atomic_lock);
+    b:acquire_spinlock(&lock);
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
     ctx_cnt = 0;
@@ -256,7 +261,7 @@ static void cache_sync(OpContext *ctx, Block *block) {
 USR_ONLY
 static void cache_end_op(OpContext *ctx) {
     // TODO
-    if (ctx->ts == 0)
+    if (!ctx || ctx->ts == 0)
         return;
     acquire_spinlock(&ctx->lock);
     Block* b[OP_MAX_NUM_BLOCKS];
