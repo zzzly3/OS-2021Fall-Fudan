@@ -217,11 +217,11 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    // #ifdef UPDATE_API
-    //     KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
-    // #else
-    //     acquire_sleeplock(&atomic_lock);
-    // #endif
+    #ifdef UPDATE_API
+        KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
+    #else
+        acquire_sleeplock(&atomic_lock);
+    #endif
     ctx->ts = ++funny;
     ctx->log.num_blocks = 0;
     ctx_cnt = 0;
