@@ -216,7 +216,7 @@ static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
     for (int i = 0; i < 100000000; i++)
-        if (current == NULL || ctx_cnt != 3)
+        if (current == NULL)
             goto a;
     cache_end_op(current);
     #ifdef UPDATE_API
