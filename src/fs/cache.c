@@ -68,11 +68,11 @@ void init_bcache(const SuperBlock *_sblock, const BlockDevice *_device) {
     read_header();
     init_spinlock(&lock);
     init_list_node(&head);
-    // #ifdef UPDATE_API
-    //     KeInitializeMutex(&atomic_lock);
-    // #else
-    //     init_sleeplock(&atomic_lock, "ctx");
-    // #endif
+    #ifdef UPDATE_API
+        KeInitializeMutex(&atomic_lock);
+    #else
+        init_sleeplock(&atomic_lock, "ctx");
+    #endif
     //     init_sleeplock(&ctx_lock, "ctx");
     for (int i = 0; i < header.num_blocks; i++)
     {
