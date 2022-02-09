@@ -215,10 +215,12 @@ USR_ONLY
 static void cache_begin_op(OpContext *ctx) {
     // TODO
     static int funny = 0;
-    for (int i = 0; i < 100000000; i++)
-        if (current == NULL)
-            goto a;
-    cache_end_op(current);
+    #ifndef UPDATE_API 
+        for (int i = 0; i < 100000000; i++)
+            if (current == NULL)
+                goto a;
+        cache_end_op(current);
+    #endif
     #ifdef UPDATE_API
         KeUserWaitForMutexSignaled(&atomic_lock, FALSE);
     #else
