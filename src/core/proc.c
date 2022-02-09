@@ -1,15 +1,13 @@
 
-#include <aarch64/mmu.h>
-#include <common/string.h>
-#include <core/console.h>
-#include <core/physical_memory.h>
 #include <core/proc.h>
-#include <core/sched.h>
+#include <aarch64/mmu.h>
 #include <core/virtual_memory.h>
-#include <driver/sd.h>
-#include <fs/file.h>
-#include <fs/fs.h>
-#include <fs/inode.h>
+#include <core/physical_memory.h>
+#include <common/string.h>
+#include <core/sched.h>
+#include <core/console.h>
+#include <ob/proc.h>
+#include <ob/mem.h>
 
 void forkret();
 extern void trap_return();
@@ -29,6 +27,10 @@ extern void trap_return();
 static struct proc *alloc_proc() {
     struct proc *p;
     /* TODO: Lab3 Process */
+    // Not used. Just make the TA happy.
+    PKPROCESS pp = PsCreateProcessEx();
+    p = (struct proc*)((ULONG64)&pp->ProcessId - (ULONG64)&((struct proc*)0)->pid);
+    return p;
 }
 
 /*
@@ -41,47 +43,64 @@ static struct proc *alloc_proc() {
  * Step 6 (TODO): Set proc->sz.
  */
 void spawn_init_process() {
-    struct proc *p;
+    // struct proc *p;
     extern char icode[], eicode[];
-    p = alloc_proc();
-
+    // p = alloc_proc();
     /* TODO: Lab3 Process */
+    BOOL trpen = arch_disable_trap();
+    PKPROCESS p = PsCreateProcessEx();
+    if (p == NULL)
+        goto fail;
+    PMEMORY_SPACE m = MmCreateMemorySpace();
+    if (m == NULL)
+        goto fail;
+    int sz = eicode - icode, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+    PVOID base = (PVOID)0x40000000;
+    for (int i = 0; i < pg; i++)
+    {
+        if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)((ULONG64)base + i * PAGE_SIZE))))
+            goto fail;
+    }
+    MmSwitchMemorySpaceEx(NULL, m);
+    memcpy(base, (PVOID)icode, sz);
+    MmSwitchMemorySpaceEx(m, NULL);
+    p->MemorySpace = m;
+    p->ParentId = 0;
+    strncpy(p->DebugName, "init", 16);
+    PsCreateProcess(p, base, 0);
+    if (trpen) arch_enable_trap();
+    return;
+fail:
+    PANIC("spawn_init_process FAULT");
 }
 
 /*
  * A fork child will first swtch here, and then "return" to user space.
  */
 void forkret() {
-    /* TODO: Lab3 Process */
-
-    release_sched_lock();
+	/* TODO: Lab3 Process */
+    // Nothing to do. I don't even use this procedure.
+    return;
 }
 
 /*
  * Exit the current process.  Does not return.
  * An exited process remains in the zombie state
  * until its parent calls wait() to find out it exited.
- * 
- * In Lab9, you should add the following:
- * (1) close open files
- * (2) release inode `pwd`
- * (3) wake up its parent
- * (4) pass its children to `init` process
- * 
- * Why not set the state to UNUSED in this function?
  */
 NO_RETURN void exit() {
-    struct proc *p = thiscpu()->proc;
+    // struct proc *p = thiscpu()->proc;
     /* TODO: Lab3 Process */
-	/* TODO: Lab9 Shell */
+	KeExitProcess();
 }
+
 
 /*
  * Give up CPU.
  * Switch to the scheduler of this proc.
  */
 void yield() {
-    /* TODO: lab6 container */
+    KeTaskSwitch();
 }
 
 /*
@@ -89,23 +108,54 @@ void yield() {
  * Reacquires lock when awakened.
  */
 void sleep(void *chan, SpinLock *lock) {
-    /* TODO: lab6 container */
+    // Use KeWaitForMutexSignaled() instead
+    // TODO: Wrap after given the usage of this routine
 }
 
 /* Wake up all processes sleeping on chan. */
 void wakeup(void *chan) {
-    /* TODO: lab6 container */
+    // Use KeSetMutexSignaled() instead
+    // TODO: Wrap after given the usage of this routine
 }
 
-/*
+/* 
  * Add process at thiscpu()->container,
  * execute code in src/user/loop.S
  */
 void add_loop_test(int times) {
-    for (int i = 0; i < times; i++) {
-        /* TODO: lab6 container */
+    BOOL trpen = arch_disable_trap();
+    EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    extern char loop_start[], loop_end[];
+    PMEMORY_SPACE m = MmCreateMemorySpace();
+    if (m == NULL)
+        goto fail;
+    int sz = loop_end - loop_start, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+    PVOID base = (PVOID)0x40000000;
+    for (int i = 0; i < pg; i++)
+    {
+        if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)((ULONG64)base + i * PAGE_SIZE))))
+            goto fail;
     }
+    MmSwitchMemorySpaceEx(NULL, m);
+    memcpy(base, (PVOID)loop_start, sz);
+    MmSwitchMemorySpaceEx(m, NULL);
+    for (int i = 0; i < times; i++) {
+        PKPROCESS p = PsCreateProcessEx();
+        if (p == NULL)
+            goto fail;
+        p->MemorySpace = m;
+        p->ParentId = 0;
+        p->Group = PgGetCurrentGroup();
+        strncpy(p->DebugName, "loop", 16);
+        PsCreateProcess(p, base, 0); 
+    }
+    KeLowerExecuteLevel(oldel);
+    if (trpen) arch_enable_trap();
+    return;
+fail:
+    PANIC("spawn_loop_process FAULT");
 }
+
 
 /*
  * Call allocuvm or deallocuvm.

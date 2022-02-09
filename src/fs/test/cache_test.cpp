@@ -902,6 +902,7 @@ int main() {
         {"parallel_3", [] { crash::test_parallel(500, 4, 10, 1); }},
         {"parallel_4", [] { crash::test_parallel(500, 4, 10, 2 * OP_MAX_NUM_BLOCKS); }},
         {"banker", crash::test_banker},
+        
     };
     Runner(tests).run();
 

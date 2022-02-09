@@ -52,8 +52,12 @@ void uart_put_char(char c) {
 }
 
 void uart_intr() {
-    /* for (int stat; !((stat = (int)get32(AUX_MU_IIR_REG)) & 1);)
+    for (int stat; !((stat = (int)get32(AUX_MU_IIR_REG)) & 1);)
         if ((stat & 6) == 4)
-            printf("%c", get32(AUX_MU_IO_REG) & 0xFF); */
-    console_intr(uart_get_char);
+            printf("%c", get32(AUX_MU_IO_REG) & 0xFF);
+}
+
+BOOL uart_valid_char(const char c)
+{
+    return c != 0xff;
 }

@@ -1,24 +1,15 @@
 #include <aarch64/intrinsic.h>
 #include <common/format.h>
+#define USE_LAGACY
+#include <core/console.h>
 #include <common/spinlock.h>
 #include <core/console.h>
-#include <core/proc.h>
-#include <core/sched.h>
-#include <driver/uart.h>
-#include <fs/inode.h>
-
-typedef struct {
-    SpinLock lock;
-    CharDevice device;
-} ConsoleContext;
-static SpinLock conslock;
 
 static ConsoleContext ctx;
 
 void init_console() {
-    init_spinlock(&ctx.lock, "console");
+    //init_spinlock(&ctx.lock, "console");
     init_uart_char_device(&ctx.device);
-    init_spinlock(&conslock, "conslock");
 }
 
 #define PANIC_BAR_CHAR   '='
@@ -102,6 +93,7 @@ NORETURN void _panic(const char *file, usize line, const char *fmt, ...) {
 
     no_return();
 }
+
 
 #define CONSOLE 1
 

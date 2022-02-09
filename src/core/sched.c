@@ -24,7 +24,7 @@ struct scheduler simple_scheduler = {.op = &simple_op};
 void swtch(struct context **, struct context *);
 
 static void init_sched_simple(struct scheduler *this) {
-    init_spinlock(&this->ptable.lock, "ptable");
+    init_spinlock(&this->ptable.lock);
 }
 
 static void acquire_ptable_lock(struct scheduler *this) {
