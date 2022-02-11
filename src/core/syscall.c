@@ -91,11 +91,12 @@ u64 syscall_dispatch(Trapframe *frame) {
 #endif
 /* Check if a block of memory lies within the process user space. */
 int in_user(void *s, usize n) {
-    struct proc *p = thiscpu()->proc;
-    if ((p->base <= (u64)s && (u64)s + n <= p->sz) ||
-        (USPACE_TOP - p->stksz <= (u64)s && (u64)s + n <= USPACE_TOP))
-        return 1;
-    return 0;
+    // TODO
+    // struct proc *p = thiscpu()->proc;
+    // if ((p->base <= (u64)s && (u64)s + n <= p->sz) ||
+    //     (USPACE_TOP - p->stksz <= (u64)s && (u64)s + n <= USPACE_TOP))
+    //     return 1;
+    // return 0;
 }
 
 /*
@@ -104,19 +105,20 @@ int in_user(void *s, usize n) {
  * Returns length of string, not including nul.
  */
 int fetchstr(u64 addr, char **pp) {
-    struct proc *p = thiscpu()->proc;
-    char *s;
-    *pp = s = (char *)addr;
-    if (p->base <= addr && addr < p->sz) {
-        for (; (u64)s < p->sz; s++)
-            if (*s == 0)
-                return s - *pp;
-    } else if (USPACE_TOP - p->stksz <= addr && addr < USPACE_TOP) {
-        for (; (u64)s < USPACE_TOP; s++)
-            if (*s == 0)
-                return s - *pp;
-    }
-    return -1;
+    // TODO
+    // struct proc *p = thiscpu()->proc;
+    // char *s;
+    // *pp = s = (char *)addr;
+    // if (p->base <= addr && addr < p->sz) {
+    //     for (; (u64)s < p->sz; s++)
+    //         if (*s == 0)
+    //             return s - *pp;
+    // } else if (USPACE_TOP - p->stksz <= addr && addr < USPACE_TOP) {
+    //     for (; (u64)s < USPACE_TOP; s++)
+    //         if (*s == 0)
+    //             return s - *pp;
+    // }
+    // return -1;
 }
 
 /*
@@ -125,15 +127,16 @@ int fetchstr(u64 addr, char **pp) {
  * now we support system calls with at most 6 parameters.
  */
 int argint(int n, int *ip) {
-    struct proc *proc = thiscpu()->proc;
-    if (n > 5) {
-        // warn("too many system call parameters");
-        return -1;
-    }
-    // set *ip to x[n] like:
-    // *ip = proc->tf->x[n];
+    // TODO
+    // struct proc *proc = thiscpu()->proc;
+    // if (n > 5) {
+    //     // warn("too many system call parameters");
+    //     return -1;
+    // }
+    // // set *ip to x[n] like:
+    // // *ip = proc->tf->x[n];
 
-    return 0;
+    // return 0;
 }
 
 /*
@@ -142,15 +145,16 @@ int argint(int n, int *ip) {
  * now we support system calls with at most 6 parameters.
  */
 int argu64(int n, u64 *ip) {
-    struct proc *proc = thiscpu()->proc;
-    if (n > 5) {
-        // warn("too many system call parameters");
-        return -1;
-    }
-	// set *ip to x[n] like:
-    // *ip = proc->tf->x[n];
+    // TODO
+ //    struct proc *proc = thiscpu()->proc;
+ //    if (n > 5) {
+ //        // warn("too many system call parameters");
+ //        return -1;
+ //    }
+	// // set *ip to x[n] like:
+ //    // *ip = proc->tf->x[n];
 
-    return 0;
+ //    return 0;
 }
 
 /*
@@ -159,16 +163,17 @@ int argu64(int n, u64 *ip) {
  * lies within the process address space.
  */
 int argptr(int n, char **pp, usize size) {
-    u64 i = 0;
-    if (argu64(n, &i) < 0) {
-        return -1;
-    }
-    if (in_user((void *)i, size)) {
-        *pp = (char *)i;
-        return 0;
-    } else {
-        return -1;
-    }
+    // TODO
+    // u64 i = 0;
+    // if (argu64(n, &i) < 0) {
+    //     return -1;
+    // }
+    // if (in_user((void *)i, size)) {
+    //     *pp = (char *)i;
+    //     return 0;
+    // } else {
+    //     return -1;
+    // }
 }
 
 /*
@@ -178,9 +183,10 @@ int argptr(int n, char **pp, usize size) {
  * between this check and being used by the kernel.)
  */
 int argstr(int n, char **pp) {
-    u64 addr = 0;
-    if (argu64(n, &addr) < 0)
-        return -1;
-    int r = fetchstr(addr, pp);
-    return r;
+    // TODO
+    // u64 addr = 0;
+    // if (argu64(n, &addr) < 0)
+    //     return -1;
+    // int r = fetchstr(addr, pp);
+    // return r;
 }
