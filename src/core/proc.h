@@ -18,7 +18,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 /* Stack must always be 16 bytes aligned. */
 struct context {
     /* TODO: Lab3 Process */
-    uint64_t reserved[16]; // See KPROCESS.Context
+    u64 reserved[16]; // See KPROCESS.Context
 };
 
 struct proc {

@@ -55,6 +55,7 @@ struct backcmd {
 int fork1(void);  // Fork but panics on failure.
 
 struct cmd *parsecmd(char *);
+void PANIC(const char *s);
 
 void *malloc1(size_t sz) {
 #define MAXN 10000
@@ -187,7 +188,7 @@ int main(int argc, char *argv[]) {
     }
 }
 
-void PANIC(char *s) {
+void PANIC(const char *s) {
     fprintf(stderr, "%s\n", s);
     exit(1);
 }

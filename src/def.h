@@ -42,6 +42,14 @@ static inline void system_init()
 	// uart_put_char('h');
 }
 
+#define putchar HalWriteConsoleChar
+void puts(const char*);
+void putstr(const char*);
+void putdec(const long long);
+void puthex(const long long);
+char getchar();
+int printf(const char*, ...);
+
 static inline void driver_init()
 {
 	// Initialize drivers & devices
@@ -51,13 +59,5 @@ static inline void driver_init()
 	sd_init();
 	puts("done.");
 }
-
-#define putchar HalWriteConsoleChar
-void puts(const char*);
-void putstr(const char*);
-void putdec(const long long);
-void puthex(const long long);
-char getchar();
-int printf(const char*, ...);
 
 #endif
