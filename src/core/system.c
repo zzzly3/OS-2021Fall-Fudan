@@ -6,6 +6,7 @@ void KeSystemEntry()
 	delay_us(500 * 1000); // Wait all cores to complete initializing
 
 	// test
+	arch_disable_trap();
 	PMEMORY_SPACE mem = MmCreateMemorySpace();
 	MmCreateUserPageEx(mem, 0);
 	MmSwitchMemorySpaceEx(NULL, mem);
