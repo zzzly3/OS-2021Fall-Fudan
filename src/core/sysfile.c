@@ -28,18 +28,19 @@ struct iovec {
  * and return both the descriptor and the corresponding struct file.
  */
 static int argfd(int n, i64 *pfd, struct file **pf) {
-    i32 fd;
-    struct file *f;
+    // TODO
+    // i32 fd;
+    // struct file *f;
 
-    if (argint(n, &fd) < 0)
-        return -1;
-    if (fd < 0 || fd >= NOFILE || (f = thiscpu()->proc->ofile[fd]) == 0)
-        return -1;
-    if (pfd)
-        *pfd = fd;
-    if (pf)
-        *pf = f;
-    return 0;
+    // if (argint(n, &fd) < 0)
+    //     return -1;
+    // if (fd < 0 || fd >= NOFILE || (f = thiscpu()->proc->ofile[fd]) == 0)
+    //     return -1;
+    // if (pfd)
+    //     *pfd = fd;
+    // if (pf)
+    //     *pf = f;
+    // return 0;
 }
 
 /*
