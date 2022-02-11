@@ -35,7 +35,7 @@ UNSAFE PVOID MmAllocatePhysicalPage()
 	PVOID p = kalloc();
 	if (p)
 	{
-		PhysicalPageInfoTable[P2N(K2P(p))].ReferenceCount = 1;
+		PhysicalPageInfoTable[P2N(K2P(p))].ShareCount = 1;
 		++AllocatedPagesCount;
 	}
 	KeReleaseSpinLockFast(&PhysicalPageListLock);
@@ -44,23 +44,23 @@ UNSAFE PVOID MmAllocatePhysicalPage()
 	return p;
 }
 
-UNSAFE BOOL MmReferencePhysicalPage(PVOID PageAddress)
-{
-	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
-	BOOL ret;
-	int ppn = P2N(K2P(PageAddress));
-	KeAcquireSpinLockFast(&PhysicalPageListLock);
-	if ((ret = (PhysicalPageInfoTable[ppn].ReferenceCount < OBJECT_MAX_REFERENCE)))
-		++PhysicalPageInfoTable[ppn].ReferenceCount;
-	KeReleaseSpinLockFast(&PhysicalPageListLock);
-	return ret;
-}
+// UNSAFE BOOL MmReferencePhysicalPage(PVOID PageAddress)
+// {
+// 	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
+// 	BOOL ret;
+// 	int ppn = P2N(K2P(PageAddress));
+// 	KeAcquireSpinLockFast(&PhysicalPageListLock);
+// 	if ((ret = (PhysicalPageInfoTable[ppn].ReferenceCount < OBJECT_MAX_REFERENCE)))
+// 		++PhysicalPageInfoTable[ppn].ReferenceCount;
+// 	KeReleaseSpinLockFast(&PhysicalPageListLock);
+// 	return ret;
+// }
 
 UNSAFE void MmFreePhysicalPage(PVOID PageAddress)
 {
 	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
 	KeAcquireSpinLockFast(&PhysicalPageListLock);
-	if (--PhysicalPageInfoTable[P2N(K2P(PageAddress))].ReferenceCount == 0)
+	if (--PhysicalPageInfoTable[P2N(K2P(PageAddress))].ShareCount == 0)
 	{
 		kfree(PageAddress);
 		--AllocatedPagesCount;
@@ -323,4 +323,57 @@ UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE ne
 		--oldMemorySpace->ActiveCount;
 		ObUnlockObjectFast(oldMemorySpace);
 	}
+}
+
+PPAGE_TABLE MmiDuplicateTable(PPAGE_TABLE PageTable, int Level)
+{
+	PPAGE_TABLE pt = (PPAGE_TABLE)MmAllocatePhysicalPage();
+	if (pt == NULL)
+		return NULL;
+	if (Level == 3)
+		KeAcquireSpinLockFast(&PhysicalPageListLock);
+	for (int i = 0; i < N_PTE_PER_TABLE; i++)
+	{
+		if (VALID_PTE(PageTable[i]))
+		{
+			if (Level < 3)
+			{
+				PPAGE_TABLE ptn = MmiDuplicateTable((PPAGE_TABLE)P2K(PTE_ADDRESS(PageTable[i])), Level + 1);
+				if (ptn == NULL)
+					goto fail;
+				pt[i] = K2P(ptn) + PTE_TABLE;
+			}
+			else
+			{
+				ULONG64 paddr = PTE_ADDRESS(PageTable[i]);
+				PhysicalPageInfoTable[P2N(paddr)].ShareCount++;
+				PageTable[i] |= PTE_RO;
+				pt[i] = PageTable[i];
+			}
+		}
+	}
+	if (Level == 3)
+		KeReleaseSpinLockFast(&PhysicalPageListLock);
+	return pt;
+fail:
+	MmiFreeTable(pt, Level);
+	return NULL;
+}
+
+UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE MemorySpace)
+{
+	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
+	PMEMORY_SPACE p = (PMEMORY_SPACE)MmAllocateObject(&MemorySpacePool);
+	if (p == NULL)
+		return NULL;
+	KeInitializeSpinLock(&p->Lock);
+	PPAGE_TABLE pt = MmiDuplicateTable(MemorySpace->PageTable, 0);
+	if (pt == NULL)
+	{
+		MmFreeObject(&MemorySpacePool, (PVOID)p);
+		return NULL;
+	}
+	p->PageTable = pt;
+	p->ttbr0 = K2P((ULONG64)pt);
+	return p;
 }

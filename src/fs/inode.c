@@ -15,6 +15,8 @@
 #include <core/physical_memory.h>
 #endif
 
+#include <sys/stat.h>
+
 // this lock mainly prevents concurrent access to inode list `head`, reference
 // count increment and decrement.
 static SpinLock lock;
@@ -411,8 +413,48 @@ static const char *skipelem(const char *path, char *name) {
  * Must be called inside a transaction since it calls iput().
  */
 static Inode *namex(const char *path, int nameiparent, char *name, OpContext *ctx) {
-	/* TODO: Lab9 Shell */
-	
+	 // TODO: Lab9 Shell 
+    const char * path2 = path, * path0 = path;
+	path = skipelem(path, name);
+    usize i = ROOT_INODE_NO;
+    Inode* in = inode_get(ROOT_INODE_NO);
+    if (path == 0)
+    {
+        name[0] = '/';
+        name[1] = '\0';
+        return in;
+    }
+    while (*path != '\0')
+    {
+        usize index;
+        i = inode_lookup(in, name, &index);
+        if (i == 0)
+            goto not_found;
+        inode_put(ctx, in);
+        in = inode_get(i);
+        path2 = path;
+        path = skipelem(path, name);
+    }
+    if (nameiparent)
+    {
+        strncpy_fast(name, path, 1024);
+        if (path2 == path0)
+        {
+            name[0] = '/';
+            name[1] = '\0';
+        }
+        else
+            name[path2 - path0 - 1] = '\0';
+        return in;
+    }
+    usize index;
+    i = inode_lookup(in, name, &index);
+    if (i == 0)
+        goto not_found;
+    inode_put(ctx, in);
+    return inode_get(i);
+not_found:
+    inode_put(ctx, in);
     return 0;
 }
 
@@ -439,6 +481,10 @@ void stati(Inode *ip, struct stat *st) {
         case INODE_DEVICE: st->st_mode = 0; break;
         default: PANIC("unexpected stat type %d. ", ip->entry.type);
     }
+
+    st->st_ino = ip->inode_no;
+    st->st_nlink = ip->entry.num_links;
+    st->st_size = ip->entry.num_bytes;
 }
 
 InodeTree inodes = {

@@ -81,7 +81,8 @@ void KiExceptionEntry(PTRAP_FRAME TrapFrame)
 		(PsGetCurrentProcess()->Flags & PROCESS_FLAG_KERNEL))
 	{
 		// Kernel exception
-
+		puts("Kernel exception!");
+		KeBugFault(BUG_PANIC);
 	}
 	else
 	{

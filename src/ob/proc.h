@@ -58,6 +58,7 @@ typedef struct _KPROCESS
 			// WARNING: Don't use 'd' or 'f' unless you are clear about what you are doing.
 		} KernelStack;
 	} Context;
+	char FileDescriptors[16];
 	char DebugName[16]; // DON'T access this directly, invoke PsGetDebugNameEx() instead.
 } KPROCESS, *PKPROCESS;
 

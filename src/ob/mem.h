@@ -32,20 +32,20 @@ typedef struct _MEMORY_SPACE
 	PPAGE_TABLE PageTable;
 } MEMORY_SPACE, *PMEMORY_SPACE;
 
-#define VALID_PTE(pte) ((pte & PTE_VALID) || (pte & VPTE_VALID))
-// Custom flags begin from bit[12] + bit[1]
-#define VPTE_VALID 1 // Different from PTE_VALID
-#define VPTE_XN (1 << 12) // PTE_HIGH_XN
-#define VPTE_AOU (1 << 13) // allocate-on-use
-typedef struct _VIRTUAL_PAGE
-{
-	ULONG Flags;
-	ULONG Id;
-} VIRTUAL_PAGE, *PVIRTUAL_PAGE;
+#define VALID_PTE(pte) (pte & PTE_VALID)
+// // Custom flags begin from bit[12] + bit[1]
+// #define VPTE_VALID 1 // Different from PTE_VALID
+// #define VPTE_XN (1 << 12) // PTE_HIGH_XN
+// #define VPTE_AOU (1 << 13) // allocate-on-use
+// typedef struct _VIRTUAL_PAGE
+// {
+// 	ULONG Flags;
+// 	ULONG Id;
+// } VIRTUAL_PAGE, *PVIRTUAL_PAGE;
 
 typedef struct _PHYSICAL_PAGE_INFO
 {
-	USHORT ReferenceCount;
+	USHORT ShareCount;
 } PHYSICAL_PAGE_INFO, *PPHYSICAL_PAGE_INFO;
 
 #define MmFlushTLB arch_tlbi_vmalle1is
@@ -64,5 +64,6 @@ UNSAFE KSTATUS MmUnmapPageEx(PMEMORY_SPACE, PVOID);
 UNSAFE void MmDestroyMemorySpace(PMEMORY_SPACE);
 UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE, PMEMORY_SPACE);
 UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE, PVOID);
+UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE);
 
 #endif

@@ -2,6 +2,8 @@
 #ifndef __LUTIL__
 #define __LUTIL__
 
+// #define UPDATE_API
+
 
 /// System parameters
 #define OBJECT_MAX_REFERENCE 32767

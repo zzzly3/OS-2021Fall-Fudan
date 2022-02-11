@@ -107,7 +107,6 @@ static usize get_num_cached_blocks() {
 // see `cache.h`.
 USR_ONLY
 static Block *cache_acquire(usize block_no) {
-    // TODO
 begin:
     acquire_spinlock(&lock);
     ListNode* p = head.next;

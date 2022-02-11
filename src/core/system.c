@@ -4,8 +4,21 @@ void KeSystemEntry()
 {
 	puts("System process created.");
 	delay_us(500 * 1000); // Wait all cores to complete initializing
-	driver_init();
-	sd_test();
+
+	// test
+	PMEMORY_SPACE mem = MmCreateMemorySpace();
+	MmCreateUserPageEx(mem, 0);
+	MmSwitchMemorySpaceEx(NULL, mem);
+	*(int*)0 = 123;
+	printf("%d\n", *(int*)0);
+	PMEMORY_SPACE mem2 = MmDuplicateMemorySpace(mem);
+	MmSwitchMemorySpaceEx(mem, mem2);
+	printf("%d\n", *(int*)0);
+	*(int*)0 = 233;
+	printf("%d\n", *(int*)0);
+
+	// driver_init();
+	// sd_test();
 }
 
 void create_system_process()
