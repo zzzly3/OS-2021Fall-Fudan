@@ -18,9 +18,10 @@ int sys_sigprocmask() {
     return 0;
 }
 int sys_default() {
+    // TODO
     do {
         // sys_yield();
-        printf("Unexpected syscall #%d\n", thiscpu()->proc->tf->x[8]);
+        // printf("Unexpected syscall #%d\n", thiscpu()->proc->tf->x[8]);
         // while (1)
         //             ;
     } while (0);
