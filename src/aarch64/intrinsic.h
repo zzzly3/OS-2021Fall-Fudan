@@ -112,6 +112,15 @@ static ALWAYS_INLINE void arch_set_ttbr1(u64 addr) {
     arch_tlbi_vmalle1is();
 }
 
+// read Fault Address Register
+static inline u64 arch_get_far() {
+    u64 result;
+    arch_fence();
+    asm volatile("mrs %[x], far_el1" : [x] "=r"(result));
+    arch_fence();
+    return result;
+}
+
 // read & set tid (may be used as a pointer?)
 // No need to add fence since added in arch_set_tid
 static inline u64 arch_get_tid() {

@@ -75,13 +75,56 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	while (1);
 }
 
+PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress);
+UNSAFE int MmUnsharePhysicalPage(PVOID PageAddress);
+BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
+{
+	if (((esr >> 2) & 31) == 0b10011) // Write Op & Permission Fault
+	{
+		ULONG64 far = arch_get_far();
+		PMEMORY_SPACE ms = PsGetCurrentProcess()->MemorySpace;
+		if (ms == NULL)
+			return FALSE;
+		ObLockObjectFast(ms);
+		PPAGE_ENTRY pe = MmiGetPageEntry(ms->PageTable, (PVOID)far);
+		if (pe == NULL)
+			goto end_cow;
+		if (!((*pe) & PTE_RO))
+			goto end_cow;
+		// copy on write
+		PVOID p0 = (PVOID)P2K(PTE_ADDRESS(*pe));
+		if (MmUnsharePhysicalPage(p0) == 1)
+		{
+			*pe = (*pe) & (ULONG64)~PTE_RO;
+		}
+		else
+		{
+			PVOID p1 = (PVOID)MmAllocatePhysicalPage();
+			if (p1 == NULL)
+				goto end_cow;
+			memcpy(p1, p0, PAGE_SIZE);
+			*pe = K2P(p1) | PTE_USER_DATA;
+		}
+		ObUnlockObjectFast(ms);
+		return TRUE;
+	end_cow:
+		ObUnlockObjectFast(ms);
+	}
+	return FALSE;
+}
+
 void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
+	printf("Exception: %p\n", esr);
+	if (((esr >> 26) & 31) == 0b00101) // EL0 & 1 Data Abort
+	{
+		if (KiMemoryFaultHandler(TrapFrame, esr))
+			return;
+	}
 	if ((TrapFrame->elr & (1ull << 63)) ||
 		(PsGetCurrentProcess()->Flags & PROCESS_FLAG_KERNEL))
 	{
 		// Kernel exception
-		printf("Kernel exception! esr=%p", esr);
 		KeBugFault(BUG_PANIC);
 	}
 	else

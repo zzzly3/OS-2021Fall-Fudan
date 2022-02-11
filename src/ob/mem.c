@@ -44,6 +44,17 @@ UNSAFE PVOID MmAllocatePhysicalPage()
 	return p;
 }
 
+UNSAFE int MmUnsharePhysicalPage(PVOID PageAddress)
+{
+	KeAcquireSpinLockFast(&PhysicalPageListLock);
+	int n = P2N(K2P(PageAddress));
+	int r = 1;
+	if (PhysicalPageInfoTable[n].ShareCount > 1)
+		r = PhysicalPageInfoTable[n].ShareCount--;
+	KeReleaseSpinLockFast(&PhysicalPageListLock);
+	return r;
+}
+
 // UNSAFE BOOL MmReferencePhysicalPage(PVOID PageAddress)
 // {
 // 	ASSERT(!arch_disable_trap(), BUG_UNSAFETRAP);
@@ -367,7 +378,9 @@ UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE MemorySpace)
 	if (p == NULL)
 		return NULL;
 	KeInitializeSpinLock(&p->Lock);
+	ObLockObjectFast(MemorySpace);
 	PPAGE_TABLE pt = MmiDuplicateTable(MemorySpace->PageTable, 0);
+	ObUnlockObjectFast(MemorySpace);
 	if (pt == NULL)
 	{
 		MmFreeObject(&MemorySpacePool, (PVOID)p);
