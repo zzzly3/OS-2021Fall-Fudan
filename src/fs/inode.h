@@ -1,5 +1,6 @@
 #pragma once
 
+#include <common/lutil.h>
 #include <common/list.h>
 #include <common/rc.h>
 #include <common/spinlock.h>
@@ -113,7 +114,7 @@ typedef struct InodeTree {
     void (*remove)(OpContext *ctx, Inode *inode, usize index);
 } InodeTree;
 
-extern InodeTree inodes;
+UNSAFE extern InodeTree inodes;
 
 UNSAFE void init_inodes(const SuperBlock *sblock, const BlockCache *cache);
 void stati(Inode *ip, struct stat *st);

@@ -288,28 +288,29 @@ int sys_mknodat() {
 }
 
 int sys_chdir() {
-    char *path;
-    Inode *ip;
-    struct proc *curproc = thiscpu()->proc;
+    // TODO
+    // char *path;
+    // Inode *ip;
+    // struct proc *curproc = thiscpu()->proc;
 
-    OpContext ctx;
-    bcache.begin_op(&ctx);
-    if (argstr(0, &path) < 0 || (ip = namei(path, &ctx)) == 0) {
-        bcache.end_op(&ctx);
-        return -1;
-    }
-    inodes.lock(ip);
-    if (ip->entry.type != INODE_DIRECTORY) {
-        inodes.unlock(ip);
-        inodes.put(&ctx, ip);
-        bcache.end_op(&ctx);
-        return -1;
-    }
-    inodes.unlock(ip);
-    inodes.put(&ctx, curproc->cwd);
-    bcache.end_op(&ctx);
-    curproc->cwd = ip;
-    return 0;
+    // OpContext ctx;
+    // bcache.begin_op(&ctx);
+    // if (argstr(0, &path) < 0 || (ip = namei(path, &ctx)) == 0) {
+    //     bcache.end_op(&ctx);
+    //     return -1;
+    // }
+    // inodes.lock(ip);
+    // if (ip->entry.type != INODE_DIRECTORY) {
+    //     inodes.unlock(ip);
+    //     inodes.put(&ctx, ip);
+    //     bcache.end_op(&ctx);
+    //     return -1;
+    // }
+    // inodes.unlock(ip);
+    // inodes.put(&ctx, curproc->cwd);
+    // bcache.end_op(&ctx);
+    // curproc->cwd = ip;
+    // return 0;
 }
 int execve(const char *path, char *const argv[], char *const envp[]);
 
