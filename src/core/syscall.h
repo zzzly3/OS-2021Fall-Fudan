@@ -2,6 +2,8 @@
 
 #include <core/syscallno.h>
 #include <core/trapframe.h>
+#include <fs/inode.h>
+#include <fs/cache.h>
 
 void sys_myexecve(char *s);
 NO_RETURN void sys_myexit();
