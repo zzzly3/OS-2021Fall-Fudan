@@ -6,7 +6,8 @@
 #include <sys/syscall.h>
 
 int sys_gettid() {
-    return thiscpu()->proc->pid;
+    // TODO
+    // return thiscpu()->proc->pid;
 }
 int sys_ioctl() {
 	/* TODO: Lab9 Shell */
