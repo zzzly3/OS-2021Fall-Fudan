@@ -9,11 +9,11 @@ void KeSystemEntry()
 	arch_disable_trap();
 	PMEMORY_SPACE mem = MmCreateMemorySpace();
 	MmCreateUserPageEx(mem, 0);
-	MmSwitchMemorySpaceEx(NULL, mem);
+	KeSwitchMemorySpace(mem);
 	*(int*)0 = 123;
 	printf("%d\n", *(int*)0);
 	PMEMORY_SPACE mem2 = MmDuplicateMemorySpace(mem);
-	MmSwitchMemorySpaceEx(mem, mem2);
+	KeSwitchMemorySpace(mem2);
 	printf("%d\n", *(int*)0);
 	*(int*)0 = 233;
 	printf("%d\n", *(int*)0);

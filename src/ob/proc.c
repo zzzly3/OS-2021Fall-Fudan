@@ -184,3 +184,14 @@ KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
 	KeLowerExecuteLevel(oldel);
 	return ret;
 }
+
+PMEMORY_SPACE KeSwitchMemorySpace(PMEMORY_SPACE MemorySpace)
+{
+	BOOL te = arch_disable_trap();
+	PKPROCESS cur = PsGetCurrentProcess();
+	PMEMORY_SPACE old = cur->MemorySpace;
+	MmSwitchMemorySpaceEx(old, MemorySpace);
+	cur->MemorySpace = MemorySpace;
+	if (te) arch_enable_trap();
+	return old;
+}

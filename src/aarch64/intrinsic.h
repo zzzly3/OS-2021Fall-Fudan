@@ -104,6 +104,14 @@ static ALWAYS_INLINE void arch_set_ttbr0(u64 addr) {
     asm volatile("msr ttbr0_el1, %[x]" : : [x] "r"(addr));
     arch_tlbi_vmalle1is();
 }
+// get
+static inline u64 arch_get_ttbr0() {
+    u64 result;
+    arch_fence();
+    asm volatile("mrs %[x], ttbr0_el1" : [x] "=r"(result));
+    arch_fence();
+    return result;
+}
 
 // set Translation Table Base Register 1 (EL1).
 static ALWAYS_INLINE void arch_set_ttbr1(u64 addr) {
