@@ -1,6 +1,7 @@
 #pragma once
 
-#include <bits/alltypes.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifndef _COMMON_TYPES_H_
 #define _COMMON_TYPES_H_
