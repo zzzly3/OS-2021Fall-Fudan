@@ -58,7 +58,7 @@ typedef u64 PTEntry;
 typedef PTEntry PTEntries[N_PTE_PER_TABLE];
 typedef PTEntry *PTEntriesPtr;
 
-#define VA_OFFSET(va) ((uint64_t)(va) & 0xFFF)
+#define VA_OFFSET(va) ((u64)(va) & 0xFFF)
 #define PTE_ADDRESS(pte)   ((pte) & ~0xFFFF000000000FFF)
 #define PTE_FLAGS(pte)  ((pte) & 0xFFFF000000000FFF)
 #define P2N(addr) (addr>>12)
