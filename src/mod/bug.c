@@ -75,13 +75,13 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	while (1);
 }
 
-void KiExceptionEntry(PTRAP_FRAME TrapFrame)
+void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
 	if ((TrapFrame->elr & (1ull << 63)) ||
 		(PsGetCurrentProcess()->Flags & PROCESS_FLAG_KERNEL))
 	{
 		// Kernel exception
-		puts("Kernel exception!");
+		printf("Kernel exception! esr=%p", esr);
 		KeBugFault(BUG_PANIC);
 	}
 	else

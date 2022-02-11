@@ -10,7 +10,7 @@
 #include <mod/syscall.h>
 #include <mod/bug.h>
 
-void KiExceptionEntry(PTRAP_FRAME);
+void KiExceptionEntry(PTRAP_FRAME, ULONG64);
 
 void init_trap() {
     extern char exception_vector[];
@@ -53,7 +53,7 @@ void trap_global_handler(Trapframe *frame) {
         default: {
             // TODO: should exit current process here.
             // exit(1);
-            KiExceptionEntry((PTRAP_FRAME)frame);
+            KiExceptionEntry((PTRAP_FRAME)frame, esr);
         }
     }
     /*
