@@ -1,19 +1,35 @@
 #include <def.h>
 
+void msgtest()
+{
+	printf("ahhh\n");
+}
+
 void KeSystemEntry()
 {
 	puts("System process created.");
 	delay_us(500 * 1000); // Wait all cores to complete initializing
 
+	int pid;
+	KeCreateProcess(NULL, msgtest, NULL, &pid);
+
+	// test message
+	for (;;)
+	{
+		PMESSAGE msg = KeUserWaitMessage(&PsGetCurrentProcess()->MessageQueue);
+		printf("msg %d %d\n", msg->Type, msg->Data);
+		KeFreeMessage(msg);
+	}
+
 	// test
-	arch_disable_trap();
-	PMEMORY_SPACE mem = MmCreateMemorySpace();
-	// MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
-	MmMapPageEx(mem, 0, 0);
-	KeSwitchMemorySpace(mem);
-	printf("a\n");
-	*(int*)0 = 123;
-	printf("%d\n", *(int*)0);
+	// arch_disable_trap();
+	// PMEMORY_SPACE mem = MmCreateMemorySpace();
+	// // MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
+	// MmMapPageEx(mem, 0, 0);
+	// KeSwitchMemorySpace(mem);
+	// printf("a\n");
+	// *(int*)0 = 123;
+	// printf("%d\n", *(int*)0);
 
 	// driver_init();
 	// sd_test();

@@ -131,7 +131,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->Flags |= PROCESS_FLAG_KERNEL;
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
-	p->Parent = KernelProcess[cpuid()];
+	p->Parent = PsGetCurrentProcess();
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
