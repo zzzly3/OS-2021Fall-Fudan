@@ -27,7 +27,7 @@ int sys_clone() {
         printf("sys_clone: flags other than SIGCHLD are not supported.\n");
         return -1;
     }
-    return fork();
+    // return fork();
 }
 
 int sys_wait4() {
