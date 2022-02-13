@@ -141,7 +141,7 @@ fail:
 void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
 	printf("Exception: %p\n", esr);
-	if (((esr >> 26) & 31) == 0b10010) // EL0 & 1 Data Abort
+	if (((esr >> 27) & 31) == 0b10010) // EL0 & 1 Data Abort
 	{
 		if (KiMemoryFaultHandler(TrapFrame, esr))
 			return;
