@@ -61,14 +61,26 @@ USR_ONLY PMESSAGE KeUserWaitMessage(PMESSAGE_QUEUE MessageQueue)
 {
 	if (!KSUCCESS(KeUserWaitForMutexSignaled(&MessageQueue->MsgSignal, FALSE)))
 		return NULL; // ???
-	BOOL te = arch_disable_trap();
-	ObLockObjectFast(MessageQueue);
+	ObLockObject(MessageQueue);
 	ASSERT(!LibTestListEmpty(&MessageQueue->MsgList), BUG_BADLOCK);
 	PMESSAGE msg = container_of(MessageQueue->MsgList.Backward, MESSAGE, MsgList);
 	LibRemoveListEntry(&msg->MsgList);
 	if (!LibTestListEmpty(&MessageQueue->MsgList))
 		KeSetMutexSignaled(&MessageQueue->MsgSignal);
-	ObUnlockObjectFast(MessageQueue);
-	if (te) arch_enable_trap();
+	ObUnlockObject(MessageQueue);
+	return msg;
+}
+
+PMESSAGE KeGetMessage(PMESSAGE_QUEUE MessageQueue)
+{
+	if (!KeTestMutexSignaled(&MessageQueue->MsgSignal, FALSE))
+		return NULL;
+	ObLockObject(MessageQueue);
+	ASSERT(!LibTestListEmpty(&MessageQueue->MsgList), BUG_BADLOCK);
+	PMESSAGE msg = container_of(MessageQueue->MsgList.Backward, MESSAGE, MsgList);
+	LibRemoveListEntry(&msg->MsgList);
+	if (!LibTestListEmpty(&MessageQueue->MsgList))
+		KeSetMutexSignaled(&MessageQueue->MsgSignal);
+	ObUnlockObject(MessageQueue);
 	return msg;
 }

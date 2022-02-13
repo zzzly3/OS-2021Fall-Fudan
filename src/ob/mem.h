@@ -65,5 +65,6 @@ UNSAFE void MmDestroyMemorySpace(PMEMORY_SPACE);
 UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE, PMEMORY_SPACE);
 UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE, PVOID);
 UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE);
+BOOL MmProbeRead(PVOID);
 
 #endif

@@ -65,6 +65,7 @@ PKPROCESS PsCreateProcessEx()
 	p->Group = NULL;
 	p->GroupWorker = NULL;
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
+	p->ChildCount = 0;
 	KeInitializeSpinLock(&p->Lock);
 	KeInitializeMessageQueue(&p->MessageQueue);
 	init_rc(&p->ReferenceCount);
@@ -125,6 +126,34 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	}
 }
 
+PKPROCESS PsiUpdateChildCount(PKPROCESS oldParent, PKPROCESS newParent)
+{
+	if (oldParent)
+	{
+		ObLockObjectFast(oldParent);
+		oldParent->ChildCount--;
+		ObUnlockObjectFast(oldParent);
+	}
+	if (newParent)
+	{
+		ObLockObjectFast(newParent);
+		newParent->ChildCount--;
+		ObUnlockObjectFast(newParent);
+	}
+}
+
+PKPROCESS PsSetParentProcess(PKPROCESS Process, PKPROCESS ParentProcess)
+{
+	BOOL te = arch_disable_trap();
+	ObLockObjectFast(Process);
+	PKPROCESS old = Process->Parent;
+	Process->Parent = ParentProcess;
+	ObUnlockObjectFast(Process);
+	PsiUpdateChildCount(old, ParentProcess);
+	if (te) arch_enable_trap();
+	return old;
+}
+
 KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryArgument, int* ProcessId)
 {
 	PKPROCESS p = PsCreateProcessEx();
@@ -133,7 +162,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->Flags |= PROCESS_FLAG_KERNEL;
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
-	p->Parent = PsGetCurrentProcess();
+	PsSetParentProcess(p, PsGetCurrentProcess());
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
@@ -162,27 +191,38 @@ void PsFreeProcess(PKPROCESS Process)
 	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
 	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
 	BOOL te = arch_disable_trap();
+	// deref
+	KeAcquireSpinLockFast(&ProcessListLock);
+	PKPROCESS p = next_process(Process);
+	// BOOL last_child = !!Process->Parent;
+	while (p != Process)
+	{
+		ObLockObjectFast(p);
+		if (p->Parent == Process)
+		{
+			p->Parent = NULL; // no need to update child count
+		}
+		// if (Process->Parent && p->Parent == Process->Parent)
+		// {
+		// 	last_child = FALSE;
+		// }
+		ObUnlockObjectFast(p);
+		p = next_process(p);
+	}
+	KeReleaseSpinLockFast(&ProcessListLock);
 	// notify
 	ObLockObjectFast(Process);
 	if (Process->Parent)
 	{
+		ObLockObjectFast(Process->Parent);
 		KeQueueMessage(&Process->Parent->MessageQueue, MSG_TYPE_CHILDEXIT, PsGetProcessId(Process));
+		Process->Parent->ChildCount--;
+		ObUnlockObjectFast(Process->Parent);
 		Process->Parent = NULL;
 	}
 	ObUnlockObjectFast(Process);
 	// remove
 	KeAcquireSpinLockFast(&ProcessListLock);
-	PKPROCESS p = next_process(Process);
-	while (p != Process)
-	{
-		if (p->Parent == Process)
-		{
-			ObLockObjectFast(p);
-			p->Parent = NULL;
-			ObUnlockObjectFast(p);
-		}
-		p = next_process(p);
-	}
 	LibRemoveListEntry(&Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
 	// Free resources

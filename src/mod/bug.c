@@ -76,6 +76,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
 	while (1);
 }
 
+void MmiProbeReadCatch();
 PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress);
 UNSAFE int MmUnsharePhysicalPage(PVOID PageAddress);
 BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
@@ -127,6 +128,12 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 	}
 fail:
 	ObUnlockObjectFast(ms);
+	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)
+	{
+		// try-catch
+		TrapFrame->elr = (ULONG64)MmiProbeReadPageCatch;
+		return TRUE;
+	}
 	return FALSE;
 }
 

@@ -380,6 +380,8 @@ UNSAFE void PsiTaskSwitch(PKPROCESS NextTask)
 	ASSERT(NextTask->Status == PROCESS_STATUS_RUNNING, BUG_SCHEDULER);
 	cur->Context.UserStack = (PVOID)arch_get_usp();
 	arch_set_usp((ULONG64)NextTask->Context.UserStack);
+	asm volatile("mrs %[x], tpidr_el0" : [x] "=r"(cur->Context.tpidr_el0));
+	asm volatile("msr tpidr_el0, %[x]" : : [x] "r"(NextTask->Context.tpidr_el0));
 	MmSwitchMemorySpaceEx(cur->MemorySpace, NextTask->MemorySpace);
 	arch_set_tid((ULONG64)NextTask);
 	swtch(NextTask->Context.KernelStack.p, &cur->Context.KernelStack.p);

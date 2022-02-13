@@ -36,6 +36,7 @@ typedef struct _KPROCESS
 	int GroupProcessId;
 	int UserDataBegin;
 	int UserDataEnd;
+	PUBLIC int ChildCount;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
 	LIST_ENTRY WaitList;
@@ -50,6 +51,7 @@ typedef struct _KPROCESS
 	PUBLIC struct _MUTEX* WaitMutex;
 	struct
 	{
+		ULONG64 tpidr_el0;
 		PVOID UserStack;
 		union
 		{
@@ -77,6 +79,10 @@ typedef struct _TRAP_FRAME
 	ULONG64 x9;
 	ULONG64 x0;
 	ULONG64 x1;
+	ULONG64 x4;
+	ULONG64 x5;
+	ULONG64 x2;
+	ULONG64 x3;
 } TRAP_FRAME, *PTRAP_FRAME;
 
 BOOL ObInitializeProcessManager();
@@ -95,5 +101,6 @@ PMEMORY_SPACE KeSwitchMemorySpace(PMEMORY_SPACE);
 KSTATUS KeCreateUserPage(PVOID);
 KSTATUS KeUnmapUserPage(PVOID);
 KSTATUS KeMapUserPage(PVOID, ULONG64);
+PKPROCESS PsSetParentProcess(PKPROCESS, PKPROCESS);
 
 #endif

@@ -28,5 +28,6 @@ BOOL KeQueueMessage(PMESSAGE_QUEUE, int, ULONG64);
 USR_ONLY PMESSAGE KeUserWaitMessage(PMESSAGE_QUEUE);
 void KeInitializeMessageQueue(PMESSAGE_QUEUE);
 void KeClearMessageQueue(PMESSAGE_QUEUE);
+PMESSAGE KeGetMessage(PMESSAGE_QUEUE);
 
 #endif

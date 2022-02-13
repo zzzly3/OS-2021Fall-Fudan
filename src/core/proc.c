@@ -240,10 +240,10 @@ int fork(PTRAP_FRAME TrapFrame) {
     }
     p->MemorySpace = m;
     p->Flags = cur->Flags | PROCESS_FLAG_FORK;
-    p->Parent = cur;
     p->UserDataBegin = cur->UserDataBegin;
     p->UserDataEnd = cur->UserDataEnd;
     p->Group = cur->Group;
+    PsSetParentProcess(p, cur);
     if (cur->Cwd)
     {
         p->Cwd = inodes.share(cur->Cwd);
@@ -260,6 +260,7 @@ int fork(PTRAP_FRAME TrapFrame) {
         }
     }
     p->Context.UserStack = cur->Context.UserStack;
+    p->Context.tpidr_el0 = cur->Context.tpidr_el0;
     PVOID ctx = (PVOID)((ULONG64)p->Context.KernelStack.p - 512);
     memcpy(ctx, TrapFrame, 11*16);
     memcpy((PVOID)((ULONG64)ctx + 11*16), &TrapContext[cpuid()], 5*16);
@@ -274,8 +275,37 @@ int fork(PTRAP_FRAME TrapFrame) {
  * 
  * You can release the PCB (set state to UNUSED) of its dead children.
  */
+USR_ONLY
 int wait() {
     /* TODO: Lab9 shell. */
-    
+    PKPROCESS cur = PsGetCurrentProcess();
+    ObLockObject(cur);
+    int child_remain = cur->ChildCount;
+    ObUnlockObject(cur);
+    if (child_remain > 0)
+    {
+        for (;;)
+        {
+            PMESSAGE msg = KeUserWaitMessage(&cur->MessageQueue);
+            ASSERT(msg, BUG_CHECKFAIL); // ???
+            int t = msg->Type, d = msg->Data;
+            KeFreeMessage(msg);
+            if (t == MSG_TYPE_CHILDEXIT)
+                return d;
+        }
+    }
+    else
+    {
+        for (;;)
+        {
+            PMESSAGE msg = KeGetMessage(&cur->MessageQueue);
+            if (msg == NULL)
+                return -1;
+            int t = msg->Type, d = msg->Data;
+            KeFreeMessage(msg);
+            if (t == MSG_TYPE_CHILDEXIT)
+                return d;
+        }
+    }
     return 0;
 }
