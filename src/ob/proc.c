@@ -1,6 +1,7 @@
 #include <ob/proc.h>
 #include <def.h>
 #include <fs/cache.h>
+#include <mod/bug.h>
 #include <fs/file.h>
 
 static OBJECT_POOL ProcessPool;
@@ -144,6 +145,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 void KeExitProcess()
 {
 	// KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	printf("exit\n");
 	PsiExitProcess();
 }
 
