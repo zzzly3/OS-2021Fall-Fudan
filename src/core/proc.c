@@ -8,6 +8,7 @@
 #include <core/console.h>
 #include <ob/proc.h>
 #include <ob/mem.h>
+#include <fs/file.h>
 
 void forkret();
 extern void trap_return();
@@ -65,7 +66,6 @@ void spawn_init_process() {
     memcpy(base, (PVOID)icode, sz);
     MmSwitchMemorySpaceEx(m, NULL);
     p->MemorySpace = m;
-    p->ParentId = 0;
     strncpy(p->DebugName, "init", 16);
     PsCreateProcess(p, base, 0);
     if (trpen) arch_enable_trap();
@@ -130,6 +130,7 @@ void add_loop_test(int times) {
     if (m == NULL)
         goto fail;
     int sz = loop_end - loop_start, pg = (sz + PAGE_SIZE - 1) / PAGE_SIZE;
+    // code
     PVOID base = (PVOID)0x40000000;
     for (int i = 0; i < pg; i++)
     {
@@ -139,13 +140,17 @@ void add_loop_test(int times) {
     MmSwitchMemorySpaceEx(NULL, m);
     memcpy(base, (PVOID)loop_start, sz);
     MmSwitchMemorySpaceEx(m, NULL);
+    // stack
+    if (!KSUCCESS(MmCreateUserPageEx(m, (PVOID)0x10000000)))
+        goto fail;
     for (int i = 0; i < times; i++) {
         PKPROCESS p = PsCreateProcessEx();
         if (p == NULL)
             goto fail;
         p->MemorySpace = m;
-        p->ParentId = 0;
         p->Group = PgGetCurrentGroup();
+        p->UserDataBegin = 0x10000000;
+        p->UserDataEnd = 0x10000000 + PAGE_SIZE;
         strncpy(p->DebugName, "loop", 16);
         PsCreateProcess(p, base, 0); 
     }
@@ -163,8 +168,43 @@ fail:
  */
 int growproc(int n) {
 	/* TODO: lab9 shell */
-
-    return 0;
+    PKPROCESS cur = PsGetCurrentProcess();
+    if (cur->MemorySpace == NULL)
+        return -1;
+    BOOL te = arch_disable_trap();
+    int old = cur->UserDataEnd;
+    if (n > old)
+    {
+        for (int i = PAGE_BASE(old); i < PAGE_BASE(n); i += PAGE_SIZE)
+        {
+            if (i >= old && i < n)
+            {
+                if (!KSUCCESS(MmMapPageEx(cur->MemorySpace, (PVOID)(ULONG64)i, VPTE_VALID)))
+                {
+                    puts("growproc: No enough memory");
+                    n = i;
+                    old = -1;
+                    goto end;
+                }
+            }
+        }
+    }
+    else if (n < old)
+    {
+        for (int i = PAGE_BASE(old - 1); i >= PAGE_BASE(n); i -= PAGE_SIZE)
+        {
+            if (i < old && i >= n)
+            {
+                if (!KSUCCESS(MmUnmapPageEx(cur->MemorySpace, (PVOID)(ULONG64)i)))
+                    KeBugFault(BUG_BADPAGE);
+            }
+        }
+    }
+    old = 0;
+ end:
+    cur->UserDataEnd = n;
+    if (te) arch_enable_trap();
+    return old;
 }
 
 /*
@@ -174,9 +214,57 @@ int growproc(int n) {
  * 
  * Don't forget to copy file descriptors and `cwd` inode.
  */
-int fork() {
+void PsiFreeProcess(PKPROCESS Process);
+extern u64 TrapContext[CPU_NUM][16];
+USR_ONLY
+int fork(PTRAP_FRAME TrapFrame) {
     /* TODO: Lab9 shell */
-    
+    PKPROCESS cur = PsGetCurrentProcess();
+    ASSERT(cur->ExecuteLevel == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
+    ASSERT(cur->WaitMutex == NULL, BUG_BADLOCK);
+    PKPROCESS p = PsCreateProcessEx();
+    if (p == NULL)
+        return -1;
+    EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+    PMEMORY_SPACE m = NULL;
+    if (cur->MemorySpace)
+    {
+        BOOL te = arch_disable_trap();
+        m = MmDuplicateMemorySpace(cur->MemorySpace);
+        if (te) arch_enable_trap();
+        if (m == NULL)
+        {
+            KeLowerExecuteLevel(el);
+            return -1;
+        }
+    }
+    p->MemorySpace = m;
+    p->Flags = cur->Flags | PROCESS_FLAG_FORK;
+    p->Parent = cur;
+    p->UserDataBegin = cur->UserDataBegin;
+    p->UserDataEnd = cur->UserDataEnd;
+    p->Group = cur->Group;
+    if (cur->Cwd)
+    {
+        p->Cwd = inodes.share(cur->Cwd);
+    }
+    else
+        p->Cwd = NULL;
+    memcpy(&p->DebugName, &cur->DebugName, 16);
+    for (int i = 0; i < 16; i++)
+    {
+        if (cur->FileDescriptors[i])
+        {
+            filedup(ifile(cur->FileDescriptors[i]));
+            p->FileDescriptors[i] = cur->FileDescriptors[i];
+        }
+    }
+    p->Context.UserStack = cur->Context.UserStack;
+    PVOID ctx = (PVOID)((ULONG64)p->Context.KernelStack.p - 512);
+    memcpy(ctx, TrapFrame, 11*16);
+    memcpy((PVOID)((ULONG64)ctx + 11*16), &TrapContext[cpuid()], 5*16);
+    PsCreateProcess(p, NULL, (ULONG64)ctx);
+    KeLowerExecuteLevel(el);
     return 0;
 }
 
@@ -188,6 +276,6 @@ int fork() {
  */
 int wait() {
     /* TODO: Lab9 shell. */
-
+    
     return 0;
 }

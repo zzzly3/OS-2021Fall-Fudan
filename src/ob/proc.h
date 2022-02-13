@@ -8,6 +8,8 @@
 #include <ob/grp.h>
 #include <mod/scheduler.h>
 #include <mod/bug.h>
+#include <fs/inode.h>
+#include <ob/msg.h>
 
 #define PROCESS_STATUS_INITIALIZE 0 // This status is inaccessible and only used when creating
 #define PROCESS_STATUS_RUNNING 1
@@ -21,6 +23,7 @@
 #define PROCESS_FLAG_WAITING 8
 #define PROCESS_FLAG_GROUPWORKER 16
 #define PROCESS_FLAG_BINDCPU 32
+#define PROCESS_FLAG_FORK 64
 
 typedef struct _KPROCESS
 {
@@ -30,8 +33,9 @@ typedef struct _KPROCESS
 	SPINLOCK Lock;
 	REF_COUNT ReferenceCount;
 	int ProcessId;
-	int ParentId; // Means group parent id
 	int GroupProcessId;
+	int UserDataBegin;
+	int UserDataEnd;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
 	LIST_ENTRY WaitList;
@@ -39,6 +43,9 @@ typedef struct _KPROCESS
 	struct _PROCESS_GROUP* Group;
 	struct _KPROCESS* GroupWorker;
 	PMEMORY_SPACE MemorySpace;
+	MESSAGE_QUEUE MessageQueue;
+	Inode* Cwd;
+	PUBLIC struct _KPROCESS* Parent;
 	PUBLIC struct _APC_ENTRY* ApcList;
 	PUBLIC struct _MUTEX* WaitMutex;
 	struct
@@ -83,5 +90,8 @@ KSTATUS PsReferenceProcessById(int, PKPROCESS*);
 #define PsGetProcessId(Process) ((Process)->Group ? (Process)->GroupProcessId : (Process)->ProcessId)
 #define PsGetCurrentProcessId() PsGetProcessId(PsGetCurrentProcess())
 PMEMORY_SPACE KeSwitchMemorySpace(PMEMORY_SPACE);
+KSTATUS KeCreateUserPage(PVOID);
+KSTATUS KeUnmapUserPage(PVOID);
+KSTATUS KeMapUserPage(PVOID, ULONG64);
 
 #endif

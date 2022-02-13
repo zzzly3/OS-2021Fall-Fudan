@@ -356,9 +356,12 @@ PPAGE_TABLE MmiDuplicateTable(PPAGE_TABLE PageTable, int Level)
 			}
 			else
 			{
-				ULONG64 paddr = PTE_ADDRESS(PageTable[i]);
-				PhysicalPageInfoTable[P2N(paddr)].ShareCount++;
-				PageTable[i] |= PTE_RO;
+				if (PageTable[i] & PTE_VALID)
+				{
+					ULONG64 paddr = PTE_ADDRESS(PageTable[i]);
+					PhysicalPageInfoTable[P2N(paddr)].ShareCount++;
+					PageTable[i] |= PTE_RO;
+				}
 				pt[i] = PageTable[i];
 			}
 		}

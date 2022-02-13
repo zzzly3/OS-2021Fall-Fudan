@@ -28,7 +28,7 @@ void IoUpdateRequest(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq, KSTATUS S
 		{
 			// Do next request
 			ASSERT(
-				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, !!(DeviceObject->Flags & DEVICE_FLAG_BINDCPU0)),
+				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, (DeviceObject->Flags & DEVICE_FLAG_BINDCPU0) ? 0 : -1),
 				BUG_BADIO);
 		}
 		KeReleaseSpinLock(&DeviceObject->IORequestLock);
@@ -85,14 +85,14 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	{
 		// Queued request
 		EXECUTE_LEVEL el = KeGetCurrentExecuteLevel();
-		ASSERT((IOReq->Flags & IOREQ_FLAG_ASYNC) || el <= EXECUTE_LEVEL_APC, BUG_BADLEVEL);
+		ASSERT((IOReq->Flags & IOREQ_FLAG_ASYNC) && el <= EXECUTE_LEVEL_APC, BUG_BADLEVEL);
 		KeAcquireSpinLock(&DeviceObject->IORequestLock);
 		LibInsertListEntry(DeviceObject->IORequest.Forward, &IOReq->RequestList);
 		if (DeviceObject->IORequest.Forward == DeviceObject->IORequest.Backward)
 		{
 			// Start do requests
 			ASSERT(
-				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, !!(DeviceObject->Flags & DEVICE_FLAG_BINDCPU0)), 
+				KeQueueWorkerApcEx((PAPC_ROUTINE)IoiDispatchRequests, (ULONG64)DeviceObject, (DeviceObject->Flags & DEVICE_FLAG_BINDCPU0) ? 0 : -1), 
 				BUG_BADIO);
 		}
 		KeReleaseSpinLock(&DeviceObject->IORequestLock);

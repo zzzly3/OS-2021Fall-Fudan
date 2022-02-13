@@ -7,6 +7,7 @@
 #include <common/lutil.h>
 #include <mod/scheduler.h>
 #include <core/console.h>
+#include <ob/proc.h>
 // TODO: Replace API after satisfying TAs.
 #ifdef UPDATE_API
 #include <ob/mem.h>
@@ -413,49 +414,50 @@ static const char *skipelem(const char *path, char *name) {
  * Must be called inside a transaction since it calls iput().
  */
 static Inode *namex(const char *path, int nameiparent, char *name, OpContext *ctx) {
-	 // TODO: Lab9 Shell 
-    const char * path2 = path, * path0 = path;
-	path = skipelem(path, name);
-    usize i = ROOT_INODE_NO;
-    Inode* in = inode_get(ROOT_INODE_NO);
-    if (path == 0)
-    {
-        name[0] = '/';
-        name[1] = '\0';
+	// TODO: Lab9 Shell 
+    Inode* in;
+    Inode* cwd = PsGetCurrentProcess()->Cwd;
+    usize i, id;
+    int f = 1;
+    if (path[0] == '/' || cwd == NULL)
+        in = inodes.get(ROOT_INODE_NO);
+    else
+        in = cwd, f = 0;
+    char elem[FILE_NAME_MAX_LENGTH];
+parse:
+    path = skipelem(path, elem);
+    if (path == NULL)
         return in;
-    }
-    while (*path != '\0')
-    {
-        usize index;
-        i = inode_lookup(in, name, &index);
-        if (i == 0)
-            goto not_found;
-        inode_put(ctx, in);
-        in = inode_get(i);
-        path2 = path;
-        path = skipelem(path, name);
-    }
+    inodes.lock(in);
+    i = inodes.lookup(in, elem, &id);
+    inodes.unlock(in);
+    if (f)
+        inodes.put(ctx, in);
+    else
+        f = 1;
+    if (i == 0)
+        return NULL;
     if (nameiparent)
     {
-        strncpy_fast(name, path, 1024);
-        if (path2 == path0)
-        {
-            name[0] = '/';
-            name[1] = '\0';
-        }
-        else
-            name[path2 - path0 - 1] = '\0';
-        return in;
+        if (*path == 0)
+            return in;
+        strncpy(name, elem, FILE_NAME_MAX_LENGTH);
     }
-    usize index;
-    i = inode_lookup(in, name, &index);
-    if (i == 0)
-        goto not_found;
-    inode_put(ctx, in);
-    return inode_get(i);
-not_found:
-    inode_put(ctx, in);
-    return 0;
+    else
+    {
+        if (*path == 0)
+        {
+            inodes.lock(in);
+            i = inodes.lookup(in, elem, &id);
+            inodes.unlock(in);
+            if (f) inodes.put(ctx, in);
+            if (i == 0)
+                return NULL;
+            return inodes.get(i);
+        }
+    }
+    in = inodes.get(i);
+    goto parse;
 }
 
 Inode *namei(const char *path, OpContext *ctx) {

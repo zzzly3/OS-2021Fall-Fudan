@@ -1,5 +1,6 @@
 #include <mod/scheduler.h>
 #include <def.h>
+#include <fs/file.h>
 
 extern BOOL KeBugFaultFlag;
 extern PKPROCESS KernelProcess[CPU_NUM];
@@ -70,7 +71,8 @@ RT_ONLY void PsiStartNewProcess(PKPROCESS Process)
 void PsiExitProcess()
 {
 	arch_disable_trap();
-	PsGetCurrentProcess()->Status = PROCESS_STATUS_ZOMBIE;
+	PKPROCESS cur = PsGetCurrentProcess();
+	cur->Status = PROCESS_STATUS_ZOMBIE;
 	KeTaskSwitch();
 }
 
@@ -79,6 +81,7 @@ void PsiProcessEntry()
 	// Interrupt disabled. Keep disabled when return.
 	// Do DPC & APCs.
 	EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	PsGetCurrentProcess()->Flags &= ~PROCESS_FLAG_FORK;
 	KeLowerExecuteLevel(el);
 	return;
 }
@@ -242,12 +245,12 @@ BOOL KeCreateApcEx(PKPROCESS Process, PAPC_ROUTINE Routine, ULONG64 Argument)
 	return p ? TRUE : FALSE;
 }
 
-BOOL KeQueueWorkerApcEx(PAPC_ROUTINE Routine, ULONG64 Argument, BOOL BindCPU0)
+BOOL KeQueueWorkerApcEx(PAPC_ROUTINE Routine, ULONG64 Argument, int BindCPU)
 {
 	static int which;
 	if (CPU_NUM > 1 && ++which == CPU_NUM)
 		which = 1;
-	BOOL r = KeCreateApcEx(KernelProcess[BindCPU0 ? 0 : which], Routine, Argument);
+	BOOL r = KeCreateApcEx(KernelProcess[BindCPU < 0 ? which : BindCPU], Routine, Argument);
 	// printf("work %p queued to %d %d\n", Routine, which, r);
 	// printf("%p\n", KernelProcess[which]->ApcList);
 	return r;
@@ -423,6 +426,7 @@ UNSAFE void KeTaskSwitch()
 			case PROCESS_STATUS_ZOMBIE:
 				LibRemoveListEntry(&cur->SchedulerList);
 				ActiveProcessCount[cid]--;
+				KeQueueWorkerApcEx((PAPC_ROUTINE)PsFreeProcess, (ULONG64)cur, cid);
 				break;
 			case PROCESS_STATUS_WAIT:
 				ObLockObjectFast(cur);

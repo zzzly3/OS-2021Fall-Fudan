@@ -62,4 +62,5 @@ typedef PTEntry *PTEntriesPtr;
 #define PTE_ADDRESS(pte)   ((pte) & ~0xFFFF000000000FFF)
 #define PTE_FLAGS(pte)  ((pte) & 0xFFFF000000000FFF)
 #define P2N(addr) (addr>>12)
+#define PAGE_BASE(addr) (addr & ~(PAGE_SIZE - 1))
 

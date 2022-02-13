@@ -1,5 +1,7 @@
 #include <ob/proc.h>
 #include <def.h>
+#include <fs/cache.h>
+#include <fs/file.h>
 
 static OBJECT_POOL ProcessPool;
 static SPINLOCK ProcessListLock;
@@ -8,12 +10,14 @@ PKPROCESS KernelProcess[CPU_NUM];
 
 void PsUserProcessEntry();
 void PsKernelProcessEntry();
+void PsUserForkEntry();
 RT_ONLY void PsiStartNewProcess(PKPROCESS);
 void PsiExitProcess();
 void PgiStartNewProcess(PKPROCESS);
 
 #define next_process(proc) container_of((proc)->ProcessList.Backward, KPROCESS, ProcessList)
- 
+
+void ObInitializeMessages();
 BOOL ObInitializeProcessManager()
 {
 	int cid = cpuid();
@@ -22,6 +26,7 @@ BOOL ObInitializeProcessManager()
 		MmInitializeObjectPool(&ProcessPool, sizeof(KPROCESS));
 		KeInitializeSpinLock(&ProcessListLock);
 		ObInitializeGroupManager();
+		ObInitializeMessages();
 	}
 	KernelProcess[cid] = PsCreateProcessEx();
 	if (KernelProcess[cid] == NULL)
@@ -59,6 +64,7 @@ PKPROCESS PsCreateProcessEx()
 	p->GroupWorker = NULL;
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
 	KeInitializeSpinLock(&p->Lock);
+	KeInitializeMessageQueue(&p->MessageQueue);
 	init_rc(&p->ReferenceCount);
 	increment_rc(&p->ReferenceCount);
 	PVOID g = MmAllocatePhysicalPage();
@@ -88,9 +94,17 @@ RT_ONLY void PsCreateProcess(PKPROCESS Process, PVOID ProcessEntry, ULONG64 Entr
 	}
 	else
 	{
-		Process->Context.KernelStack.d->lr = (ULONG64)PsUserProcessEntry;
-		Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
-		Process->Context.KernelStack.d->x1 = EntryArgument;
+		if (Process->Flags & PROCESS_FLAG_FORK) // forkret
+		{
+			Process->Context.KernelStack.d->lr = (ULONG64)PsUserForkEntry;
+			Process->Context.KernelStack.d->x0 = EntryArgument;
+		}
+		else // user
+		{
+			Process->Context.KernelStack.d->lr = (ULONG64)PsUserProcessEntry;
+			Process->Context.KernelStack.d->x0 = (ULONG64)ProcessEntry;
+			Process->Context.KernelStack.d->x1 = EntryArgument;
+		}
 	}
 	KeAcquireSpinLockFast(&ProcessListLock);
 	LibInsertListEntry(&KernelProcess[0]->ProcessList, &Process->ProcessList);
@@ -117,7 +131,7 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 	p->Flags |= PROCESS_FLAG_KERNEL;
 	if (ProcessName != NULL)
 		LibKStringToCString(ProcessName, p->DebugName, 16);
-	p->ParentId = KernelProcess[cpuid()]->ProcessId;
+	p->Parent = KernelProcess[cpuid()];
 	p->MemorySpace = NULL;
 	*ProcessId = p->ProcessId;
 	EXECUTE_LEVEL oldel = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
@@ -138,21 +152,58 @@ void PsiFreeProcess(PKPROCESS Process)
 	MmFreeObject(&ProcessPool, Process);
 }
 
-UNSAFE void PsFreeProcess(PKPROCESS Process)
+static OpContext SingleOpCtx;
+void PsFreeProcess(PKPROCESS Process)
 {
-	ASSERT(ObTestReferenceZero(Process), BUG_BADREF);
+	// TODO: clean ref?
+	ASSERT(Process->ReferenceCount.count == 1, BUG_BADREF);
 	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
 	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
+	BOOL te = arch_disable_trap();
+	// notify
+	ObLockObjectFast(Process);
+	if (Process->Parent)
+	{
+		KeQueueMessage(&Process->Parent->MessageQueue, MSG_TYPE_CHILDEXIT, PsGetProcessId(Process));
+		Process->Parent = NULL;
+	}
+	ObUnlockObjectFast(Process);
 	// remove
 	KeAcquireSpinLockFast(&ProcessListLock);
+	PKPROCESS p = next_process(Process);
+	while (p != Process)
+	{
+		if (p->Parent == Process)
+		{
+			ObLockObjectFast(p);
+			p->Parent = NULL;
+			ObUnlockObjectFast(p);
+		}
+		p = next_process(p);
+	}
 	LibRemoveListEntry(&Process->ProcessList);
 	KeReleaseSpinLockFast(&ProcessListLock);
 	// Free resources
 	KeCancelApcs(Process);
-	MmDestroyMemorySpace(Process->MemorySpace);
-	// TODO: PID reusing?
+	KeClearMessageQueue(&Process->MessageQueue);
+	if (Process->MemorySpace)
+		MmDestroyMemorySpace(Process->MemorySpace);
+	if (Process->Cwd)
+	{
+		bcache.begin_op(&SingleOpCtx);
+		inodes.put(&SingleOpCtx, Process->Cwd);
+		bcache.end_op(&SingleOpCtx);
+	}
+	for (int i = 0; i < 16; i++)
+	{
+		if (Process->FileDescriptors[i])
+		{
+			fileclose(ifile(Process->FileDescriptors[i]));
+		}
+	}
 	// Free process object
 	MmFreeObject(&ProcessPool, Process);
+	if (te) arch_enable_trap();
 }
 
 KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)
@@ -194,4 +245,37 @@ PMEMORY_SPACE KeSwitchMemorySpace(PMEMORY_SPACE MemorySpace)
 	cur->MemorySpace = MemorySpace;
 	if (te) arch_enable_trap();
 	return old;
+}
+
+KSTATUS KeCreateUserPage(PVOID VirtualAddress)
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	if (cur->MemorySpace == NULL)
+		return STATUS_NO_MEMORY_SPACE;
+	BOOL te = arch_disable_trap();
+	KSTATUS ret = MmCreateUserPageEx(cur->MemorySpace, VirtualAddress);
+	if (te) arch_disable_trap();
+	return ret;
+}
+
+KSTATUS KeMapUserPage(PVOID VirtualAddress, ULONG64 PageDescriptor)
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	if (cur->MemorySpace == NULL)
+		return STATUS_NO_MEMORY_SPACE;
+	BOOL te = arch_disable_trap();
+	KSTATUS ret = MmMapPageEx(cur->MemorySpace, VirtualAddress, PageDescriptor);
+	if (te) arch_disable_trap();
+	return ret;
+}
+
+KSTATUS KeUnmapUserPage(PVOID VirtualAddress)
+{
+	PKPROCESS cur = PsGetCurrentProcess();
+	if (cur->MemorySpace == NULL)
+		return STATUS_NO_MEMORY_SPACE;
+	BOOL te = arch_disable_trap();
+	KSTATUS ret = MmUnmapPageEx(cur->MemorySpace, VirtualAddress);
+	if (te) arch_disable_trap();
+	return ret;
 }

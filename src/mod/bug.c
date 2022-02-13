@@ -21,7 +21,8 @@ static const struct
 	{BUG_BADREF, "Invalid reference count."},
 	{BUG_FSFAULT, "Filesystem internal fault."},
 	{BUG_WORKER, "System worker process exception."},
-	{BUG_BADIO, "Invalid IO request."}
+	{BUG_BADIO, "Invalid IO request."},
+	{BUG_BADPAGE, "Pagetable corruption."}
 };
 static const CPCHAR ELName[] = {"USR", "RES_1", "APC", "RES_3", "RT", "RES_5", "ISR"};
 static const CPCHAR PSName[] = {"INVALID", "RUNNING", "RUNABLE", "ZOMBIE", "WAIT"};
@@ -92,6 +93,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		if (!((*pe) & PTE_RO))
 			goto end_cow;
 		// copy on write
+		printf("COW: %p\n", far);
 		PVOID p0 = (PVOID)P2K(PTE_ADDRESS(*pe));
 		if (MmUnsharePhysicalPage(p0) == 1)
 		{

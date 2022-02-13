@@ -8,14 +8,9 @@ void KeSystemEntry()
 	// test
 	arch_disable_trap();
 	PMEMORY_SPACE mem = MmCreateMemorySpace();
-	MmCreateUserPageEx(mem, 0);
+	MmMapPageEx(mem, 0, VPTE_VALID);
 	KeSwitchMemorySpace(mem);
 	*(int*)0 = 123;
-	printf("%d\n", *(int*)0);
-	PMEMORY_SPACE mem2 = MmDuplicateMemorySpace(mem);
-	KeSwitchMemorySpace(mem2);
-	printf("%d\n", *(int*)0);
-	*(int*)0 = 233;
 	printf("%d\n", *(int*)0);
 
 	// driver_init();

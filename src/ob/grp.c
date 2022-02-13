@@ -39,7 +39,7 @@ PPROCESS_GROUP PgCreateGroup(int WorkerCount)
 		if (p[i] == NULL)
 			goto fail;
 		p[i]->Flags |= PROCESS_FLAG_GROUPWORKER | PROCESS_FLAG_KERNEL;
-		p[i]->ParentId = 0;
+		p[i]->Parent = NULL;
 		p[i]->GroupProcessId = 0;
 		p[i]->GroupProcessList.Forward = p[i]->GroupProcessList.Backward = &p[i]->GroupProcessList;
 		p[i]->Group = g;
@@ -141,6 +141,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 				case PROCESS_STATUS_ZOMBIE:
 					// exit
 					LibRemoveListEntry(&p->SchedulerList);
+					KeQueueWorkerApcEx((PAPC_ROUTINE)PsFreeProcess, (ULONG64)cur, cpuid());
 					break;
 				case PROCESS_STATUS_WAIT:
 					ObLockObjectFast(p);

@@ -34,6 +34,16 @@ trap_entry:
     mrs x1, spsr_el1
     stp x0, x1, [sp, #-16]!
 
+    // store context
+    mrs x0, mpidr_el1 // cpuid
+    adr x1, TrapContext
+    add x1, x1, x0, lsl #4
+    stp x19, x20, [x1], #16
+    stp x21, x22, [x1], #16
+    stp x23, x24, [x1], #16
+    stp x25, x26, [x1], #16
+    stp x27, x28, [x1], #16
+
     /*
      * Call trap_global_handler(Trapframe *frame).
      * Hint: The first argument is a stack pointer.

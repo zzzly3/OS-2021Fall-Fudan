@@ -16,6 +16,12 @@ struct {
     struct file file[NFILE];
 } ftable;
 
+struct file* ifile(char id) {
+    if (id > 0)
+        return &ftable[id];
+    return 0;
+}
+
 /* Optional since BSS is zero-initialized. */
 void fileinit() {
     // init_spinlock(&ftable.lock);
@@ -26,7 +32,7 @@ void fileinit() {
 struct file *filealloc() {
     /* TODO: Lab9 Shell */
     KeAcquireSpinLock(&ftable.lock);
-    for (int i = 0; i < NFILE; i++)
+    for (int i = 1; i < NFILE; i++)
     {
         if (ftable.file[i].ref == 0)
         {
