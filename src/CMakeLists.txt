@@ -43,7 +43,7 @@ add_subdirectory(fs)
 
 set(kernel_name kernel8)
 add_executable(${kernel_name}.elf lagacy.c main.c start.S)
-target_link_libraries(${kernel_name}.elf fs ob mod core mod core ob driver asm aarch64 common user)
+target_link_libraries(${kernel_name}.elf fs ob fs mod core mod core ob driver asm aarch64 common user)
 
 set(kernel_prefix "${CMAKE_CURRENT_BINARY_DIR}/${kernel_name}")
 set(kernel_elf "${kernel_prefix}.elf")
