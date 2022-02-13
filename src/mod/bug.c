@@ -127,6 +127,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		return TRUE;
 	}
 fail:
+	printf("mem fault at %p\n", TrapFrame->elr);
 	ObUnlockObjectFast(ms);
 	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)
 	{
