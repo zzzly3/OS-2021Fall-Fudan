@@ -158,7 +158,7 @@ static OpContext SingleOpCtx;
 void PsFreeProcess(PKPROCESS Process)
 {
 	// TODO: clean ref?
-	printf("free %p\n", Process);
+	printf("%d\n", Process->ReferenceCount.count);
 	ASSERT(Process->ReferenceCount.count == 1, BUG_BADREF);
 	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
 	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
