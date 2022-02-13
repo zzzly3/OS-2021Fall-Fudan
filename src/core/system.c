@@ -8,7 +8,7 @@ void KeSystemEntry()
 	// test
 	arch_disable_trap();
 	PMEMORY_SPACE mem = MmCreateMemorySpace();
-	MmMapPageEx(mem, 0, VPTE_VALID);
+	MmMapPageEx(mem, 0, NULL);
 	KeSwitchMemorySpace(mem);
 	*(int*)0 = 123;
 	printf("%d\n", *(int*)0);
