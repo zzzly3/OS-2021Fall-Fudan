@@ -142,7 +142,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 					// exit
 					LibRemoveListEntry(&p->SchedulerList);
 					if (PsReferenceProcess(cur))
-						KeQueueWorkerApcEx((PAPC_ROUTINE)PsDereferenceProcess, (ULONG64)cur, cid);
+						KeQueueWorkerApcEx((PAPC_ROUTINE)PsDereferenceProcess, (ULONG64)cur, cpuid());
 					break;
 				case PROCESS_STATUS_WAIT:
 					ObLockObjectFast(p);
