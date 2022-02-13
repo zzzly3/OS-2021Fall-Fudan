@@ -80,18 +80,18 @@ PPAGE_ENTRY MmiGetPageEntry(PPAGE_TABLE PageTable, PVOID VirtualAddress);
 UNSAFE int MmUnsharePhysicalPage(PVOID PageAddress);
 BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
+	ULONG64 far = arch_get_far();
+	PMEMORY_SPACE ms = PsGetCurrentProcess()->MemorySpace;
+	if (ms == NULL)
+		return FALSE;
+	ObLockObjectFast(ms);
+	PPAGE_ENTRY pe = MmiGetPageEntry(ms->PageTable, (PVOID)far);
+	if (pe == NULL)
+		goto fail;
 	if (((esr >> 2) & 31) == 0b10011) // Write Op & Permission Fault
 	{
-		ULONG64 far = arch_get_far();
-		PMEMORY_SPACE ms = PsGetCurrentProcess()->MemorySpace;
-		if (ms == NULL)
-			return FALSE;
-		ObLockObjectFast(ms);
-		PPAGE_ENTRY pe = MmiGetPageEntry(ms->PageTable, (PVOID)far);
-		if (pe == NULL)
-			goto end_cow;
 		if (!((*pe) & PTE_RO))
-			goto end_cow;
+			goto fail;
 		// copy on write
 		printf("COW: %p\n", far);
 		PVOID p0 = (PVOID)P2K(PTE_ADDRESS(*pe));
@@ -103,15 +103,30 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		{
 			PVOID p1 = (PVOID)MmAllocatePhysicalPage();
 			if (p1 == NULL)
-				goto end_cow;
+				goto fail;
 			memcpy(p1, p0, PAGE_SIZE);
 			*pe = K2P(p1) | PTE_USER_DATA;
 		}
 		ObUnlockObjectFast(ms);
 		return TRUE;
-	end_cow:
-		ObUnlockObjectFast(ms);
 	}
+	else if (((esr >> 2) & 15) == 0b0001) // Translation Fault
+	{
+		if (VALID_PTE(*pe) && ((*pe) & VPTE_VALID))
+		{
+			printf("AOA: %p\n", far);
+			PVOID p = MmAllocatePhysicalPage();
+			if (p == NULL)
+				goto fail;
+			*pe = K2P(p) | PTE_USER_DATA;
+		}
+		else
+			goto fail;
+		ObUnlockObjectFast(ms);
+		return TRUE;
+	}
+fail:
+	ObUnlockObjectFast(ms);
 	return FALSE;
 }
 
