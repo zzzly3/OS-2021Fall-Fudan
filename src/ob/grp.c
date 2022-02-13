@@ -141,7 +141,8 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 				case PROCESS_STATUS_ZOMBIE:
 					// exit
 					LibRemoveListEntry(&p->SchedulerList);
-					KeQueueWorkerApcEx((PAPC_ROUTINE)PsFreeProcess, (ULONG64)cur, cpuid());
+					if (PsReferenceProcess(cur))
+						KeQueueWorkerApcEx((PAPC_ROUTINE)PsDereferenceProcess, (ULONG64)cur, cid);
 					break;
 				case PROCESS_STATUS_WAIT:
 					ObLockObjectFast(p);

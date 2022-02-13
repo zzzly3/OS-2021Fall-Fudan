@@ -158,8 +158,7 @@ static OpContext SingleOpCtx;
 void PsFreeProcess(PKPROCESS Process)
 {
 	// TODO: clean ref?
-	printf("%d\n", Process->ReferenceCount.count);
-	ASSERT(Process->ReferenceCount.count == 1, BUG_BADREF);
+	ASSERT(ObTestReferenceZero(Process), BUG_BADREF);
 	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
 	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
 	BOOL te = arch_disable_trap();
@@ -207,6 +206,12 @@ void PsFreeProcess(PKPROCESS Process)
 	// Free process object
 	MmFreeObject(&ProcessPool, Process);
 	if (te) arch_enable_trap();
+}
+
+void PsDereferenceProcess(PKPROCESS Process)
+{
+	if (ObDereferenceObject(Process) && Process->Status == PROCESS_STATUS_ZOMBIE)
+		PsFreeProcess(Process);
 }
 
 KSTATUS PsReferenceProcessById(int ProcessId, PKPROCESS* Process)

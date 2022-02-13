@@ -87,6 +87,8 @@ KSTATUS KeCreateProcess(PKSTRING, PVOID, ULONG64, int*);
 void KeExitProcess();
 UNSAFE void PsFreeProcess(PKPROCESS);
 KSTATUS PsReferenceProcessById(int, PKPROCESS*);
+#define PsReferenceProcess ObReferenceObject
+void PsDereferenceProcess(PKPROCESS);
 #define PsGetProcessId(Process) ((Process)->Group ? (Process)->GroupProcessId : (Process)->ProcessId)
 #define PsGetCurrentProcessId() PsGetProcessId(PsGetCurrentProcess())
 PMEMORY_SPACE KeSwitchMemorySpace(PMEMORY_SPACE);
