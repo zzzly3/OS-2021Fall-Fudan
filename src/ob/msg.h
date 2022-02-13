@@ -20,7 +20,7 @@ typedef struct _MESSAGE_QUEUE
 {
 	SPINLOCK Lock;
 	LIST_ENTRY MsgList;
-	struct _MUTEX MsgSignal;
+	MUTEX MsgSignal;
 } MESSAGE_QUEUE, *PMESSAGE_QUEUE;
 
 void KeFreeMessage(PMESSAGE);

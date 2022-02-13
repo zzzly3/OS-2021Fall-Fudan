@@ -1,5 +1,7 @@
 #include <ob/mutex.h>
 #include <driver/uart.h>
+#include <ob/proc.h>
+#include <mod/bug.h>
 
 UNSAFE void PsiAwakeProcess(PKPROCESS);
 
