@@ -16,14 +16,14 @@ void KeSystemEntry()
 	{
 		printf("%p %d\n", addr[i], MmProbeRead((PVOID)addr[i]));
 	}
-	// arch_disable_trap();
-	// PMEMORY_SPACE mem = MmCreateMemorySpace();
-	// // MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
-	// MmMapPageEx(mem, 0, VPTE_VALID);
-	// KeSwitchMemorySpace(mem);
-	// printf("a\n");
-	// *(int*)0 = 123;
-	// printf("%d\n", *(int*)0);
+	arch_disable_trap();
+	PMEMORY_SPACE mem = MmCreateMemorySpace();
+	// MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
+	MmMapPageEx(mem, 0, VPTE_VALID);
+	KeSwitchMemorySpace(mem);
+	printf("a\n");
+	*(int*)0 = 123;
+	printf("%d\n", *(int*)0);
 
 	// driver_init();
 	// sd_test();

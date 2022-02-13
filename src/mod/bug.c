@@ -128,7 +128,6 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 	}
 fail:
 	ObUnlockObjectFast(ms);
-	printf("%p %p %p\n", TrapFrame->elr, MmProbeRead, MmiProbeReadCatch);
 	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)
 	{
 		// try-catch
@@ -141,7 +140,7 @@ fail:
 void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
 	printf("Exception: %p\n", esr);
-	if (((esr >> 26) & 31) == 0b00101) // EL0 & 1 Data Abort
+	if (((esr >> 26) & 31) == 0b10010) // EL0 & 1 Data Abort
 	{
 		if (KiMemoryFaultHandler(TrapFrame, esr))
 			return;
