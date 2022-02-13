@@ -32,6 +32,7 @@ BOOL ObInitializeProcessManager()
 	KernelProcess[cid] = PsCreateProcessEx();
 	if (KernelProcess[cid] == NULL)
 		return FALSE;
+	strncpy(KernelProcess[cid]->DebugName, "kworker", 16);
 	KernelProcess[cid]->ExecuteLevel = EXECUTE_LEVEL_RT;
 	KernelProcess[cid]->Flags |= PROCESS_FLAG_KERNEL | PROCESS_FLAG_BINDCPU;
 	KernelProcess[cid]->SchedulerList.Forward = KernelProcess[cid]->SchedulerList.Backward = &KernelProcess[cid]->SchedulerList;
@@ -145,7 +146,6 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 void KeExitProcess()
 {
 	// KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
-	printf("exit\n");
 	PsiExitProcess();
 }
 
@@ -158,6 +158,7 @@ static OpContext SingleOpCtx;
 void PsFreeProcess(PKPROCESS Process)
 {
 	// TODO: clean ref?
+	printf("free %p\n", Process);
 	ASSERT(Process->ReferenceCount.count == 1, BUG_BADREF);
 	ASSERT(Process->Status == PROCESS_STATUS_ZOMBIE, BUG_SCHEDULER);
 	ASSERT(Process->WaitMutex == NULL, BUG_SCHEDULER);
