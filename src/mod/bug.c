@@ -84,7 +84,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 	ULONG64 far = arch_get_far();
 	PMEMORY_SPACE ms = PsGetCurrentProcess()->MemorySpace;
 	if (ms == NULL)
-		return FALSE;
+		goto end;
 	ObLockObjectFast(ms);
 	PPAGE_ENTRY pe = MmiGetPageEntry(ms->PageTable, (PVOID)far);
 	if (pe == NULL)
@@ -129,6 +129,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 fail:
 	printf("mem fault at %p\n", TrapFrame->elr);
 	ObUnlockObjectFast(ms);
+end:
 	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)
 	{
 		// try-catch
