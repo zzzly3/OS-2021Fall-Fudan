@@ -18,7 +18,7 @@ struct {
 
 struct file* ifile(char id) {
     if (id > 0)
-        return &ftable[id];
+        return &ftable.file[id];
     return 0;
 }
 
