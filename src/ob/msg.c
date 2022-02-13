@@ -13,6 +13,7 @@ void KeInitializeMessageQueue(PMESSAGE_QUEUE MessageQueue)
 {
 	MessageQueue->MsgList.Forward = MessageQueue->MsgList.Backward = &MessageQueue->MsgList;
 	KeInitializeMutex(&MessageQueue->MsgSignal);
+	KeTestMutexSignaled(&MessageQueue->MsgSignal, FALSE);
 	KeInitializeSpinLock(&MessageQueue->Lock);
 }
 
