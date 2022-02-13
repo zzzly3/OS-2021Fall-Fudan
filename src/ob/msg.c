@@ -1,5 +1,6 @@
 #include <ob/msg.h>
 #include <ob/mem.h>
+#include <mod/bug.h>
 
 static OBJECT_POOL MessagePool;
 
