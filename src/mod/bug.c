@@ -131,7 +131,7 @@ fail:
 	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)
 	{
 		// try-catch
-		TrapFrame->elr = (ULONG64)MmiProbeReadPageCatch;
+		TrapFrame->elr = (ULONG64)MmiProbeReadCatch;
 		return TRUE;
 	}
 	return FALSE;
