@@ -85,7 +85,7 @@ KSTATUS IoCallDevice(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
 	{
 		// Queued request
 		EXECUTE_LEVEL el = KeGetCurrentExecuteLevel();
-		ASSERT((IOReq->Flags & IOREQ_FLAG_ASYNC) && el <= EXECUTE_LEVEL_APC, BUG_BADLEVEL);
+		ASSERT((IOReq->Flags & IOREQ_FLAG_ASYNC) || el <= EXECUTE_LEVEL_APC, BUG_BADLEVEL);
 		KeAcquireSpinLock(&DeviceObject->IORequestLock);
 		LibInsertListEntry(DeviceObject->IORequest.Forward, &IOReq->RequestList);
 		if (DeviceObject->IORequest.Forward == DeviceObject->IORequest.Backward)
