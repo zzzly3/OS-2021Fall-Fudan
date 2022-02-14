@@ -48,6 +48,7 @@ void spawn_init_process() {
     extern char icode[], eicode[];
     // p = alloc_proc();
     /* TODO: Lab3 Process */
+    EXECUTE_LEVEL el = KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
     BOOL trpen = arch_disable_trap();
     PKPROCESS p = PsCreateProcessEx();
     if (p == NULL)
@@ -69,6 +70,7 @@ void spawn_init_process() {
     strncpy(p->DebugName, "init", 16);
     PsCreateProcess(p, base, 0);
     if (trpen) arch_enable_trap();
+    KeLowerExecuteLevel(el);
     return;
 fail:
     PANIC("spawn_init_process FAULT");
