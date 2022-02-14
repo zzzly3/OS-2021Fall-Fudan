@@ -5,7 +5,7 @@ extern BOOL KeBugFaultFlag;
 extern u64 TrapContext[CPU_NUM][16];
 u64 SyscallContext[CPU_NUM][16];
 
-extern const char* syscall_table_str;
+extern const char* syscall_table_str[NR_SYSCALL];
 
 BOOL KiValidateBuffer(PVOID Address, unsigned Size)
 {
@@ -43,7 +43,6 @@ struct file* KiValidateFileDescriptor(int FileDescriptor) // return file object
 
 void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 {
-	uart_put_char('c');
 	if (KeBugFaultFlag) for(arch_disable_trap();;);
 	if (TrapFrame->elr >> 63) 
 	{
