@@ -215,7 +215,7 @@ Inode *create(char *path, short type, short major, short minor, OpContext *ctx) 
     inodes.insert(ctx, ip, name, id->inode_no);
     inodes.sync(ctx, ip, 1);
     inodes.unlock(ip);
-    inodes.put(ip);
+    inodes.put(ctx, ip);
     inodes.lock(id);
     id->entry.num_links = 1;
     id->entry.major = major;
