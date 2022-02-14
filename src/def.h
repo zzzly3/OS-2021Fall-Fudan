@@ -12,6 +12,7 @@
 #include <mod/bug.h>
 #include <mod/scheduler.h>
 #include <mod/worker.h>
+#include <fs/fs.h>
 
 void create_system_process();
 // static void hello()
