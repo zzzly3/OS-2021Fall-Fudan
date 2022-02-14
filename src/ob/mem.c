@@ -255,6 +255,26 @@ UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddres
 	return r;
 }
 
+UNSAFE KSTATUS MmCreateUserPagesEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, int Size, BOOL Allocate)
+{
+	ULONG64 end = (ULONG64)VirtualAddress + Size;
+	for (ULONG64 a = PAGE_BASE((ULONG64)VirtualAddress); a < PAGE_BASE(end); a += PAGE_SIZE)
+	{
+		KSTATUS r;
+		if (Allocate)
+		{
+			r = MmCreateUserPageEx(MemorySpace, (PVOID)a);
+		}
+		else
+		{
+			r = MmMapPageEx(MemorySpace, (PVOID)a, VPTE_VALID);
+		}
+		if (!KSUCCESS(r))
+			return r;
+	}
+	return STATUS_SUCCESS;
+}
+
 // Given in kernel address
 UNSAFE PVOID MmGetPhysicalAddressEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress)
 {
@@ -392,4 +412,14 @@ UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE MemorySpace)
 	p->PageTable = pt;
 	p->ttbr0 = K2P((ULONG64)pt);
 	return p;
+}
+
+BOOL MmProbeReadEx(PVOID Address, int Size)
+{
+	for (ULONG64 i = (ULONG64)Address; i < (ULONG64)Address + Size; i += PAGE_SIZE)
+	{
+		if (!MmProbeRead((PVOID)i))
+			return FALSE;
+	}
+	return MmProbeRead((PVOID)((ULONG64)Address + Size - 1));
 }

@@ -4,14 +4,15 @@
 #include <core/syscall.h>
 #include <core/virtual_memory.h>
 #include <sys/syscall.h>
+#include <def.h>
 
 int sys_gettid() {
     // TODO
-    // return thiscpu()->proc->pid;
+    return PsGetCurrentProcessId();
 }
 int sys_ioctl() {
 	/* TODO: Lab9 Shell */
-    /* Assert tf->x1 == 0x5413 */
+     // Assert tf->x1 == 0x5413 
     return 0;
 }
 int sys_sigprocmask() {
@@ -94,11 +95,11 @@ u64 syscall_dispatch(Trapframe *frame) {
 /* Check if a block of memory lies within the process user space. */
 int in_user(void *s, usize n) {
     // TODO
-    // struct proc *p = thiscpu()->proc;
-    // if ((p->base <= (u64)s && (u64)s + n <= p->sz) ||
-    //     (USPACE_TOP - p->stksz <= (u64)s && (u64)s + n <= USPACE_TOP))
-    //     return 1;
-    // return 0;
+    struct proc *p = thiscpu()->proc;
+    if ((p->base <= (u64)s && (u64)s + n <= p->sz) ||
+        (USPACE_TOP - p->stksz <= (u64)s && (u64)s + n <= USPACE_TOP))
+        return 1;
+    return 0;
 }
 
 /*

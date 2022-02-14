@@ -103,7 +103,7 @@ typedef struct BlockCache {
     void (*free)(OpContext *ctx, usize block_no);
 } BlockCache;
 
-extern BlockCache bcache;
+USR_ONLY extern BlockCache bcache;
 
 void init_bcache(const SuperBlock *sblock, const BlockDevice *device);
 static void cache_begin_op(OpContext *ctx);

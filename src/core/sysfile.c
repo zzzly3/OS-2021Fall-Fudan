@@ -49,102 +49,136 @@ static int argfd(int n, i64 *pfd, struct file **pf) {
  */
 static int fdalloc(struct file *f) {
     /* TODO: Lab9 Shell */
-    
+    PKPROCESS cur = PsGetCurrentProcess();
+    for (int i = 0; i < 16; i++)
+    {
+        if (cur->FileDescriptors[i] == 0)
+        {
+            cur->FileDescriptors[i] = filei(f);
+            return i;
+        }
+    }
     return -1;
 }
 
 /* 
  * Get the parameters and call filedup.
  */
-int sys_dup() {
+int sys_dup(int fd) {
     /* TODO: Lab9 Shell. */
-    return 0;
+    struct file* f = KiValidateFileDescriptor(fd);
+    if (f)
+    {
+        int fd = fdalloc(f);
+        if (fd == -1)
+            return -1;
+        filedup(f);
+        return fd;
+    }
+    return -1;
 }
 
 /* 
  * Get the parameters and call fileread.
  */
-isize sys_read() {
+isize sys_read(int fd, void* buf, int count) {
     /* TODO: Lab9 Shell */
-    return -1;
+    struct file* f = KiValidateFileDescriptor(fd);
+    if (f == NULL || !KiValidateBuffer(buf, count))
+        return -1;
+    return fileread(f, buf, count);
 }
 
 /* 
  * Get the parameters and call filewrite.
  */
-isize sys_write() {
+isize sys_write(int fd, void* buf, int count) {
     /* TODO: Lab9 Shell */
+    struct file* f = KiValidateFileDescriptor(fd);
+    if (f == NULL || !KiValidateBuffer(buf, count))
+        return -1;
+    return filewrite(f, buf, count);
     return -1;
 }
 
-isize sys_writev() {
+isize sys_writev(int fd, void* _iov, int iovcnt) {
     /* TODO: Lab9 Shell */
 
-    /* Example code.
-     *
-     * ```
-     * struct file *f;
-     * i64 fd, iovcnt;
-     * struct iovec *iov, *p;
-     * if (argfd(0, &fd, &f) < 0 ||
-     *     argint(2, &iovcnt) < 0 ||
-     *     argptr(1, &iov, iovcnt * sizeof(struct iovec)) < 0) {
-     *     return -1;
-     * }
-     *
-     * usize tot = 0;
-     * for (p = iov; p < iov + iovcnt; p++) {
-     *     // in_user(p, n) checks if va [p, p+n) lies in user address space.
-     *     if (!in_user(p->iov_base, p->iov_len))
-     *          return -1;
-     *     tot += filewrite(f, p->iov_base, p->iov_len);
-     * }
-     * return tot;
-     * ```
-     */
-
-    return -1;
+    struct file *f = KiValidateFileDescriptor(fd);
+    struct iovec *iov = (struct iovec*)_iov, *p;
+    // if (argfd(0, &fd, &f) < 0 ||
+    //     argint(2, &iovcnt) < 0 ||
+    //     argptr(1, &iov, iovcnt * sizeof(struct iovec)) < 0) {
+    //     return -1;
+    // }
+    if (iovcnt < 0 || iovcnt >= 0x1000000)
+        return -1;
+    if (f == NULL)
+        return -1;
+    if (!KiValidateBuffer(iov, sizeof(struct iovec) * iovcnt))
+        return -1;
+    
+    usize tot = 0;
+    for (p = iov; p < iov + iovcnt; p++) {
+        if (!KiValidateBuffer(p->iov_base, p->iov_len))
+            return -1;
+        tot += filewrite(f, p->iov_base, p->iov_len);
+    }
+    return tot;
 }
 
 /* 
  * Get the parameters and call fileclose.
  * Clear this fd of this process.
  */
-int sys_close() {
+int sys_close(int fd) {
     /* TODO: Lab9 Shell */
-    
-
+    struct file *f = KiValidateFileDescriptor(fd);
+    if (f == NULL)
+        return -1;
+    PsGetCurrentProcess()->FileDescriptors[fd] = 0;
+    fileclose(f);
     return 0;
 }
 
 /* 
  * Get the parameters and call filestat.
  */
-int sys_fstat() {
+int sys_fstat(int fd, struct stat *st) {
     /* TODO: Lab9 Shell */
-    return -1;
+    struct file* f = KiValidateFileDescriptor(fd);
+    if (f == NULL || !KiValidateBuffer(st, sizeof(struct stat)))
+        return -1;
+    filestat(f, st);
+    return 0;
 }
 
-int sys_fstatat() {
-    i32 dirfd, flags;
-    char *path;
-    struct stat *st;
+int sys_fstatat(PTRAP_FRAME tf) {
+    // i32 dirfd, flags;
+    char *path = (char*)tf->x1;
+    struct stat *st = (struct stat*)tf->x2;
 
-    if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argptr(2, (void *)&st, sizeof(*st)) < 0 ||
-        argint(3, &flags) < 0)
+    int len = KiValidateString(path);
+    if (len == 0 || len > 1024)
+        return -1;
+    if (!KiValidateBuffer(st, sizeof(struct stat)))
         return -1;
 
-    if (dirfd != AT_FDCWD) {
+    // if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argptr(2, (void *)&st, sizeof(*st)) < 0 ||
+    //     argint(3, &flags) < 0)
+    //     return -1;
+
+    if (tf->x0 != AT_FDCWD) {
         printf("sys_fstatat: dirfd unimplemented\n");
         return -1;
     }
-    if (flags != 0) {
+    if (tf->x3 != 0) {
         printf("sys_fstatat: flags unimplemented\n");
         return -1;
     }
 
     Inode *ip;
-    OpContext ctx;
+    static OpContext ctx;
     bcache.begin_op(&ctx);
     if ((ip = namei(path, &ctx)) == 0) {
         bcache.end_op(&ctx);
@@ -171,17 +205,42 @@ int sys_fstatat() {
  */
 Inode *create(char *path, short type, short major, short minor, OpContext *ctx) {
     /* TODO: Lab9 Shell */
-    return 0;
+    char name[FILE_NAME_MAX_LENGTH] = {0};
+    Inode* ip = nameiparent(path, name, ctx);
+    if (ip == NULL)
+        return NULL;
+    Inode* id = inodes.get(inodes.alloc(ctx, type));
+    inodes.lock(ip);
+    ip->entry.num_links++;
+    inodes.insert(ctx, ip, name, id->inode_no);
+    inodes.sync(ctx, ip, 1);
+    inodes.unlock(ip);
+    inodes.put(ip);
+    inodes.lock(id);
+    id->entry.num_links = 1;
+    id->entry.major = major;
+    id->entry.minor = minor;
+    if (type == INODE_DIRECTORY)
+    {
+        id->entry.num_links = 2;
+        inodes.insert(ctx, id, ".", id->inode_no);
+        inodes.insert(ctx, id, "..", ip->inode_no);
+    }
+    inodes.sync(ctx, id, 1);
+    return id;
 }
 
-int sys_openat() {
-    char *path;
-    int dirfd, fd, omode;
+int sys_openat(int dirfd, char* path, int omode) {
+    int fd;
     struct file *f;
     Inode *ip;
 
-    if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &omode) < 0)
+    int len = KiValidateString(path);
+    if (len == 0 || len > 1024)
         return -1;
+
+    // if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &omode) < 0)
+    //     return -1;
 
     // printf("%d, %s, %lld\n", dirfd, path, omode);
     if (dirfd != AT_FDCWD) {
@@ -193,7 +252,7 @@ int sys_openat() {
     //     return -1;
     // }
 
-    OpContext ctx;
+    static OpContext ctx;
     bcache.begin_op(&ctx);
     if (omode & O_CREAT) {
         // FIXME: Support acl mode.
@@ -235,13 +294,14 @@ int sys_openat() {
     return fd;
 }
 
-int sys_mkdirat() {
-    i32 dirfd, mode;
-    char *path;
+int sys_mkdirat(int dirfd, char* path, int mode) {
     Inode *ip;
-
-    if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &mode) < 0)
+    int len = KiValidateString(path);
+    if (len == 0 || len > 1024)
         return -1;
+
+    // if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &mode) < 0)
+    //     return -1;
     if (dirfd != AT_FDCWD) {
         printf("sys_mkdirat: dirfd unimplemented\n");
         return -1;
@@ -250,7 +310,7 @@ int sys_mkdirat() {
         printf("sys_mkdirat: mode unimplemented\n");
         return -1;
     }
-    OpContext ctx;
+    static OpContext ctx;
     bcache.begin_op(&ctx);
     if ((ip = create(path, INODE_DIRECTORY, 0, 0, &ctx)) == 0) {
         bcache.end_op(&ctx);
@@ -262,13 +322,16 @@ int sys_mkdirat() {
     return 0;
 }
 
-int sys_mknodat() {
+int sys_mknodat(PTRAP_FRAME tf) {
     Inode *ip;
-    char *path;
-    i32 dirfd, major, minor;
-
-    if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &major) < 0 || argint(3, &minor))
+    char *path = (char*)tf->x1;
+    int len = KiValidateString(path);
+    if (len == 0 || len > 1024)
         return -1;
+    i32 dirfd = tf->x0, major = tf->x2, minor = tf->x3;
+
+    // if (argint(0, &dirfd) < 0 || argstr(1, &path) < 0 || argint(2, &major) < 0 || argint(3, &minor))
+    //     return -1;
 
     if (dirfd != AT_FDCWD) {
         printf("sys_mknodat: dirfd unimplemented\n");
@@ -276,7 +339,7 @@ int sys_mknodat() {
     }
     printf("mknodat: path '%s', major:minor %d:%d\n", path, major, minor);
 
-    OpContext ctx;
+    static OpContext ctx;
     bcache.begin_op(&ctx);
     if ((ip = create(path, INODE_DEVICE, major, minor, &ctx)) == 0) {
         bcache.end_op(&ctx);
@@ -288,37 +351,41 @@ int sys_mknodat() {
     return 0;
 }
 
-int sys_chdir() {
-    // TODO
-    // char *path;
-    // Inode *ip;
-    // struct proc *curproc = thiscpu()->proc;
-
-    // OpContext ctx;
-    // bcache.begin_op(&ctx);
-    // if (argstr(0, &path) < 0 || (ip = namei(path, &ctx)) == 0) {
-    //     bcache.end_op(&ctx);
-    //     return -1;
-    // }
-    // inodes.lock(ip);
-    // if (ip->entry.type != INODE_DIRECTORY) {
-    //     inodes.unlock(ip);
-    //     inodes.put(&ctx, ip);
-    //     bcache.end_op(&ctx);
-    //     return -1;
-    // }
-    // inodes.unlock(ip);
-    // inodes.put(&ctx, curproc->cwd);
-    // bcache.end_op(&ctx);
-    // curproc->cwd = ip;
-    // return 0;
+int sys_chdir(char* path) {
+    Inode *ip;
+    unsigned len = KiValidateString(path);
+    if (len == 0 || len > 1024)
+        return -1;
+    PKPROCESS cur = PsGetCurrentProcess();
+    static OpContext ctx;
+    bcache.begin_op(&ctx);
+    if ((ip = namei(path, &ctx)) == 0) {
+        bcache.end_op(&ctx);
+        return -1;
+    }
+    inodes.lock(ip);
+    if (ip->entry.type != INODE_DIRECTORY) {
+        inodes.unlock(ip);
+        inodes.put(&ctx, ip);
+        bcache.end_op(&ctx);
+        return -1;
+    }
+    inodes.unlock(ip);
+    if (cur->Cwd)
+        inodes.put(&ctx, cur->Cwd);
+    bcache.end_op(&ctx);
+    cur->Cwd = ip;
+    return 0;
 }
-int execve(const char *path, char *const argv[], char *const envp[]);
+int execve(PTRAP_FRAME, const char *path, char *const argv[], char *const envp[]);
 
 /* 
  * Get the parameters and call execve.
  */
-int sys_exec() {
+int sys_exec(PTRAP_FRAME tf) {
     /* TODO: Lab9 Shell */
-    return -1;
+    int len = KiValidateString((PVOID)tf->x0);
+    if (len == 0 || len >= 1024)
+        return -1;
+    return execve(tf, (const char *)tf->x0, (char *const*)tf->x1, (char *const*)tf->x2);
 }

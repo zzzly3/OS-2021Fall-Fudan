@@ -58,7 +58,7 @@ void KeBugFaultEx(CPCHAR BugFile, ULONG64 BugLine, ULONG64 BugId)
     asm volatile("mov %[x], sp" : [x] "=r"(p));
     //asm volatile("mov %[x], x18" : [x] "=r"(x));
     asm volatile("mrs %[x], ttbr0_el1" : [x] "=r"(t));
-    printf(BLUE("[*]")"sp = 0x%p, ttbr0 = 0x%p, elr = 0x%p, esr = 0x%p.\n", p, t, arch_get_elr(), arch_get_esr());
+    printf(BLUE("[*]")"sp = 0x%p, ttbr0 = 0x%p, elr = 0x%p, far = 0x%p.\n", p, t, arch_get_elr(), arch_get_far());
 	PKPROCESS cur = PsGetCurrentProcess();
 	printf(BLUE("[*]")"Current CPUID = %d, PID = %d, Status = %s, Execute Level = %s, Trap %s,\n", cpuid(), cur->ProcessId, PSName[cur->Status], ELName[cur->ExecuteLevel], trapen ? "enabled" : "disabled");
 	printf("Name = %s, Flags = 0x%x, APC List: %s, Wait Mutex: %s, %s, Reference = %d.\n", &cur->DebugName, cur->Flags, cur->ApcList ? "not empty" : "empty", cur->WaitMutex ? "true" : "false", cur->Lock.locked ? "Locked" : "Not locked", cur->ReferenceCount.count);
@@ -127,7 +127,6 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		return TRUE;
 	}
 fail:
-	printf("mem fault at %p\n", TrapFrame->elr);
 	ObUnlockObjectFast(ms);
 end:
 	if (TrapFrame->elr >= (ULONG64)MmProbeRead && TrapFrame->elr < (ULONG64)MmiProbeReadCatch)

@@ -22,6 +22,12 @@ struct file* ifile(char id) {
     return 0;
 }
 
+char filei(struct file* f) {
+    if (f)
+        return ((ULONG64)f - (ULONG64)&ftable.file) / sizeof (struct file);
+    return 0;
+}
+
 /* Optional since BSS is zero-initialized. */
 void fileinit() {
     // init_spinlock(&ftable.lock);
@@ -36,6 +42,7 @@ struct file *filealloc() {
     {
         if (ftable.file[i].ref == 0)
         {
+            memset(&ftable.file[i], 0, sizeof(struct file));
             ftable.file[i].ref = 1;
             KeReleaseSpinLock(&ftable.lock);
             return &ftable.file[i];

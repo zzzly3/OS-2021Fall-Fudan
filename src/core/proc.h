@@ -42,3 +42,5 @@ void exit();
 void sleep(void *chan, SpinLock *lock);
 void wakeup(void *chan);
 int fork(PTRAP_FRAME TrapFrame);
+int growproc(int n);
+int wait();

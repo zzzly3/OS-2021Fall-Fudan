@@ -200,7 +200,6 @@ int growproc(int n) {
             }
         }
     }
-    old = 0;
  end:
     cur->UserDataEnd = n;
     if (te) arch_enable_trap();
@@ -215,7 +214,7 @@ int growproc(int n) {
  * Don't forget to copy file descriptors and `cwd` inode.
  */
 void PsiFreeProcess(PKPROCESS Process);
-extern u64 TrapContext[CPU_NUM][16];
+extern u64 SyscallContext[CPU_NUM][16];
 USR_ONLY
 int fork(PTRAP_FRAME TrapFrame) {
     /* TODO: Lab9 shell */
@@ -263,7 +262,7 @@ int fork(PTRAP_FRAME TrapFrame) {
     p->Context.tpidr_el0 = cur->Context.tpidr_el0;
     PVOID ctx = (PVOID)((ULONG64)p->Context.KernelStack.p - 512);
     memcpy(ctx, TrapFrame, 11*16);
-    memcpy((PVOID)((ULONG64)ctx + 11*16), &TrapContext[cpuid()], 5*16);
+    memcpy((PVOID)((ULONG64)ctx + 11*16), &SyscallContext[cpuid()], 5*16);
     PsCreateProcess(p, NULL, (ULONG64)ctx);
     KeLowerExecuteLevel(el);
     return 0;

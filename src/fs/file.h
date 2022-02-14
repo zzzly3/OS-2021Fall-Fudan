@@ -59,6 +59,7 @@ isize fileread(struct file *f, char *addr, isize n);
 isize filewrite(struct file *f, char *addr, isize n);
 
 struct file* ifile(char id);
+char filei(struct file* f);
 
 int sys_dup();
 isize sys_read();

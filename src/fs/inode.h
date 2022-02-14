@@ -114,7 +114,7 @@ typedef struct InodeTree {
     void (*remove)(OpContext *ctx, Inode *inode, usize index);
 } InodeTree;
 
-UNSAFE extern InodeTree inodes;
+USR_ONLY extern InodeTree inodes;
 
 UNSAFE void init_inodes(const SuperBlock *sblock, const BlockCache *cache);
 void stati(Inode *ip, struct stat *st);

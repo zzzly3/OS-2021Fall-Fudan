@@ -357,7 +357,7 @@ static usize inode_insert(OpContext *ctx, Inode *inode, const char *name, usize 
     inode_lookup(inode, NULL, &i);
     //printf("i to %d\n", i);
     inode_write(ctx, inode, (u8*)&de, i, sizeof(DirEntry));
-    return 0;
+    return i;
 }
 
 // see `inode.h`.
@@ -413,7 +413,7 @@ static const char *skipelem(const char *path, char *name) {
  * path element into name, which must have room for DIRSIZ bytes.
  * Must be called inside a transaction since it calls iput().
  */
-static Inode *namex(const char *path, int nameiparent, char *name, OpContext *ctx) {
+Inode *namex(const char *path, int nameiparent, char *name, OpContext *ctx) {
 	// TODO: Lab9 Shell 
     Inode* in;
     Inode* cwd = PsGetCurrentProcess()->Cwd;
@@ -428,6 +428,11 @@ parse:
     path = skipelem(path, elem);
     if (path == NULL)
         return in;
+    if (*path == 0 && nameiparent)
+    {
+        strncpy(name, elem, FILE_NAME_MAX_LENGTH);
+        return in;
+    }
     inodes.lock(in);
     i = inodes.lookup(in, elem, &id);
     inodes.unlock(in);
@@ -436,27 +441,13 @@ parse:
     else
         f = 1;
     if (i == 0)
-        return NULL;
-    if (nameiparent)
     {
-        if (*path == 0)
-            return in;
         strncpy(name, elem, FILE_NAME_MAX_LENGTH);
-    }
-    else
-    {
-        if (*path == 0)
-        {
-            inodes.lock(in);
-            i = inodes.lookup(in, elem, &id);
-            inodes.unlock(in);
-            if (f) inodes.put(ctx, in);
-            if (i == 0)
-                return NULL;
-            return inodes.get(i);
-        }
+        return NULL;
     }
     in = inodes.get(i);
+    if (*path == 0)
+        return in;
     goto parse;
 }
 
