@@ -140,7 +140,7 @@ end:
 
 void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
-	printf("Exception: %p\n", esr);
+	printf("%d Exception: %p\n", PsGetCurrentProcessId(), esr);
 	if (((esr >> 27) & 31) == 0b10010) // EL0 & 1 Data Abort
 	{
 		if (KiMemoryFaultHandler(TrapFrame, esr))
