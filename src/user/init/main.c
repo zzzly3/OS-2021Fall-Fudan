@@ -27,7 +27,7 @@ int main() {
             exit(1);
         }
         if (pid == 0) {
-            printf("forked\n");
+            break;
             execve("sh", argv, envp);
             printf("init: exec sh failed\n");
             exit(1);
