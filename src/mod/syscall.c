@@ -5,6 +5,7 @@ extern BOOL KeBugFaultFlag;
 extern u64 TrapContext[CPU_NUM][16];
 u64 SyscallContext[CPU_NUM][16];
 
+#define NR_SYSCALL 512
 extern const char* syscall_table_str[NR_SYSCALL];
 
 BOOL KiValidateBuffer(PVOID Address, unsigned Size)
