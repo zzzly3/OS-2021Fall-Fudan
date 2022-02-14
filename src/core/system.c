@@ -35,9 +35,10 @@ void KeSystemEntry()
 	Inode* ip = inodes.get(ROOT_INODE_NO);
 	printf("root size=%d bno=%d\n", ip->entry.num_bytes, ip->entry.addrs[0]);
 	Block* b = bcache.acquire(ip->entry.addrs[0]);
-	for (int i = 0; i < 512; i += 8)
+	for (int i = 0; i < 512; i += sizeof(DirEntry))
 	{
-		printf("%p\n", *(ULONG64*)&b->data[i]);
+		DirEntry* d = (DirEntry*)&b->data[i];
+		printf("#%d: %d %s\n", i, d->inode_no, d->name);
 	}
 	bcache.release(b);
 	bcache.end_op(&ctx);
