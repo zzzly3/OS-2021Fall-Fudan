@@ -51,12 +51,12 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	}
 	memcpy(SyscallContext[cpuid()], TrapContext[cpuid()], 16*8);
 	arch_enable_trap();
-	if (sysno < 400) printf("SYSCALL %d %s\n", sysno, syscall_table_str[sysno]);
 	ULONG64 callno = TrapFrame->x8;
 	ULONG64 arg1 = TrapFrame->x0;
 	ULONG64 arg2 = TrapFrame->x1;
 	ULONG64 arg3 = TrapFrame->x2;
 	ULONG64 ret = 0;
+	if (callno < 400) printf("SYSCALL %d %s\n", callno, syscall_table_str[callno]);
 	switch (callno)
 	{
 		case SYS_set_tid_address: ret = sys_gettid(); break;
