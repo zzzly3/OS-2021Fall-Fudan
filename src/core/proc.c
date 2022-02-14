@@ -102,7 +102,9 @@ NO_RETURN void exit() {
  * Switch to the scheduler of this proc.
  */
 void yield() {
+    BOOL te = arch_disable_trap();
     KeTaskSwitch();
+    if (te) arch_enable_trap();
 }
 
 /*
