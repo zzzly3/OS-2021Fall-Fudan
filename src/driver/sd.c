@@ -508,6 +508,8 @@ SPINLOCK sdlock;
 static DEVICE_OBJECT SDDevice;
 static KSTRING SDDeviceName;
 
+static u8 MBR[BSIZE];
+
 int MBR_PE2_LBA, MBR_PE2_SZ;
 
 bool sd_test_interrupt(unsigned int mask)
@@ -567,7 +569,7 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
             break;
         case IOREQ_TYPE_READ:
             // puts("read");
-            sd_start(IOReq->ObjectAttribute.Id, 0, (u32*)IOReq->Buffer);
+            sd_start(IOReq->ObjectAttribute.Id + (IOReq->RequestCode ? 0 : MBR_PE2_LBA), 0, (u32*)IOReq->Buffer);
             if (sd_test_interrupt(INT_READ_RDY))
             {
                 sd_read_ready(IOReq);
@@ -581,7 +583,7 @@ void sd_request_handler(PDEVICE_OBJECT DeviceObject, PIOREQ_OBJECT IOReq)
             break;
         case IOREQ_TYPE_WRITE:
             // puts("write");
-            sd_start(IOReq->ObjectAttribute.Id, 1, (u32*)IOReq->Buffer);
+            sd_start(IOReq->ObjectAttribute.Id + (IOReq->RequestCode ? 0 : MBR_PE2_LBA), 1, (u32*)IOReq->Buffer);
             if (sd_test_interrupt(INT_WRITE_RDY))
             {
                 sd_write_ready(IOReq);
@@ -606,7 +608,6 @@ USR_ONLY void sd_init() {
      * Remember to call sd_init() at somewhere.
      */
     ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
-    static struct buf b;
     // sdInit();
     // set_interrupt_handler(IRQ_ARASANSDIO, sd_intr);
     LibInitializeKString(&SDDeviceName, "sd_card", 16);
@@ -642,10 +643,19 @@ USR_ONLY void sd_init() {
     /* TODO: Lab7 driver. */
     // puts("read first");
     
-    sdrw(&b);
-    MBR_PE2_LBA = *(int*)&b.data[0x1ce + 0x8];
-    MBR_PE2_SZ = *(int*)&b.data[0x1ce + 0xc];
-    printf("check %x%x, MBR_PE2_LBA=0x%x, MBR_PE2_SZ=0x%x\n", b.data[510], b.data[511], MBR_PE2_LBA, MBR_PE2_SZ);
+    PIOREQ_OBJECT req = IoAllocateRequest();
+    req->Type = IOREQ_TYPE_READ;
+    req->Size = BSIZE;
+    req->Buffer = (PVOID)&MBR;
+    req->ObjectAttribute.Id = 0;
+    req->RequestCode = 1;
+    KSTATUS ret = IoCallDevice(&SDDevice, req);
+    IoFreeRequest(req);
+    asserts(KSUCCESS(ret), "Cannot read MBR (%d)", ret);
+
+    MBR_PE2_LBA = *(int*)&MBR[0x1ce + 0x8];
+    MBR_PE2_SZ = *(int*)&MBR[0x1ce + 0xc];
+    printf("check %x%x, MBR_PE2_LBA=0x%x, MBR_PE2_SZ=0x%x\n", MBR[510], MBR[511], MBR_PE2_LBA, MBR_PE2_SZ);
 
 }
 
