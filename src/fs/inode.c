@@ -290,7 +290,7 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
         else
         {
             Block* b = cache->acquire(bn);
-            *dest = ((u8*)b)[o % BLOCK_SIZE];
+            *dest = b->data[o % BLOCK_SIZE];
             cache->release(b);
         }
     }
@@ -309,7 +309,7 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
         usize bn = inode_map(ctx, inode, o, &x);
         assert(bn > 0);
         Block* b = cache->acquire(bn);
-        ((u8*)b)[o % BLOCK_SIZE] = *src;
+        b->data[o % BLOCK_SIZE] = *src;
         cache->release(b);
     }
     entry->num_bytes = MAX(entry->num_bytes, end);
