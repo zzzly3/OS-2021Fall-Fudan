@@ -49,7 +49,9 @@ static INLINE u32 *get_addrs(Block *block) {
 // initialize inode tree.
 void init_inodes(const SuperBlock *_sblock, const BlockCache *_cache) {
     #ifdef UPDATE_API
+        BOOL te = arch_disable_trap();
         MmInitializeObjectPool(&InodePool, sizeof(Inode));
+        if (te) arch_enable_trap();
     #else
         ArenaPageAllocator allocator = {.allocate = kalloc, .free = kfree};
         init_arena(&arena, sizeof(Inode), allocator);
