@@ -5,6 +5,8 @@ extern BOOL KeBugFaultFlag;
 extern u64 TrapContext[CPU_NUM][16];
 u64 SyscallContext[CPU_NUM][16];
 
+extern const char* syscall_table_str;
+
 BOOL KiValidateBuffer(PVOID Address, unsigned Size)
 {
 	if (Size == 0)
@@ -49,6 +51,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	}
 	memcpy(SyscallContext[cpuid()], TrapContext[cpuid()], 16*8);
 	arch_enable_trap();
+	if (sysno < 400) printf("SYSCALL %d %s\n", sysno, syscall_table_str[sysno]);
 	ULONG64 callno = TrapFrame->x8;
 	ULONG64 arg1 = TrapFrame->x0;
 	ULONG64 arg2 = TrapFrame->x1;
