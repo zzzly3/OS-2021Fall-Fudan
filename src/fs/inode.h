@@ -118,3 +118,5 @@ USR_ONLY extern InodeTree inodes;
 
 UNSAFE void init_inodes(const SuperBlock *sblock, const BlockCache *cache);
 void stati(Inode *ip, struct stat *st);
+Inode *namei(const char *path, OpContext *ctx);
+Inode *nameiparent(const char *path, char *name, OpContext *ctx);

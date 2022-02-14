@@ -8,6 +8,8 @@
 #include <mod/scheduler.h>
 #include <core/console.h>
 #include <ob/proc.h>
+#include <ob/dev.h>
+#include <driver/console.h>
 // TODO: Replace API after satisfying TAs.
 #ifdef UPDATE_API
 #include <ob/mem.h>
@@ -275,6 +277,19 @@ static usize inode_map(OpContext *ctx, Inode *inode, usize offset, bool *modifie
 // see `inode.h`.
 static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
     InodeEntry *entry = &inode->entry;
+    if (inode->entry.type == INODE_DEVICE)
+    {
+        IOREQ_OBJECT req;
+        IoInitializeRequest(&req);
+        req.Type = IOREQ_TYPE_READ;
+        req.Size = count;
+        req.Buffer = dest;
+        if (inode->entry.major == 1)
+        {
+            IoCallDevice(HalConsoleDevice, &req);
+        }
+        return;
+    }
     usize end = offset + count;
     assert(offset <= entry->num_bytes);
     assert(end <= entry->num_bytes);
@@ -299,6 +314,19 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
 // see `inode.h`.
 static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usize count) {
     InodeEntry *entry = &inode->entry;
+    if (inode->entry.type == INODE_DEVICE)
+    {
+        IOREQ_OBJECT req;
+        IoInitializeRequest(&req);
+        req.Type = IOREQ_TYPE_WRITE;
+        req.Size = count;
+        req.Buffer = src;
+        if (inode->entry.major == 1)
+        {
+            IoCallDevice(HalConsoleDevice, &req);
+        }
+        return;
+    }
     usize end = offset + count;
     assert(offset <= entry->num_bytes);
     assert(end <= INODE_MAX_BYTES);
