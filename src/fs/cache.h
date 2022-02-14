@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common/list.h>
+#include <common/lutil.h>
 #include <core/sleeplock.h>
 #include <fs/block_device.h>
 #include <fs/defines.h>
