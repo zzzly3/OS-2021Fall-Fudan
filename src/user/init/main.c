@@ -27,12 +27,14 @@ int main() {
             exit(1);
         }
         if (pid == 0) {
+            printf("forked\n");
             execve("sh", argv, envp);
             printf("init: exec sh failed\n");
             exit(1);
         }
         while ((wpid = wait(NULL)) >= 0 && wpid != pid)
             printf("zombie!\n");
+        break;
     }
 
     return 0;
