@@ -30,8 +30,9 @@ void KeSystemEntry()
 	driver_init();
 	// sd_test();
 
-	puts("spawn_init_process");
+	putstr("spawn_init_process\n");
 	spawn_init_process();
+	putstr("System process exited.\n");
 }
 
 void create_system_process()

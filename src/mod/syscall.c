@@ -43,6 +43,7 @@ struct file* KiValidateFileDescriptor(int FileDescriptor) // return file object
 
 void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 {
+	uart_put_char('c');
 	if (KeBugFaultFlag) for(arch_disable_trap();;);
 	if (TrapFrame->elr >> 63) 
 	{
