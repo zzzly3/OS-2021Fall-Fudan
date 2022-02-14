@@ -1,5 +1,6 @@
 #include <mod/syscall.h>
 #include <fs/file.h>
+#include <def.h>
 
 extern BOOL KeBugFaultFlag;
 extern u64 TrapContext[CPU_NUM][16];
@@ -59,6 +60,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	ULONG64 ret = 0;
 	if (callno < 400) printf("SYSCALL %d %s\n", callno, syscall_table_str[callno]);
 	else printf("SYSCALL %d\n", callno);
+
 	switch (callno)
 	{
 		case SYS_set_tid_address: ret = sys_gettid(); break;
@@ -91,4 +93,24 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	// Fault if EL mismatching
 	KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
 	KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+
+	static OpContext ctx;
+	bcache.begin_op(&ctx);
+	Inode* ip = inodes.get(ROOT_INODE_NO);
+	printf("root size=%d bno=%d\n", ip->entry.num_bytes, ip->entry.addrs[0]);
+	// Block* b = bcache.acquire(ip->entry.addrs[0]);
+	static u8 b[512];
+	inodes.read(ip, b, 0, 512);
+	for (int i = 0; i < 512; i += sizeof(DirEntry))
+	{
+		DirEntry* d = (DirEntry*)&b[i];
+		if (d->inode_no == 0)
+			break;
+		printf("#%d: %d %s\n", i, d->inode_no, d->name);
+	}
+	inodes.put(&ctx, ip);
+	ip = inodes.get(4);
+	printf("sh: %d %d\n", ip->entry.type, ip->entry.num_bytes);
+	inodes.put(&ctx, ip);
+	bcache.end_op(&ctx);
 }
