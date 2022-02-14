@@ -228,7 +228,9 @@ static void inode_put(OpContext *ctx, Inode *inode) {
         }
         //printf("clearrrrrr\n");
         #ifdef UPDATE_API
+            BOOL te = arch_disable_trap();
             MmFreeObject(&InodePool, inode);
+            if (te) arch_enable_trap();
         #else
             free_object(inode);
         #endif
