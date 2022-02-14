@@ -265,11 +265,12 @@ int fork(PTRAP_FRAME TrapFrame) {
     p->Context.UserStack = cur->Context.UserStack;
     p->Context.tpidr_el0 = cur->Context.tpidr_el0;
     PVOID ctx = (PVOID)((ULONG64)p->Context.KernelStack.p - 512);
+    TrapFrame->x0 = 0; // ret
     memcpy(ctx, TrapFrame, 11*16);
     memcpy((PVOID)((ULONG64)ctx + 11*16), &SyscallContext[cpuid()], 5*16);
     PsCreateProcess(p, NULL, (ULONG64)ctx);
     KeLowerExecuteLevel(el);
-    return 0;
+    return PsGetProcessId(p);
 }
 
 /*
