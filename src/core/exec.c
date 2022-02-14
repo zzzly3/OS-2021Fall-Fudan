@@ -99,39 +99,45 @@ int execve(PTRAP_FRAME tf, const char *path, char *const argv[], char *const env
     static char str[2048];
     short _argv[16] = {0}, _envp[16] = {0}, pstr = 0, argc = 0, envc = 0;
     memset(str, 0, 2048);
-    for (int i = 0; i < 16; i++)
+    if (argv)
     {
-        if (!MmProbeRead(&argv[i]))
-            return -1;
-        if (argv[i] == NULL || i == 15)
+        for (int i = 0; i < 16; i++)
         {
-            _argv[i] = -1;
-            argc = i;
-            break;
+            if (!MmProbeRead(&argv[i]))
+                return -1;
+            if (argv[i] == NULL || i == 15)
+            {
+                _argv[i] = -1;
+                argc = i;
+                break;
+            }
+            int len = KiValidateString(argv[i]);
+            if (len == 0 || pstr + len >= 2048)
+                return -1;
+            memcpy(&str[pstr], argv[i], len);
+            _argv[i] = pstr;
+            pstr += len;
         }
-        int len = KiValidateString(argv[i]);
-        if (len == 0 || pstr + len >= 2048)
-            return -1;
-        memcpy(&str[pstr], argv[i], len);
-        _argv[i] = pstr;
-        pstr += len;
     }
-    for (int i = 0; i < 16; i++)
+    if (envp)
     {
-        if (!MmProbeRead(&envp[i]))
-            return -1;
-        if (envp[i] == NULL || i == 15)
+        for (int i = 0; i < 16; i++)
         {
-            _envp[i] = -1;
-            envc = i;
-            break;
-        }
-        int len = KiValidateString(envp[i]);
-        if (len == 0 || pstr + len >= 2048)
-            return -1;
-        memcpy(&str[pstr], envp[i], len);
-        _envp[i] = pstr;
-        pstr += len;
+            if (!MmProbeRead(&envp[i]))
+                return -1;
+            if (envp[i] == NULL || i == 15)
+            {
+                _envp[i] = -1;
+                envc = i;
+                break;
+            }
+            int len = KiValidateString(envp[i]);
+            if (len == 0 || pstr + len >= 2048)
+                return -1;
+            memcpy(&str[pstr], envp[i], len);
+            _envp[i] = pstr;
+            pstr += len;
+        }       
     }
     // read ehdr
     char name[16] = {0};

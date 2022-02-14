@@ -53,11 +53,11 @@ int printf(const char*, ...);
 static inline void driver_init()
 {
 	// Initialize drivers & devices
-	puts("Basic core loaded.");
-	puts("Loading drivers...");
-	putstr("sd_card...");
-	sd_init();
-	puts("done.");
+	putstr("Basic core loaded.\n");
+	putstr("Loading drivers...\n");
+	init_filesystem();
+	fileinit();
+	putstr("Done.\n");
 }
 
 #endif

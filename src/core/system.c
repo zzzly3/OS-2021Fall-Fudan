@@ -5,28 +5,33 @@ void msgtest()
 	printf("ahhh\n");
 }
 
+void spawn_init_process();
+
 void KeSystemEntry()
 {
 	puts("System process created.");
 	delay_us(500 * 1000); // Wait all cores to complete initializing
 
 	// // test
-	ULONG64 addr[] = {0, 12345, 222222222222, -999999};
-	for (int i = 0; i < 4; i++)
-	{
-		printf("%p %d\n", addr[i], MmProbeRead((PVOID)addr[i]));
-	}
-	arch_disable_trap();
-	PMEMORY_SPACE mem = MmCreateMemorySpace();
-	// MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
-	MmMapPageEx(mem, 0, VPTE_VALID);
-	KeSwitchMemorySpace(mem);
-	printf("a\n");
-	*(int*)0 = 123;
-	printf("%d\n", *(int*)0);
+	// ULONG64 addr[] = {0, 12345, 222222222222, -999999};
+	// for (int i = 0; i < 4; i++)
+	// {
+	// 	printf("%p %d\n", addr[i], MmProbeRead((PVOID)addr[i]));
+	// }
+	// arch_disable_trap();
+	// PMEMORY_SPACE mem = MmCreateMemorySpace();
+	// // MmMapPageEx(mem, 0, K2P(MmAllocatePhysicalPage()) | PTE_USER_DATA);
+	// MmMapPageEx(mem, 0, VPTE_VALID);
+	// KeSwitchMemorySpace(mem);
+	// printf("a\n");
+	// *(int*)0 = 123;
+	// printf("%d\n", *(int*)0);
 
-	// driver_init();
+	driver_init();
 	// sd_test();
+
+	puts("spawn_init_process");
+	spawn_init_process();
 }
 
 void create_system_process()
