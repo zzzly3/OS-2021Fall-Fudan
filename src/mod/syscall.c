@@ -58,6 +58,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	ULONG64 arg3 = TrapFrame->x2;
 	ULONG64 ret = 0;
 	if (callno < 400) printf("SYSCALL %d %s\n", callno, syscall_table_str[callno]);
+	else printf("SYSCALL %d\n", callno);
 	switch (callno)
 	{
 		case SYS_set_tid_address: ret = sys_gettid(); break;
@@ -83,6 +84,7 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 		case SYS_write: ret = sys_write(arg1, (void*)arg2, arg3); break;
 		case SYS_close: ret = sys_close(arg1); break;
 		case SYS_myyield: ret = sys_yield(); break;
+		case SYS_myexit: ret = sys_exit(); break;
 		default: ret = -1;
 	}
 	TrapFrame->x0 = ret;

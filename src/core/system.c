@@ -30,6 +30,18 @@ void KeSystemEntry()
 	driver_init();
 	// sd_test();
 
+	static OpContext ctx;
+	bcache.begin_op(&ctx);
+	Inode* ip = inodes.get(ROOT_INODE_NO);
+	printf("root size=%d bno=%d\n", ip->entry.num_bytes, ip->entry.addrs[0]);
+	Block* b = bcache.acquire(ip->entry.addrs[0]);
+	for (int i = 0; i < 512; i += 8)
+	{
+		printf("%p\n", *(ULONG64*)&b->data[i]);
+	}
+	bcache.release(b);
+	bcache.end_op(&ctx);
+
 	putstr("spawn_init_process\n");
 	spawn_init_process();
 	putstr("System process exited.\n");

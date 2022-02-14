@@ -13,6 +13,8 @@
 #include <mod/scheduler.h>
 #include <mod/worker.h>
 #include <fs/fs.h>
+#include <fs/cache.h>
+#include <fs/inode.h>
 
 void create_system_process();
 // static void hello()
