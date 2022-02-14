@@ -10,7 +10,7 @@
 #include <mod/syscall.h>
 #include <mod/bug.h>
 
-u64 TrapContext[CPU_NUM][16];
+u64 __attribute__((aligned(16))) TrapContext[CPU_NUM][16];
 
 void KiExceptionEntry(PTRAP_FRAME, ULONG64);
 
