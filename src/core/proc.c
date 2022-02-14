@@ -253,7 +253,7 @@ int fork(PTRAP_FRAME TrapFrame) {
     }
     else
         p->Cwd = NULL;
-    memcpy(&p->DebugName, &cur->DebugName, 16);
+    memcpy(p->DebugName, cur->DebugName, 16);
     for (int i = 0; i < 16; i++)
     {
         if (cur->FileDescriptors[i])

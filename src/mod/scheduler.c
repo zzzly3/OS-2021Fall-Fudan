@@ -187,7 +187,7 @@ void KiClockTrapEntry()
 		static int dbgcd[CPU_NUM];
 		if (dbgcd[cid] == 2000 / TIME_SLICE_MS)
 		{
-			printf("CPU %d HELLO!\n", cid);
+			// printf("CPU %d HELLO!\n", cid);
 			dbgcd[cid] = 0;
 		}
 		else

@@ -185,7 +185,7 @@ int execve(PTRAP_FRAME tf, const char *path, char *const argv[], char *const env
         }
     }
     // setup stack
-    ULONG64 sp = USPACE_TOP - 0x4000000 + PAGE_SIZE;
+    ULONG64 sp = 0x60000000 + PAGE_SIZE;
     if (!KSUCCESS(MmCreateUserPageEx(mem, (PVOID)sp)))
         goto end3;
     sp += PAGE_SIZE;
@@ -217,8 +217,8 @@ int execve(PTRAP_FRAME tf, const char *path, char *const argv[], char *const env
     #undef PUSH
     // update process
     PKPROCESS cur = PsGetCurrentProcess();
-    cur->UserDataBegin = USPACE_TOP - 0x4000000 + PAGE_SIZE;
-    cur->UserDataEnd = USPACE_TOP - 0x4000000 + PAGE_SIZE * 2;
+    cur->UserDataBegin = 0x60000000 + PAGE_SIZE;
+    cur->UserDataEnd = 0x60000000 + PAGE_SIZE * 2;
     arch_set_usp(sp);
     strncpy(cur->DebugName, name, 16);
     tf->elr = ehdr.e_entry;
