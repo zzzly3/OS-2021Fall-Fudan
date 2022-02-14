@@ -12,6 +12,7 @@
 #include <core/virtual_memory.h>
 
 #include <elf.h>
+#include <mod/syscall.h>
 
 static uint64_t auxv[][2] = {{AT_PAGESZ, PAGE_SIZE}};
 
@@ -135,7 +136,7 @@ int execve(PTRAP_FRAME tf, const char *path, char *const argv[], char *const env
     // read ehdr
     char name[16] = {0};
     static OpContext ctx;
-    static struct Elf64_Ehdr ehdr;
+    static Elf64_Ehdr ehdr;
     BOOL te = arch_disable_trap();
     bcache.begin_op(&ctx);
 	Inode* ip = namex(path, 0, name, &ctx);
@@ -155,7 +156,7 @@ int execve(PTRAP_FRAME tf, const char *path, char *const argv[], char *const env
     if (mem == NULL)
         goto end2;
     PMEMORY_SPACE old_mem = KeSwitchMemorySpace(mem);
-    static struct Elf64_Phdr phdr;
+    static Elf64_Phdr phdr;
     static char buffer[65536];
     for (int p = ehdr.e_phoff, i = 0; p < 0x4000000 && i < ehdr.e_phnum; p += sizeof(phdr), i += 1)
     {
