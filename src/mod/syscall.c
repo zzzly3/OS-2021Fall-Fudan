@@ -42,7 +42,11 @@ struct file* KiValidateFileDescriptor(int FileDescriptor) // return file object
 void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 {
 	if (KeBugFaultFlag) for(arch_disable_trap();;);
-	if (TrapFrame->elr >> 63) PANIC("Invoke syscall in kernel mode");
+	if (TrapFrame->elr >> 63) 
+	{
+		printf("Invoke syscall in kernel mode");
+		KeBugFault(BUG_BADLEVEL);
+	}
 	memcpy(SyscallContext[cpuid()], TrapContext[cpuid()], 16*8);
 	arch_enable_trap();
 	ULONG64 callno = TrapFrame->x8;
