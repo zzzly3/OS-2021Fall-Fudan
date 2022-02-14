@@ -37,7 +37,7 @@ trap_entry:
     // store context
     mrs x0, mpidr_el1 
     and x0, x0, #0xff // cpuid
-    adr x1, TrapContext
+    ldr x1, =TrapContext
     add x1, x1, x0, lsl #4
     stp x19, x20, [x1], #16
     stp x21, x22, [x1], #16
