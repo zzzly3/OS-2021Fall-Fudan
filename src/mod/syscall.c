@@ -106,11 +106,11 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 		DirEntry* d = (DirEntry*)&b[i];
 		if (d->inode_no == 0)
 			break;
-		printf("#%d: %d %s\n", i, d->inode_no, d->name);
+		// printf("#%d: %d %s\n", i, d->inode_no, d->name);
 	}
 	inodes.put(&ctx, ip);
 	ip = inodes.get(4);
-	printf("sh: %d %d\n", ip->entry.type, ip->entry.num_bytes);
+	// printf("sh: %d %d\n", ip->entry.type, ip->entry.num_bytes);
 	inodes.put(&ctx, ip);
 	bcache.end_op(&ctx);
 }
