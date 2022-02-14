@@ -150,7 +150,7 @@ void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		(PsGetCurrentProcess()->Flags & PROCESS_FLAG_KERNEL))
 	{
 		// Kernel exception
-		KeBugFault(BUG_PANIC);
+		KeBugFault(BUG_EXCEPTION);
 	}
 	else
 	{

@@ -258,7 +258,7 @@ UNSAFE KSTATUS MmCreateUserPageEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddres
 UNSAFE KSTATUS MmCreateUserPagesEx(PMEMORY_SPACE MemorySpace, PVOID VirtualAddress, int Size, BOOL Allocate)
 {
 	ULONG64 end = (ULONG64)VirtualAddress + Size;
-	for (ULONG64 a = PAGE_BASE((ULONG64)VirtualAddress); a < PAGE_BASE(end); a += PAGE_SIZE)
+	for (ULONG64 a = PAGE_BASE((ULONG64)VirtualAddress); a <= PAGE_BASE(end) && a < end; a += PAGE_SIZE)
 	{
 		KSTATUS r;
 		if (Allocate)

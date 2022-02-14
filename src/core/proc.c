@@ -179,7 +179,7 @@ int growproc(int n) {
     int old = cur->UserDataEnd;
     if (n > old)
     {
-        for (int i = PAGE_BASE(old); i < PAGE_BASE(n); i += PAGE_SIZE)
+        for (int i = PAGE_BASE(old); i <= PAGE_BASE(n); i += PAGE_SIZE)
         {
             if (i >= old && i < n)
             {
@@ -195,7 +195,7 @@ int growproc(int n) {
     }
     else if (n < old)
     {
-        for (int i = PAGE_BASE(old - 1); i >= PAGE_BASE(n); i -= PAGE_SIZE)
+        for (int i = PAGE_BASE(old); i >= PAGE_BASE(n); i -= PAGE_SIZE)
         {
             if (i < old && i >= n)
             {
