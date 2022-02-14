@@ -149,7 +149,9 @@ static Inode *inode_get(usize inode_no) {
     if (q != NULL)
         return q;
     #ifdef UPDATE_API
+        BOOL te = arch_disable_trap();
         Inode* in = MmAllocateObject(&InodePool);
+        if (te) arch_enable_trap();
         ASSERT(in != NULL, BUG_FSFAULT);
     #else
         Inode* in = alloc_object(&arena);
