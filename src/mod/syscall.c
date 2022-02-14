@@ -94,23 +94,23 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	KeRaiseExecuteLevel(EXECUTE_LEVEL_APC);
 	KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
 
-	static OpContext ctx;
-	bcache.begin_op(&ctx);
-	Inode* ip = inodes.get(ROOT_INODE_NO);
-	printf("root size=%d bno=%d\n", ip->entry.num_bytes, ip->entry.addrs[0]);
-	// Block* b = bcache.acquire(ip->entry.addrs[0]);
-	static u8 b[512];
-	inodes.read(ip, b, 0, 512);
-	for (int i = 0; i < 512; i += sizeof(DirEntry))
-	{
-		DirEntry* d = (DirEntry*)&b[i];
-		if (d->inode_no == 0)
-			break;
-		// printf("#%d: %d %s\n", i, d->inode_no, d->name);
-	}
-	inodes.put(&ctx, ip);
-	ip = inodes.get(4);
-	// printf("sh: %d %d\n", ip->entry.type, ip->entry.num_bytes);
-	inodes.put(&ctx, ip);
-	bcache.end_op(&ctx);
+	// static OpContext ctx;
+	// bcache.begin_op(&ctx);
+	// Inode* ip = inodes.get(ROOT_INODE_NO);
+	// printf("root size=%d bno=%d\n", ip->entry.num_bytes, ip->entry.addrs[0]);
+	// // Block* b = bcache.acquire(ip->entry.addrs[0]);
+	// static u8 b[512];
+	// inodes.read(ip, b, 0, 512);
+	// for (int i = 0; i < 512; i += sizeof(DirEntry))
+	// {
+	// 	DirEntry* d = (DirEntry*)&b[i];
+	// 	if (d->inode_no == 0)
+	// 		break;
+	// 	// printf("#%d: %d %s\n", i, d->inode_no, d->name);
+	// }
+	// inodes.put(&ctx, ip);
+	// ip = inodes.get(4);
+	// // printf("sh: %d %d\n", ip->entry.type, ip->entry.num_bytes);
+	// inodes.put(&ctx, ip);
+	// bcache.end_op(&ctx);
 }
