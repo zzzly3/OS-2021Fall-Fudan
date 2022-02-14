@@ -310,6 +310,7 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
         assert(bn > 0);
         Block* b = cache->acquire(bn);
         b->data[o % BLOCK_SIZE] = *src;
+        cache->sync(ctx, b);
         cache->release(b);
     }
     entry->num_bytes = MAX(entry->num_bytes, end);
