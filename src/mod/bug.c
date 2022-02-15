@@ -109,6 +109,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 			*pe = K2P(p1) | PTE_USER_DATA;
 		}
 		ObUnlockObjectFast(ms);
+		MmFlushTLB();
 		return TRUE;
 	}
 	else if (((esr >> 2) & 15) == 0b0001) // Translation Fault
@@ -124,6 +125,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		else
 			goto fail;
 		ObUnlockObjectFast(ms);
+		MmFlushTLB();
 		return TRUE;
 	}
 fail:
