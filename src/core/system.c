@@ -10,7 +10,7 @@ void spawn_init_process();
 PKPROCESS CleanerProcess;
 void KeCleanerEntry()
 {
-	printf("Cleaner process created.");
+	printf("Cleaner process created.\n");
 	// clean zombie process
 	PKPROCESS cur = PsGetCurrentProcess();
 	KeUpdateQueueCounter(&cur->MessageQueue, 999);
@@ -21,7 +21,7 @@ void KeCleanerEntry()
 			break;
 		if (msg->Type == MSG_TYPE_FREEPROC)
 		{
-			printf("\t free proc %p\n", msg->Data);
+			printf("\t free proc %d\n", PsGetProcessId((PKPROCESS)msg->Data));
 			PsDereferenceProcess((PKPROCESS)msg->Data);
 		}
 		KeFreeMessage(msg);
