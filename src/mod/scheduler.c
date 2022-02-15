@@ -429,7 +429,7 @@ UNSAFE void KeTaskSwitch()
 				LibRemoveListEntry(&cur->SchedulerList);
 				ActiveProcessCount[cid]--;
 				if (PsReferenceProcess(cur))
-					KeQueueWorkerApcEx((PAPC_ROUTINE)PsDereferenceProcess, (ULONG64)cur, cid);
+					KeQueueMessage(&KernelProcess[cid]->MessageQueue, MSG_TYPE_FREEPROC, (ULONG64)cur);
 				break;
 			case PROCESS_STATUS_WAIT:
 				ObLockObjectFast(cur);

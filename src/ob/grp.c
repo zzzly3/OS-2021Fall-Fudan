@@ -4,6 +4,7 @@
 UNSAFE void PsiTaskSwitch(PKPROCESS);
 void PgiWorkerEntry(PPROCESS_GROUP);
 void PsiFreeProcess(PKPROCESS);
+extern PKPROCESS KernelProcess[CPU_NUM];
 
 static OBJECT_POOL GroupPool;
 static SPINLOCK GroupListLock;
@@ -142,7 +143,7 @@ void PgiWorkerEntry(PPROCESS_GROUP ProcessGroup)
 					// exit
 					LibRemoveListEntry(&p->SchedulerList);
 					if (PsReferenceProcess(cur))
-						KeQueueWorkerApcEx((PAPC_ROUTINE)PsDereferenceProcess, (ULONG64)cur, cpuid());
+						KeQueueMessage(&KernelProcess[cpuid()]->MessageQueue, MSG_TYPE_FREEPROC, (ULONG64)cur);
 					break;
 				case PROCESS_STATUS_WAIT:
 					ObLockObjectFast(p);
