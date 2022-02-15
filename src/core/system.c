@@ -7,6 +7,27 @@ void msgtest()
 
 void spawn_init_process();
 
+PKPROCESS CleanerProcess;
+void KeCleanerEntry()
+{
+	printf("Cleaner process created.");
+	// clean zombie process
+	PKPROCESS cur = PsGetCurrentProcess();
+	KeUpdateQueueCounter(&cur->MessageQueue, 999);
+	for (;;)
+	{
+		PMESSAGE msg = KeUserWaitMessage(&cur->MessageQueue);
+		if (msg == NULL)
+			break;
+		if (msg->Type == MSG_TYPE_FREEPROC)
+		{
+			printf("\t free proc %p\n", msg->Data);
+			PsDereferenceProcess((PKPROCESS)msg->Data);
+		}
+		KeFreeMessage(msg);
+	}
+}
+
 void KeSystemEntry()
 {
 	puts("System process created.");
@@ -46,6 +67,12 @@ void KeSystemEntry()
 	}
 	inodes.put(&ctx, ip);
 	bcache.end_op(&ctx);
+
+	static KSTRING cleaner;
+	static int pid;
+	LibInitializeKString(&cleaner, "cleaner", 16);
+	KeCreateProcess(&cleaner, KeCleanerEntry, NULL, &pid);
+	ASSERT(KSUCCESS(PsReferenceProcessById(pid, &CleanerProcess)), BUG_STOP);
 
 	putstr("spawn_init_process\n");
 	spawn_init_process();

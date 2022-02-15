@@ -10,6 +10,7 @@ extern int ActiveProcessCount[CPU_NUM];
 extern PKPROCESS TransferProcess;
 extern PDPC_ENTRY DpcList;
 // extern PKPROCESS TransferWaitingProcess;
+extern PKPROCESS CleanerProcess;
 
 void KeSystemWorkerEntry()
 {
@@ -32,9 +33,10 @@ void KeSystemWorkerEntry()
 				break;
 			if (msg->Type == MSG_TYPE_FREEPROC)
 			{
-				printf("\t free proc %p\n", msg->Data);
-				PsDereferenceProcess((PKPROCESS)msg->Data);
+				KeQueueMessage(&CleanerProcess->MessageQueue, MSG_TYPE_FREEPROC, msg->Data);
+				// PsDereferenceProcess((PKPROCESS)msg->Data);
 			}
+			KeFreeMessage(msg);
 		}
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{
