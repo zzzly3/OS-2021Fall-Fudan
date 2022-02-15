@@ -354,6 +354,7 @@ UNSAFE void MmSwitchMemorySpaceEx(PMEMORY_SPACE oldMemorySpace, PMEMORY_SPACE ne
 		--oldMemorySpace->ActiveCount;
 		ObUnlockObjectFast(oldMemorySpace);
 	}
+	MmFlushTLB();
 }
 
 PPAGE_TABLE MmiDuplicateTable(PPAGE_TABLE PageTable, int Level)
@@ -404,6 +405,8 @@ UNSAFE PMEMORY_SPACE MmDuplicateMemorySpace(PMEMORY_SPACE MemorySpace)
 	ObLockObjectFast(MemorySpace);
 	PPAGE_TABLE pt = MmiDuplicateTable(MemorySpace->PageTable, 0);
 	ObUnlockObjectFast(MemorySpace);
+	if (MemorySpace->ActiveCount > 0)
+		MmFlushTLB();
 	if (pt == NULL)
 	{
 		MmFreeObject(&MemorySpacePool, (PVOID)p);
