@@ -94,7 +94,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 		if (!((*pe) & PTE_RO))
 			goto fail;
 		// copy on write
-		printf("COW: %p\n", far);
+		printf("\t\t COW: %p\n", far);
 		PVOID p0 = (PVOID)P2K(PTE_ADDRESS(*pe));
 		if (MmUnsharePhysicalPage(p0) == 1)
 		{
@@ -116,7 +116,7 @@ BOOL KiMemoryFaultHandler(PTRAP_FRAME TrapFrame, ULONG64 esr)
 	{
 		if (VALID_PTE(*pe) && ((*pe) & VPTE_VALID))
 		{
-			printf("AOA: %p\n", far);
+			printf("\t\t AOA: %p\n", far);
 			PVOID p = MmAllocatePhysicalPage();
 			if (p == NULL)
 				goto fail;
@@ -142,7 +142,7 @@ end:
 
 void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 {
-	printf("%d Exception: %p far=%p elr=%p\n", PsGetCurrentProcessId(), esr, arch_get_far(), arch_get_elr());
+	printf("\t %d Exception: %p far=%p elr=%p\n", PsGetCurrentProcessId(), esr, arch_get_far(), arch_get_elr());
 	if (((esr >> 27) & 31) == 0b10010) // EL0 & 1 Data Abort
 	{
 		if (KiMemoryFaultHandler(TrapFrame, esr))

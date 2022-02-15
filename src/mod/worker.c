@@ -25,6 +25,17 @@ void KeSystemWorkerEntry()
 		PsiTransferProcess();
 		WorkerSwitchTimer[cpuid()] = WORKER_SWITCH_ROUND; // Reset the timer
 		KeLowerExecuteLevel(EXECUTE_LEVEL_USR);
+		for (;;)
+		{
+			PMESSAGE msg = KeGetMessage(&cur->MessageQueue);
+			if (msg == NULL)
+				break;
+			if (msg->Type == MSG_TYPE_FREEPROC)
+			{
+				printf("\t free proc %p\n", msg->Data);
+				PsDereferenceProcess((PKPROCESS)msg->Data);
+			}
+		}
 		if (cur->SchedulerList.Backward == &cur->SchedulerList)
 		{
 			// Scheduler list is empty

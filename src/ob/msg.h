@@ -6,6 +6,7 @@
 
 #define MSG_TYPE_CHILDEXIT 1
 #define MSG_TYPE_CHILDLEAVE 2
+#define MSG_TYPE_FREEPROC 3
 
 #define MSG_FLAG_FOWRAWD 1
 
