@@ -137,7 +137,7 @@ PKPROCESS PsiUpdateChildCount(PKPROCESS oldParent, PKPROCESS newParent)
 	if (newParent)
 	{
 		ObLockObjectFast(newParent);
-		newParent->ChildCount--;
+		newParent->ChildCount++;
 		ObUnlockObjectFast(newParent);
 	}
 }
