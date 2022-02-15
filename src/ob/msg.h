@@ -5,6 +5,7 @@
 #include <ob/mutex.h>
 
 #define MSG_TYPE_CHILDEXIT 1
+#define MSG_TYPE_CHILDLEAVE 2
 
 #define MSG_FLAG_FOWRAWD 1
 
@@ -18,6 +19,7 @@ typedef struct _MESSAGE
 
 typedef struct _MESSAGE_QUEUE
 {
+	int ChildCount;
 	SPINLOCK Lock;
 	LIST_ENTRY MsgList;
 	MUTEX MsgSignal;
@@ -29,5 +31,6 @@ USR_ONLY PMESSAGE KeUserWaitMessage(PMESSAGE_QUEUE);
 void KeInitializeMessageQueue(PMESSAGE_QUEUE);
 void KeClearMessageQueue(PMESSAGE_QUEUE);
 PMESSAGE KeGetMessage(PMESSAGE_QUEUE);
+int KeUpdateQueueCounter(PMESSAGE_QUEUE, int);
 
 #endif

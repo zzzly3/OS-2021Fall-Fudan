@@ -12,6 +12,7 @@ void ObInitializeMessages()
 void KeInitializeMessageQueue(PMESSAGE_QUEUE MessageQueue)
 {
 	MessageQueue->MsgList.Forward = MessageQueue->MsgList.Backward = &MessageQueue->MsgList;
+	MessageQueue->ChildCount = 0;
 	KeInitializeMutex(&MessageQueue->MsgSignal);
 	KeTestMutexSignaled(&MessageQueue->MsgSignal, FALSE);
 	KeInitializeSpinLock(&MessageQueue->Lock);
@@ -49,6 +50,8 @@ BOOL KeQueueMessage(PMESSAGE_QUEUE MessageQueue, int Type, ULONG64 Data)
 	msg->Type = Type;
 	msg->Data = Data;
 	ObLockObjectFast(MessageQueue);
+	if (msg->Type == MSG_TYPE_CHILDEXIT)
+		MessageQueue->ChildCount--;
 	if (LibTestListEmpty(&MessageQueue->MsgList))
 		KeSetMutexSignaled(&MessageQueue->MsgSignal);
 	LibInsertListEntry(MessageQueue->MsgList.Forward, &msg->MsgList);
@@ -59,16 +62,40 @@ BOOL KeQueueMessage(PMESSAGE_QUEUE MessageQueue, int Type, ULONG64 Data)
 
 USR_ONLY PMESSAGE KeUserWaitMessage(PMESSAGE_QUEUE MessageQueue)
 {
-	if (!KSUCCESS(KeUserWaitForMutexSignaled(&MessageQueue->MsgSignal, FALSE)))
-		return NULL; // ???
 	ObLockObject(MessageQueue);
-	ASSERT(!LibTestListEmpty(&MessageQueue->MsgList), BUG_BADLOCK);
-	PMESSAGE msg = container_of(MessageQueue->MsgList.Backward, MESSAGE, MsgList);
+	PMESSAGE msg = NULL;
+	if (MessageQueue->ChildCount > 0)
+	{
+		ObUnlockObject(MessageQueue);
+		if (!KSUCCESS(KeUserWaitForMutexSignaled(&MessageQueue->MsgSignal, FALSE)))
+			return NULL; // ???
+		ObLockObject(MessageQueue);
+		// ASSERT(!LibTestListEmpty(&MessageQueue->MsgList), BUG_BADLOCK);
+	}
+	if (!LibTestListEmpty(&MessageQueue->MsgList))
+		msg = container_of(MessageQueue->MsgList.Backward, MESSAGE, MsgList);
 	LibRemoveListEntry(&msg->MsgList);
 	if (!LibTestListEmpty(&MessageQueue->MsgList))
 		KeSetMutexSignaled(&MessageQueue->MsgSignal);
 	ObUnlockObject(MessageQueue);
 	return msg;
+}
+
+int KeUpdateQueueCounter(PMESSAGE_QUEUE MessageQueue, int Delta)
+{
+	ObLockObject(MessageQueue);
+	int r = MessageQueue->ChildCount;
+	MessageQueue->ChildCount += Delta;
+	if (MessageQueue->ChildCount == 0 && LibTestListEmpty(&MessageQueue->MsgList))
+	{
+		PMESSAGE msg = MmAllocateObject(&MessagePool);
+		ASSERT(msg, BUG_CHECKFAIL);
+		msg->Type = MSG_TYPE_CHILDLEAVE;
+		KeSetMutexSignaled(&MessageQueue->MsgSignal);
+		LibInsertListEntry(MessageQueue->MsgList.Forward, &msg->MsgList);
+	}
+	ObUnlockObject(MessageQueue);
+	return r;
 }
 
 PMESSAGE KeGetMessage(PMESSAGE_QUEUE MessageQueue)

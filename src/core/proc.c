@@ -284,33 +284,15 @@ USR_ONLY
 int wait() {
     /* TODO: Lab9 shell. */
     PKPROCESS cur = PsGetCurrentProcess();
-    ObLockObject(cur);
-    int child_remain = cur->ChildCount;
-    ObUnlockObject(cur);
-    if (child_remain > 0)
+    for (;;)
     {
-        for (;;)
-        {
-            PMESSAGE msg = KeUserWaitMessage(&cur->MessageQueue);
-            ASSERT(msg, BUG_CHECKFAIL); // ???
-            int t = msg->Type, d = msg->Data;
-            KeFreeMessage(msg);
-            if (t == MSG_TYPE_CHILDEXIT)
-                return d;
-        }
+        PMESSAGE msg = KeUserWaitMessage(&cur->MessageQueue);
+        if (msg == NULL)
+            break;
+        int t = msg->Type, d = msg->Data;
+        KeFreeMessage(msg);
+        if (t == MSG_TYPE_CHILDEXIT)
+            return d;
     }
-    else
-    {
-        for (;;)
-        {
-            PMESSAGE msg = KeGetMessage(&cur->MessageQueue);
-            if (msg == NULL)
-                return -1;
-            int t = msg->Type, d = msg->Data;
-            KeFreeMessage(msg);
-            if (t == MSG_TYPE_CHILDEXIT)
-                return d;
-        }
-    }
-    return 0;
+    return -1;
 }

@@ -36,7 +36,6 @@ typedef struct _KPROCESS
 	int GroupProcessId;
 	int UserDataBegin;
 	int UserDataEnd;
-	PUBLIC int ChildCount;
 	LIST_ENTRY ProcessList;
 	LIST_ENTRY SchedulerList;
 	LIST_ENTRY WaitList;

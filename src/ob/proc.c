@@ -65,7 +65,6 @@ PKPROCESS PsCreateProcessEx()
 	p->Group = NULL;
 	p->GroupWorker = NULL;
 	p->GroupProcessList.Forward = p->GroupProcessList.Backward = NULL;
-	p->ChildCount = 0;
 	KeInitializeSpinLock(&p->Lock);
 	KeInitializeMessageQueue(&p->MessageQueue);
 	init_rc(&p->ReferenceCount);
@@ -130,15 +129,11 @@ PKPROCESS PsiUpdateChildCount(PKPROCESS oldParent, PKPROCESS newParent)
 {
 	if (oldParent)
 	{
-		ObLockObjectFast(oldParent);
-		oldParent->ChildCount--;
-		ObUnlockObjectFast(oldParent);
+		KeUpdateQueueCounter(&oldParent->MessageQueue, -1);
 	}
 	if (newParent)
 	{
-		ObLockObjectFast(newParent);
-		newParent->ChildCount++;
-		ObUnlockObjectFast(newParent);
+		KeUpdateQueueCounter(&newParent->MessageQueue, 1);
 	}
 }
 
@@ -216,10 +211,7 @@ void PsFreeProcess(PKPROCESS Process)
 	ObLockObjectFast(Process);
 	if (Process->Parent)
 	{
-		ObLockObjectFast(Process->Parent);
 		KeQueueMessage(&Process->Parent->MessageQueue, MSG_TYPE_CHILDEXIT, PsGetProcessId(Process));
-		Process->Parent->ChildCount--;
-		ObUnlockObjectFast(Process->Parent);
 		Process->Parent = NULL;
 	}
 	ObUnlockObjectFast(Process);
