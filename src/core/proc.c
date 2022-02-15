@@ -269,6 +269,7 @@ int fork(PTRAP_FRAME TrapFrame) {
     memcpy(ctx, TrapFrame, 11*16);
     memcpy((PVOID)((ULONG64)ctx + 11*16), &SyscallContext[cpuid()], 5*16);
     PsCreateProcess(p, NULL, (ULONG64)ctx);
+    PsDereferenceProcess(p);
     KeLowerExecuteLevel(el);
     return PsGetProcessId(p);
 }

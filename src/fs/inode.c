@@ -277,7 +277,7 @@ static usize inode_map(OpContext *ctx, Inode *inode, usize offset, bool *modifie
 }
 
 // see `inode.h`.
-static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
+static usize inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
     InodeEntry *entry = &inode->entry;
     if (inode->entry.type == INODE_DEVICE)
     {
@@ -288,13 +288,16 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
         req.Buffer = dest;
         if (inode->entry.major == 1)
         {
+            inode_unlock(inode);
             IoCallDevice(HalConsoleDevice, &req);
+            inode_lock(inode);
+            return req.Size;
         }
-        return;
+        return 0;
     }
     usize end = offset + count;
-    assert(offset <= entry->num_bytes);
-    assert(end <= entry->num_bytes);
+    // assert(offset <= entry->num_bytes);
+    // assert(end <= entry->num_bytes);
     assert(offset <= end);
     for (usize o = offset; o < end; o++, dest++)
     {
@@ -311,10 +314,11 @@ static void inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
             cache->release(b);
         }
     }
+    return count;
 }
 
 // see `inode.h`.
-static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usize count) {
+static usize inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usize count) {
     InodeEntry *entry = &inode->entry;
     if (inode->entry.type == INODE_DEVICE)
     {
@@ -327,7 +331,7 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
         {
             IoCallDevice(HalConsoleDevice, &req);
         }
-        return;
+        return req.Size;
     }
     usize end = offset + count;
     assert(offset <= entry->num_bytes);
@@ -345,6 +349,7 @@ static void inode_write(OpContext *ctx, Inode *inode, u8 *src, usize offset, usi
     }
     entry->num_bytes = MAX(entry->num_bytes, end);
     inode_sync(ctx, inode, true);
+    return count;
 }
 
 // see `inode.h`.

@@ -110,15 +110,8 @@ isize fileread(struct file *f, char *addr, isize n) {
     {
         case FD_INODE:
             KeAcquireSpinLock(&f->ip->lock);
-            sz = f->ip->entry.num_bytes;
-            if (f->off >= sz)
-                sz = 0;
-            else
-            {
-                sz = min(sz - f->off, n);
-                inodes.read(f->ip, addr, f->off, sz);
-                f->off += sz;
-            }
+            sz = inodes.read(f->ip, addr, f->off, n);
+            f->off += sz;
             KeReleaseSpinLock(&f->ip->lock);
             break;
     }

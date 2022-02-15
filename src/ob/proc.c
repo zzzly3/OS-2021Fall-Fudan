@@ -175,6 +175,8 @@ KSTATUS KeCreateProcess(PKSTRING ProcessName, PVOID ProcessEntry, ULONG64 EntryA
 void KeExitProcess()
 {
 	// KeRaiseExecuteLevel(EXECUTE_LEVEL_RT);
+	if (!ObTestReferenceZero(PsGetCurrentProcess()))
+		printf("WARNING: process exited without deref\n");
 	PsiExitProcess();
 }
 

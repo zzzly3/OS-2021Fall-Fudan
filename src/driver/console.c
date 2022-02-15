@@ -126,7 +126,7 @@ static void ConsoleHandler(PDEVICE_OBJECT dev, PIOREQ_OBJECT req)
 		else
 		{
 			ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
-			console_read(buf, req->Size); // may block (switch out)
+			req->Size = console_read(buf, req->Size); // may block (switch out)
 			ret = STATUS_COMPLETED;
 		}
 		break;
