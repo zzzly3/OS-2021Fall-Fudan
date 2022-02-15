@@ -65,7 +65,6 @@ struct file *filedup(struct file *f) {
 static OpContext SingleOpCtx;
 
 /* Close file f. (Decrement ref count, close when reaches 0.) */
-USR_ONLY
 void fileclose(struct file *f) {
     /* TODO: Lab9 Shell */
     BOOL te = arch_disable_trap();
@@ -77,7 +76,7 @@ void fileclose(struct file *f) {
         close = f->ip;
     }
     KeReleaseSpinLockFast(&ftable.lock);
-    ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
+    // ASSERT(KeGetCurrentExecuteLevel() == EXECUTE_LEVEL_USR, BUG_BADLEVEL);
     if (close == NULL)
         goto end;
     bcache.begin_op(&SingleOpCtx); // maybe switched out
