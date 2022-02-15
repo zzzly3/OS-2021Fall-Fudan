@@ -25,7 +25,9 @@ int sys_clone(PTRAP_FRAME tf) {
         printf("sys_clone: flags other than SIGCHLD are not supported.\n");
         return -1;
     }
-    return fork(tf);
+    int id = fork(tf);
+    printf("sys_clone: %d->%d\n", PsGetCurrentProcessId(), id);
+    return id;
 }
 
 int sys_wait4(PTRAP_FRAME tf) {

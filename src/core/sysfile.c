@@ -387,5 +387,6 @@ int sys_exec(PTRAP_FRAME tf) {
     int len = KiValidateString((PVOID)tf->x0);
     if (len == 0 || len >= 1024)
         return -1;
+    printf("sys_exec: %s\n", (char*)tf->x0);
     return execve(tf, (const char *)tf->x0, (char *const*)tf->x1, (char *const*)tf->x2);
 }
