@@ -69,6 +69,7 @@ void spawn_init_process() {
     p->MemorySpace = m;
     strncpy(p->DebugName, "init", 16);
     PsCreateProcess(p, base, 0);
+    ObDereferenceObject(p);
     if (trpen) arch_enable_trap();
     KeLowerExecuteLevel(el);
     return;

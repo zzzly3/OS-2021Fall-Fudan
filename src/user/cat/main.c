@@ -19,7 +19,7 @@ void cat(char *path) {
     {
     	int r = read(fd, &buf, 512);
     	buf[r] = 0;
-    	printf("%s", r);
+    	printf("%s", buf);
     	if (r < 512)
     		break;
     }

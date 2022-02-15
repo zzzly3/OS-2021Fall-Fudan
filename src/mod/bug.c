@@ -157,6 +157,7 @@ void KiExceptionEntry(PTRAP_FRAME TrapFrame, ULONG64 esr)
 	else
 	{
 		// User exception
+		printf("\t\t Killed");
 		KeExitProcess();
 	}
 }
