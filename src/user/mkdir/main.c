@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 void mymkdir(char *path) {
-    if (mkdir(path, 0) < 0)
+    if (mkdirat(AT_FDCWD, path, 0) < 0)
         printf("Unable to mkdir %s\n", path);
 }
 
