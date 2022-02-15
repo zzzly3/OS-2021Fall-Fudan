@@ -262,8 +262,8 @@ int fork(PTRAP_FRAME TrapFrame) {
             p->FileDescriptors[i] = cur->FileDescriptors[i];
         }
     }
-    p->Context.UserStack = cur->Context.UserStack;
-    p->Context.tpidr_el0 = cur->Context.tpidr_el0;
+    p->Context.tpidr_el0 = arch_get_tid0();
+    p->Context.UserStack = (PVOID)arch_get_usp();
     PVOID ctx = (PVOID)((ULONG64)p->Context.KernelStack.p - 512);
     TrapFrame->x0 = 0; // ret
     memcpy(ctx, TrapFrame, 11*16);

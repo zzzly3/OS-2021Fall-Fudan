@@ -477,12 +477,14 @@ parse:
         f = 1;
     if (i == 0)
     {
-        strncpy(name, elem, FILE_NAME_MAX_LENGTH);
         return NULL;
     }
     in = inodes.get(i);
     if (*path == 0)
+    {
+        strncpy(name, elem, FILE_NAME_MAX_LENGTH);
         return in;
+    }
     goto parse;
 }
 

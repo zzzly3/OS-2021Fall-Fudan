@@ -158,6 +158,20 @@ static inline void arch_set_usp(u64 usp) {
     arch_fence();
 }
 
+// tpidr_el0 (belongs to context)
+static inline u64 arch_get_tid0() {
+    u64 tid;
+    // arch_fence();
+    asm volatile("mrs %[x], tpidr_el0" : [x] "=r"(tid));
+    // arch_fence();
+    return tid;
+}
+static inline void arch_set_tid0(u64 tid) {
+    arch_fence();
+    asm volatile("msr tpidr_el0, %[x]" : : [x] "r"(tid));
+    arch_fence();
+}
+
 // set-event instruction.
 static ALWAYS_INLINE void arch_sev() {
     asm volatile("sev" ::: "memory");
