@@ -299,6 +299,7 @@ static usize inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
     // assert(offset <= entry->num_bytes);
     // assert(end <= entry->num_bytes);
     assert(offset <= end);
+    memset(dest, 0, count);
     for (usize o = offset; o < end; o++, dest++)
     {
         bool x;
@@ -306,7 +307,7 @@ static usize inode_read(Inode *inode, u8 *dest, usize offset, usize count) {
         //printf("%d in %d\n", o, bn);
         assert(x == false);
         if (bn == 0)
-            *dest = 0;
+            return o - offset;
         else
         {
             Block* b = cache->acquire(bn);

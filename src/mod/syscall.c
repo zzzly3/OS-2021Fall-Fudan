@@ -58,8 +58,8 @@ void KiSystemCallEntry(PTRAP_FRAME TrapFrame)
 	ULONG64 arg2 = TrapFrame->x1;
 	ULONG64 arg3 = TrapFrame->x2;
 	ULONG64 ret = 0;
-	if (callno < 400) printf("%d SYSCALL %d %s\n", PsGetCurrentProcessId(), callno, syscall_table_str[callno]);
-	else printf("%d SYSCALL %d\n", PsGetCurrentProcessId(), callno);
+	if (callno < 400) printf("\t %d SYSCALL %d %s\n", PsGetCurrentProcessId(), callno, syscall_table_str[callno]);
+	else printf("\t %d SYSCALL %d\n", PsGetCurrentProcessId(), callno);
 
 	switch (callno)
 	{
